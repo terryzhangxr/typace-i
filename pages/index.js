@@ -17,6 +17,11 @@ export default function Home({ allPostsData }) {
           </li>
         ))}
       </ul>
+      <div className="text-center mt-8">
+        <a href="/rss.xml">
+          <img src="/rss-icon.png" alt="RSS Feed" style={{ display: 'inline-block' }} />
+        </a>
+      </div>
     </div>
   );
 }
