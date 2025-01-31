@@ -1,3 +1,38 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@layer base {
+  :root {
+    --color-text-primary: #2d2d2d;
+    --color-text-secondary: #737373;
+  }
+
+  .dark {
+    --color-text-primary: #f5f5f5;
+    --color-text-secondary: #a3a3a3;
+  }
+
+  body {
+    @apply bg-white dark:bg-dark transition-colors duration-300;
+  }
+  
+  /* 毛玻璃特效 */
+  .glass-effect {
+    @apply bg-glass backdrop-blur-xs border border-white/10 shadow-lg;
+  }
+  
+  /* 灵动岛转场 */
+  .page-transition {
+    @apply transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)];
+  }
+}
+
+/* 代码块样式 */
+.prose pre {
+  @apply rounded-xl border border-white/20 bg-black/80 p-6;
+}
+
+.prose code::before,
+.prose code::after {
+  content: '';
+}
