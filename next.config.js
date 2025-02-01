@@ -12,7 +12,7 @@ const withRSS = require('next-rss')({
       {
         title: 'Post Title',
         description: 'Post Description',
-        url: 'https://your-blog-url.com/post-url',
+        url: 'https://mrche.rrdd.top/post-url',
         date: '2025-01-31'
       }
     ];
