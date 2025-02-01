@@ -20,6 +20,7 @@
     "tailwindcss-text-fill-stroke": "^1.1.2",
     "@tailwindcss/typography": "^0.5.9",
     "next-sitemap": "^2.4.0",
-    "rss": "^1.2.2"
+    "rss": "^1.2.2",
+    "next-rss": "^1.2.2"
   }
 }
