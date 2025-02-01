@@ -1,9 +1,9 @@
 const withRSS = require('next-rss')({
   // RSS options
-  title: 'Your Blog Title',
+  title: 'MRCHE',
   description: 'Your Blog Description',
-  site_url: 'https://your-blog-url.com',
-  feed_url: 'https://your-blog-url.com/rss.xml',
+  site_url: 'https://mrche.rrdd.top',
+  feed_url: 'https://mrche.rrdd.top/rss.xml',
   output: 'public/rss.xml',
   // Function to get posts data
   getPosts: async () => {
