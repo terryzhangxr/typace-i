@@ -1,11 +1,11 @@
 module.exports = {
-  title: 'Typace I',
+  title: 'MRCHE',
   description: 'A modern blog built with Next.js and Tailwind CSS',
-  author: 'Your Name',
-  siteUrl: 'https://yourblog.com',
+  author: '车易达',
+  siteUrl: 'https://mrche.rrdd.top',
   social: {
-    twitter: 'yourtwitter',
-    github: 'yourgithub',
+    twitter: 'mrche_top',
+    github: 'che-ui',
   },
   theme: {
     darkMode: true,
