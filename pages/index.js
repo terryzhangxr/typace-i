@@ -22,7 +22,7 @@ export default function Home({ allPostsData }) {
       </main>
       <footer className="text-center mt-12">
         <a href="/api/sitemap" className="inline-block">
-          <img src="/rss-icon.png" alt="RSS Feed" className="block mx-auto w-8 h-8" />
+          <img src="https://cdn.us.mrche.top/sitemap.svg" alt="Sitemap" className="block mx-auto w-8 h-8" />
         </a>
       </footer>
     </div>
