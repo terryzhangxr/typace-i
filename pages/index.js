@@ -21,7 +21,7 @@ export default function Home({ allPostsData }) {
         </ul>
       </main>
       <footer className="text-center mt-12">
-        <a href="/rss.xml" className="inline-block">
+        <a href="/api/sitemap" className="inline-block">
           <img src="/rss-icon.png" alt="RSS Feed" className="block mx-auto w-8 h-8" />
         </a>
       </footer>
