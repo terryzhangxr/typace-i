@@ -21,6 +21,7 @@
     "@tailwindcss/typography": "^0.5.9",
     "next-sitemap": "^2.4.0",
     "rss": "^1.2.2",
-    "next-rss": "^1.0.0"
+    "next-rss": "^1.0.0",
+    "sitemap": "^6.2.0"
   }
 }
