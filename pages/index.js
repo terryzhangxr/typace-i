@@ -25,7 +25,7 @@ export default function Home({ allPostsData }) {
           <img src="https://cdn.us.mrche.top/sitemap.svg" alt="Sitemap" className="block mx-auto w-8 h-8" />
         </a>
         <p className="mt-4">
-          由MRCHE创建的<a href="https://www.mrche.top/typace" className="text-blue-600 hover:underline">Typace</a>强势驱动
+          由MRCHE&tz创建的<a href="https://www.mrche.top/typace" className="text-blue-600 hover:underline">Typace</a>强势驱动
         </p>
       </footer>
     </div>
