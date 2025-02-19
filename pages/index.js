@@ -3,7 +3,7 @@ import { getSortedPostsData } from '../lib/posts';
 
 export default function Home({ allPostsData }) {
   useEffect(() => {
-    const colors = [#ee7752, #e73c7e, #23a6d5, #23d5ab];
+    const colors = ['#ee7752', '#e73c7e', '#23a6d5', '#23d5ab'];
     let currentColorIndex = 0;
 
     const changeBackgroundColor = () => {
