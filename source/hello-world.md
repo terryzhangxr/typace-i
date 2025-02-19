@@ -1,6 +1,7 @@
 ---
 title: 'Hello World'
 date: '2023-10-01'
+cover: https://pic2.zhimg.com/v2-6c02e28c8e9b9f1fca6cace4e6c0ead9_1440w.webp?consumer=ZHI_MENG
 ---
 
 This is my first blog post!
