@@ -20,7 +20,7 @@ export default function Home({ allPostsData }) {
     <div className="min-h-screen bg-gradient-to-r from-gray-200 to-gray-400 p-8">
       <header className="text-center mb-8">
         <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">
-          MRCHE
+          THEME typace
         </h1>
       </header>
       <main>
@@ -40,7 +40,7 @@ export default function Home({ allPostsData }) {
           <img src="https://cdn.us.mrche.top/sitemap.svg" alt="Sitemap" className="block mx-auto w-8 h-8" />
         </a>
         <p className="mt-4">
-          由MRCHE创建的<a href="https://www.mrche.top/typace" className="text-blue-600 hover:underline">Typace</a>强势驱动
+          由MRCHE和terryzhang创建的<a href="https://www.mrche.top/typace" className="text-blue-600 hover:underline">Typace</a>强势驱动
         </p>
       </footer>
     </div>
