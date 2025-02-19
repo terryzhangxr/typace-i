@@ -5,7 +5,7 @@ export default function Home({ allPostsData }) {
     <div className="min-h-screen bg-gradient-to-r from-gray-200 to-gray-400 p-8">
       <header className="text-center mb-8">
         <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">
-          MRCHE
+          TYPACE
         </h1>
       </header>
       <main>
