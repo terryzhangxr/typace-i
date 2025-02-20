@@ -77,7 +77,7 @@ export default function Home({ allPostsData }) {
       {/* 保持原有内容不变 */}
       <header className="text-center mb-8">
         <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">
-          Theme tycape
+          Typace
         </h1>
       </header>
       <main>
