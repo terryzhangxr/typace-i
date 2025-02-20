@@ -41,7 +41,7 @@ export default function Post({ frontmatter, contentHtml, slug }) {
     import('@waline/client').then(({ init }) => {
       init({
         el: '#waline-comments', // 绑定评论容器
-        serverURL: 'https://comment.mrzxr.com', // 替换为你的 Waline 服务地址
+        serverURL: 'https://comment.mrzxr.top', // 替换为你的 Waline 服务地址
         path: slug, // 使用文章 slug 作为评论路径
         dark: 'auto', // 自动切换暗黑模式
         locale: {
