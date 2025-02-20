@@ -4,6 +4,7 @@ import path from 'path';
 import matter from 'gray-matter';
 import { remark } from 'remark';
 import html from 'remark-html';
+import { useEffect } from 'react'; // 引入 useEffect
 
 // 获取所有文章的路径
 export async function getStaticPaths() {
@@ -28,12 +29,28 @@ export async function getStaticProps({ params }) {
     props: {
       frontmatter: data,
       contentHtml,
+      slug: params.slug, // 将 slug 传递给组件
     },
   };
 }
 
 // 文章页组件
-export default function Post({ frontmatter, contentHtml }) {
+export default function Post({ frontmatter, contentHtml, slug }) {
+  // 动态加载 Waline
+  useEffect(() => {
+    import('@waline/client').then(({ init }) => {
+      init({
+        el: '#waline-comments', // 绑定评论容器
+        serverURL: 'https://your-waline-server-url', // 替换为你的 Waline 服务地址
+        path: slug, // 使用文章 slug 作为评论路径
+        dark: 'auto', // 自动切换暗黑模式
+        locale: {
+          placeholder: '欢迎留言讨论~', // 自定义输入框占位符
+        },
+      });
+    });
+  }, [slug]);
+
   return (
     <div className="min-h-screen p-8 relative z-10">
       {/* 新增的导航栏 */}
@@ -83,6 +100,9 @@ export default function Post({ frontmatter, contentHtml }) {
           <p className="text-sm text-gray-600 mb-8">{frontmatter.date}</p>
           <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
         </article>
+
+        {/* Waline 评论系统 */}
+        <div id="waline-comments" className="mt-16 max-w-4xl mx-auto"></div>
       </main>
 
       {/* 页脚 */}
