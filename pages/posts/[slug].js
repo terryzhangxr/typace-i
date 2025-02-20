@@ -9,6 +9,8 @@ import html from 'remark-html';
 export async function getStaticPaths() {
   const posts = getSortedPostsData();
   const paths = posts.map((post) => ({
+    params: { slug: post.slug },
+  }));
 
   return { paths, fallback: false };
 }
@@ -17,16 +19,22 @@ export async function getStaticPaths() {
 export async function getStaticProps({ params }) {
   const filePath = path.join(process.cwd(), 'source', `${params.slug}.md`);
   const fileContents = fs.readFileSync(filePath, 'utf8');
+  const { data, content } = matter(fileContents);
 
+  const processedContent = await remark().use(html).process(content);
+  const contentHtml = processedContent.toString();
+
+  return {
+    props: {
+      frontmatter: data,
+      contentHtml,
+    },
   };
 }
 
 // 文章页组件
 export default function Post({ frontmatter, contentHtml }) {
   return (
-    <div className="prose mx-auto p-4">
-      <h1>{frontmatter.title}</h1>
-      <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
     <div className="min-h-screen p-8 relative z-10">
       {/* 新增的导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white shadow-md z-20">
