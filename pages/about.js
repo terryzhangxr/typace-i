@@ -6,7 +6,7 @@ import html from 'remark-html';
 
 // 获取 about.md 文件内容
 export async function getStaticProps() {
-  const filePath = path.join(process.cwd(), 'source', 'about.md');
+  const filePath = path.join(process.cwd(), 'pages', 'about.md');
   const fileContents = fs.readFileSync(filePath, 'utf8');
   const { data, content } = matter(fileContents);
 
