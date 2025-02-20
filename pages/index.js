@@ -74,12 +74,54 @@ export default function Home({ allPostsData }) {
 
   return (
     <div className="min-h-screen p-8 relative z-10">
-      {/* 保持原有内容不变 */}
-      <header className="text-center mb-8">
+      {/* 新增的导航栏 */}
+      <nav className="fixed top-0 left-0 w-full bg-white shadow-md z-20">
+        <div className="container mx-auto px-8 py-4">
+          <div className="flex justify-between items-center">
+            <a 
+              href="/" 
+              className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600"
+            >
+              Typace
+            </a>
+            <ul className="flex space-x-6">
+              <li>
+                <a 
+                  href="/" 
+                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                >
+                  首页
+                </a>
+              </li>
+              <li>
+                <a 
+                  href="/about" 
+                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                >
+                  关于
+                </a>
+              </li>
+              <li>
+                <a 
+                  href="/archive" 
+                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                >
+                  归档
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+
+      {/* 调整原有header的上边距 */}
+      <header className="text-center mb-8 mt-24">
         <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">
           Typace
         </h1>
       </header>
+
+      {/* 保持原有main内容不变 */}
       <main>
         <ul className="space-y-6">
           {allPostsData.map(({ slug, title, date }) => (
@@ -92,6 +134,8 @@ export default function Home({ allPostsData }) {
           ))}
         </ul>
       </main>
+
+      {/* 保持原有footer内容不变 */}
       <footer className="text-center mt-12">
         <a href="/api/sitemap" className="inline-block">
           <img src="https://cdn.us.mrche.top/sitemap.svg" alt="Sitemap" className="block mx-auto w-8 h-8" />
