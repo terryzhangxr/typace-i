@@ -11,5 +11,5 @@ Typace 由 MRCHE 和 terryzhang 共同创建，旨在为开发者、设计师和
 
 如果你有任何问题或建议，欢迎通过以下方式联系我们：
 
-- 邮箱：[contact@mrzxr.com](mailto:contact@zxr.com)
+- 邮箱：[zhang@mrzxr.com](mailto:zhang@zxr.com)
 - GitHub：[@mrche](https://github.com/mrche)
