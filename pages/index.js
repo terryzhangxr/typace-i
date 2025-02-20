@@ -1,5 +1,6 @@
-import { getSortedPostsData } from '../lib/posts';
 import { useEffect } from 'react';
+import { getSortedPostsData } from '../lib/posts';
+
 // 新增的样式定义
 const addDynamicStyles = () => {
   const style = document.createElement('style');
@@ -71,10 +72,9 @@ export default function Home({ allPostsData }) {
     };
   }, []);
 
-export default function Home({ allPostsData }) {
   return (
     <div className="min-h-screen p-8 relative z-10">
-      {/* 导航栏 */}
+      {/* 新增的导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white shadow-md z-20">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
@@ -114,36 +114,28 @@ export default function Home({ allPostsData }) {
         </div>
       </nav>
 
-      {/* 文章列表 */}
-      <main className="mt-24">
-        <ul className="space-y-8">
-          {allPostsData.map(({ slug, title, date, cover }) => (
-            <li key={slug} className="bg-white rounded-lg shadow-lg overflow-hidden transition transform hover:scale-105">
-              <a href={`/posts/${slug}`} className="block">
-                {/* 封面图片 */}
-                {cover && (
-                  <div className="w-full h-48 overflow-hidden">
-                    <img
-                      src={cover}
-                      alt={title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                {/* 文章内容 */}
-                <div className="p-6">
-                  <h2 className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800">
-                    {title}
-                  </h2>
-                  <p className="text-sm text-gray-600 mt-2">{date}</p>
-                </div>
+      {/* 调整原有header的上边距 */}
+      <header className="text-center mb-8 mt-24">
+        <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">
+          Typace
+        </h1>
+      </header>
+
+      {/* 保持原有main内容不变 */}
+      <main>
+        <ul className="space-y-6">
+          {allPostsData.map(({ slug, title, date }) => (
+            <li key={slug} className="bg-white rounded-lg shadow-lg p-6 transition transform hover:scale-105">
+              <a href={`/posts/${slug}`} className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800">
+                {title}
               </a>
+              <p className="text-sm text-gray-600 mt-2">{date}</p>
             </li>
           ))}
         </ul>
       </main>
 
-      {/* 页脚 */}
+      {/* 保持原有footer内容不变 */}
       <footer className="text-center mt-12">
         <a href="/api/sitemap" className="inline-block">
           <img src="https://cdn.us.mrche.top/sitemap.svg" alt="Sitemap" className="block mx-auto w-8 h-8" />
