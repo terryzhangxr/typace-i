@@ -9,7 +9,7 @@ import html from 'remark-html';
 export async function getStaticPaths() {
   const posts = getSortedPostsData();
   const paths = posts.map((post) => ({
-@@ -14,6 +15,7 @@
+
   return { paths, fallback: false };
 }
 
@@ -17,7 +17,7 @@ export async function getStaticPaths() {
 export async function getStaticProps({ params }) {
   const filePath = path.join(process.cwd(), 'source', `${params.slug}.md`);
   const fileContents = fs.readFileSync(filePath, 'utf8');
-@@ -30,11 +32,68 @@
+
   };
 }
 
