@@ -1,4 +1,75 @@
 import { getSortedPostsData } from '../lib/posts';
+import { useEffect } from 'react';
+// 新增的样式定义
+const addDynamicStyles = () => {
+  const style = document.createElement('style');
+  style.textContent = `
+    .bg-transition {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 1.5s ease-in-out;
+      z-index: -1;
+    }
+    .bg-visible {
+      opacity: 1;
+    }
+  `;
+  document.head.appendChild(style);
+};
+
+export default function Home({ allPostsData }) {
+  useEffect(() => {
+    addDynamicStyles();
+
+    const colors = [
+      'linear-gradient(45deg, #ee7752, #e73c7e)',
+      'linear-gradient(45deg, #e73c7e, #23a6d5)',
+      'linear-gradient(45deg, #23a6d5, #23d5ab)',
+      'linear-gradient(45deg, #23d5ab, #ee7752)',
+    ];
+
+    // 创建两个背景层
+    const bg1 = document.createElement('div');
+    const bg2 = document.createElement('div');
+    bg1.className = bg2.className = 'bg-transition';
+    document.body.append(bg1, bg2);
+
+    let currentIndex = 0;
+    let activeBg = bg1;
+
+    // 初始化第一个背景
+    activeBg.style.backgroundImage = colors[currentIndex];
+    activeBg.classList.add('bg-visible');
+
+    const changeBackground = () => {
+      const nextIndex = (currentIndex + 1) % colors.length;
+      const nextBg = activeBg === bg1 ? bg2 : bg1;
+
+      // 预加载下一个背景
+      nextBg.style.backgroundImage = colors[nextIndex];
+      
+      // 触发过渡
+      setTimeout(() => {
+        activeBg.classList.remove('bg-visible');
+        nextBg.classList.add('bg-visible');
+        activeBg = nextBg;
+        currentIndex = nextIndex;
+      }, 100);
+    };
+
+    const intervalId = setInterval(changeBackground, 3000);
+
+    return () => {
+      clearInterval(intervalId);
+      bg1.remove();
+      bg2.remove();
+      document.head.querySelector('style').remove();
+    };
+  }, []);
 
 export default function Home({ allPostsData }) {
   return (
