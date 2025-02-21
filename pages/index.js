@@ -18,6 +18,18 @@ const addDynamicStyles = () => {
     .bg-visible {
       opacity: 1;
     }
+    @media (max-width: 767px) {
+      .cover-image-container {
+        width: 100%;
+        height: 200px;
+      }
+    }
+    .line-clamp-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
   `;
   document.head.appendChild(style);
 };
@@ -124,14 +136,42 @@ export default function Home({ allPostsData }) {
       {/* 保持原有main内容不变 */}
       <main>
         <ul className="space-y-6">
-          {allPostsData.map(({ slug, title, date }) => (
-            <li key={slug} className="bg-white rounded-lg shadow-lg p-6 transition transform hover:scale-105">
-              <a href={`/posts/${slug}`} className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800">
-                {title}
-              </a>
-              <p className="text-sm text-gray-600 mt-2">{date}</p>
-            </li>
-          ))}
+          {allPostsData.map(({ slug, title, date, coverImage, content }) => {
+            // 自动生成摘要
+            const plainText = content
+              .replace(/<[^>]+>/g, '') // 移除HTML标签
+              .replace(/#+\s*|\[.*?\]\(.*?\)|\*\*|\*/g, '') // 移除Markdown标记
+              .substring(0, 100)
+              .trim();
+            const excerpt = plainText + (plainText.length === 100 ? "..." : "");
+
+            return (
+              <li key={slug} className="bg-white rounded-lg shadow-lg p-6 transition transform hover:scale-105">
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* 封面图片 */}
+                  <div className="md:w-1/3 cover-image-container">
+                    <img 
+                      src={coverImage || '/images/default-cover.jpg'}
+                      alt={title}
+                      className="w-full h-full object-cover rounded-lg transition-transform duration-300 hover:scale-105"
+                      loading="lazy"
+                    />
+                  </div>
+                  
+                  {/* 文字内容 */}
+                  <div className="flex-1">
+                    <a href={`/posts/${slug}`} className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800">
+                      {title}
+                    </a>
+                    <p className="text-sm text-gray-600 mt-2">{date}</p>
+                    <p className="mt-3 text-gray-700 leading-relaxed line-clamp-3">
+                      {excerpt}
+                    </p>
+                  </div>
+                </div>
+              </li>
+            )
+          })}
         </ul>
       </main>
 
@@ -152,7 +192,11 @@ export async function getStaticProps() {
   const allPostsData = getSortedPostsData();
   return {
     props: {
-      allPostsData,
+      allPostsData: allPostsData.map(post => ({
+        ...post,
+        // 确保每篇文章都有content字段
+        content: post.content || ""
+      }))
     },
   };
 }
