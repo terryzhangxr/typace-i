@@ -43,10 +43,11 @@ const addDynamicStyles = () => {
       align-items: center;
       z-index: 1000;
       opacity: 1;
-      transition: opacity 0.5s ease-in-out;
+      transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
     }
     .splash-screen.hidden {
       opacity: 0;
+      transform: translateY(-20px);
       visibility: hidden;
     }
     .splash-screen h1 {
@@ -83,11 +84,10 @@ export default function Home({ allPostsData }) {
   useEffect(() => {
     addDynamicStyles();
 
-    // 检查是否首次加载
-    const hasSeenSplash = localStorage.getItem('hasSeenSplash');
-    if (!hasSeenSplash) {
+    // 检查是否是从站内切换过来的
+    const isInternalNavigation = performance.getEntriesByType('navigation')[0].type === 'navigate';
+    if (isInternalNavigation) {
       setShowSplash(true);
-      localStorage.setItem('hasSeenSplash', 'true');
     }
 
     // 开屏动画结束后隐藏
