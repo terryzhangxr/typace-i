@@ -42,48 +42,61 @@ const addDynamicStyles = () => {
       justify-content: center;
       align-items: center;
       z-index: 1000;
-      animation: fadeOut 2s ease-in-out forwards;
+      opacity: 1;
+      transition: opacity 0.5s ease-in-out;
     }
-    @keyframes fadeOut {
-      0% {
-        opacity: 1;
-      }
-      90% {
-        opacity: 1;
-      }
-      100% {
-        opacity: 0;
-        visibility: hidden;
-      }
+    .splash-screen.hidden {
+      opacity: 0;
+      visibility: hidden;
     }
     .splash-screen h1 {
       font-size: 4rem;
       font-weight: bold;
       color: white;
-      animation: scaleUp 1.5s ease-in-out infinite;
+      overflow: hidden;
     }
-    @keyframes scaleUp {
-      0%, 100% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.2);
+    .splash-screen h1 span {
+      display: inline-block;
+      transform: translateY(100%);
+      opacity: 0;
+      animation: slideUp 0.5s ease-in-out forwards;
+    }
+    @keyframes slideUp {
+      to {
+        transform: translateY(0);
+        opacity: 1;
       }
     }
+    .splash-screen h1 span:nth-child(1) { animation-delay: 0.1s; }
+    .splash-screen h1 span:nth-child(2) { animation-delay: 0.2s; }
+    .splash-screen h1 span:nth-child(3) { animation-delay: 0.3s; }
+    .splash-screen h1 span:nth-child(4) { animation-delay: 0.4s; }
+    .splash-screen h1 span:nth-child(5) { animation-delay: 0.5s; }
+    .splash-screen h1 span:nth-child(6) { animation-delay: 0.6s; }
   `;
   document.head.appendChild(style);
 };
 
 export default function Home({ allPostsData }) {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(false);
 
   useEffect(() => {
     addDynamicStyles();
 
+    // 检查是否首次加载
+    const hasSeenSplash = localStorage.getItem('hasSeenSplash');
+    if (!hasSeenSplash) {
+      setShowSplash(true);
+      localStorage.setItem('hasSeenSplash', 'true');
+    }
+
     // 开屏动画结束后隐藏
-    const splashTimer = setTimeout(() => {
-      setShowSplash(false);
-    }, 2000); // 2秒后隐藏
+    if (showSplash) {
+      const splashTimer = setTimeout(() => {
+        setShowSplash(false);
+      }, 2000); // 2秒后隐藏
+      return () => clearTimeout(splashTimer);
+    }
 
     const colors = [
       'linear-gradient(45deg, #ee7752, #e73c7e)',
@@ -125,19 +138,22 @@ export default function Home({ allPostsData }) {
 
     return () => {
       clearInterval(intervalId);
-      clearTimeout(splashTimer);
       bg1.remove();
       bg2.remove();
       document.head.querySelector('style').remove();
     };
-  }, []);
+  }, [showSplash]);
 
   return (
     <div className="min-h-screen p-8 relative z-10">
       {/* 全屏开屏动画 */}
       {showSplash && (
         <div className="splash-screen">
-          <h1>Typace</h1>
+          <h1>
+            {['T', 'y', 'p', 'a', 'c', 'e'].map((char, index) => (
+              <span key={index}>{char}</span>
+            ))}
+          </h1>
         </div>
       )}
 
