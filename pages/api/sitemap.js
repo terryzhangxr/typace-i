@@ -7,7 +7,7 @@ export default async (req, res) => {
     // Add other pages
   ];
 
-  const stream = new SitemapStream({ hostname: 'https://your-blog-url.com' });
+  const stream = new SitemapStream({ hostname: 'https://typace.mrzxr.com' });
   const xml = await streamToPromise(Readable.from(links).pipe(stream)).then((data) => data.toString());
 
   res.setHeader('Content-Type', 'application/xml');
