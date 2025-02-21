@@ -21,6 +21,15 @@ export async function getStaticProps({ params }) {
   const fileContents = fs.readFileSync(filePath, 'utf8');
   const { data, content } = matter(fileContents);
 
+  // 提取纯文本作为摘要
+  const plainText = content
+    .replace(/<[^>]+>/g, '') // 移除HTML标签
+    .replace(/#+\s*|\[.*?\]\(.*?\)|\*\*|\*/g, '') // 移除Markdown标记
+    .substring(0, 100) // 截取前100个字符
+    .trim();
+  const excerpt = plainText + (plainText.length === 100 ? "..." : "");
+
+  // 转换Markdown为HTML
   const processedContent = await remark().use(html).process(content);
   const contentHtml = processedContent.toString();
 
@@ -28,12 +37,13 @@ export async function getStaticProps({ params }) {
     props: {
       frontmatter: data,
       contentHtml,
+      excerpt, // 将摘要传递给组件
     },
   };
 }
 
 // 文章页组件
-export default function Post({ frontmatter, contentHtml }) {
+export default function Post({ frontmatter, contentHtml, excerpt }) {
   return (
     <div className="min-h-screen p-8 relative z-10">
       {/* 新增的导航栏 */}
@@ -81,6 +91,12 @@ export default function Post({ frontmatter, contentHtml }) {
         <article className="prose max-w-4xl mx-auto">
           <h1 className="text-4xl font-bold mb-4">{frontmatter.title}</h1>
           <p className="text-sm text-gray-600 mb-8">{frontmatter.date}</p>
+          {/* 显示摘要 */}
+          {excerpt && (
+            <div className="bg-gray-50 p-4 rounded-lg mb-8">
+              <p className="text-gray-700">{excerpt}</p>
+            </div>
+          )}
           <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
         </article>
       </main>
@@ -96,4 +112,5 @@ export default function Post({ frontmatter, contentHtml }) {
       </footer>
     </div>
   );
+}
 }
