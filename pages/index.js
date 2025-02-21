@@ -136,7 +136,7 @@ export default function Home({ allPostsData }) {
       {/* 保持原有main内容不变 */}
       <main>
         <ul className="space-y-6">
-          {allPostsData.map(({ slug, title, date, coverImage, content }) => {
+          {allPostsData.map(({ slug, title, date, cover, content }) => {
             // 自动生成摘要
             const plainText = content
               .replace(/<[^>]+>/g, '') // 移除HTML标签
@@ -149,14 +149,16 @@ export default function Home({ allPostsData }) {
               <li key={slug} className="bg-white rounded-lg shadow-lg p-6 transition transform hover:scale-105">
                 <div className="flex flex-col md:flex-row gap-6">
                   {/* 封面图片 */}
-                  <div className="md:w-1/3 cover-image-container">
-                    <img 
-                      src={coverImage || '/images/default-cover.jpg'}
-                      alt={title}
-                      className="w-full h-full object-cover rounded-lg transition-transform duration-300 hover:scale-105"
-                      loading="lazy"
-                    />
-                  </div>
+                  {cover && (
+                    <div className="md:w-1/3 cover-image-container">
+                      <img 
+                        src={cover}
+                        alt={title}
+                        className="w-full h-full object-cover rounded-lg transition-transform duration-300 hover:scale-105"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
                   
                   {/* 文字内容 */}
                   <div className="flex-1">
