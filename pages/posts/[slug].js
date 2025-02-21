@@ -113,4 +113,3 @@ export default function Post({ frontmatter, contentHtml, excerpt }) {
     </div>
   );
 }
-}
