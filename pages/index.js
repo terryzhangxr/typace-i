@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { getSortedPostsData } from '../lib/posts';
 
 // 新增的样式定义
@@ -30,73 +30,13 @@ const addDynamicStyles = () => {
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
-    /* 开屏动画样式 */
-    .splash-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      opacity: 1;
-      transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
-    }
-    .splash-screen.hidden {
-      opacity: 0;
-      transform: translateY(-20px);
-      visibility: hidden;
-    }
-    .splash-screen h1 {
-      font-size: 4rem;
-      font-weight: bold;
-      color: white;
-      overflow: hidden;
-    }
-    .splash-screen h1 span {
-      display: inline-block;
-      transform: translateY(100%);
-      opacity: 0;
-      animation: slideUp 0.5s ease-in-out forwards;
-    }
-    @keyframes slideUp {
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
-    }
-    .splash-screen h1 span:nth-child(1) { animation-delay: 0.1s; }
-    .splash-screen h1 span:nth-child(2) { animation-delay: 0.2s; }
-    .splash-screen h1 span:nth-child(3) { animation-delay: 0.3s; }
-    .splash-screen h1 span:nth-child(4) { animation-delay: 0.4s; }
-    .splash-screen h1 span:nth-child(5) { animation-delay: 0.5s; }
-    .splash-screen h1 span:nth-child(6) { animation-delay: 0.6s; }
   `;
   document.head.appendChild(style);
 };
 
 export default function Home({ allPostsData }) {
-  const [showSplash, setShowSplash] = useState(false);
-
   useEffect(() => {
     addDynamicStyles();
-
-    // 检查是否是从站内切换过来的
-    const isInternalNavigation = performance.getEntriesByType('navigation')[0].type === 'navigate';
-    if (isInternalNavigation) {
-      setShowSplash(true);
-    }
-
-    // 开屏动画结束后隐藏
-    if (showSplash) {
-      const splashTimer = setTimeout(() => {
-        setShowSplash(false);
-      }, 2000); // 2秒后隐藏
-      return () => clearTimeout(splashTimer);
-    }
 
     const colors = [
       'linear-gradient(45deg, #ee7752, #e73c7e)',
@@ -142,21 +82,10 @@ export default function Home({ allPostsData }) {
       bg2.remove();
       document.head.querySelector('style').remove();
     };
-  }, [showSplash]);
+  }, []);
 
   return (
     <div className="min-h-screen p-8 relative z-10">
-      {/* 全屏开屏动画 */}
-      {showSplash && (
-        <div className="splash-screen">
-          <h1>
-            {['T', 'y', 'p', 'a', 'c', 'e'].map((char, index) => (
-              <span key={index}>{char}</span>
-            ))}
-          </h1>
-        </div>
-      )}
-
       {/* 新增的导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white shadow-md z-20">
         <div className="container mx-auto px-8 py-4">
@@ -261,9 +190,7 @@ export async function getStaticProps() {
       allPostsData: allPostsData.map(post => ({
         ...post,
         // 确保每篇文章都有content字段
-        content: post.content || "",
-        // 确保每篇文章都有excerpt字段
-        excerpt: post.excerpt || ""
+        content: post.content || ""
       }))
     },
   };
