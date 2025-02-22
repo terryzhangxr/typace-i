@@ -35,6 +35,7 @@ export async function getStaticProps({ params }) {
 
 export default function Post({ frontmatter, contentHtml }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [toc, setToc] = useState([]); // 存储目录
 
   useEffect(() => {
     // 检查本地存储或系统偏好设置
@@ -48,6 +49,9 @@ export default function Post({ frontmatter, contentHtml }) {
     } else {
       document.documentElement.classList.remove('dark');
     }
+
+    // 提取标题生成目录
+    generateToc();
   }, []);
 
   // 切换暗黑模式
@@ -56,6 +60,26 @@ export default function Post({ frontmatter, contentHtml }) {
     setIsDarkMode(newDarkMode);
     localStorage.setItem('darkMode', newDarkMode);
     document.documentElement.classList.toggle('dark', newDarkMode);
+  };
+
+  // 生成目录
+  const generateToc = () => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(contentHtml, 'text/html');
+    const headings = doc.querySelectorAll('h1, h2, h3'); // 提取 h1, h2, h3 标题
+    const tocItems = [];
+
+    headings.forEach((heading) => {
+      const id = heading.textContent.toLowerCase().replace(/\s+/g, '-'); // 生成 ID
+      heading.id = id; // 设置标题 ID
+      tocItems.push({
+        level: heading.tagName.toLowerCase(),
+        text: heading.textContent,
+        id,
+      });
+    });
+
+    setToc(tocItems); // 更新目录状态
   };
 
   return (
@@ -110,30 +134,56 @@ export default function Post({ frontmatter, contentHtml }) {
       </nav>
 
       {/* 文章内容 */}
-      <main className="mt-24">
-        {/* 封面图片 */}
-        {frontmatter.cover && (
-          <div className="w-full h-64 md:h-96 mb-8">
-            <img
-              src={frontmatter.cover}
-              alt={frontmatter.title}
-              className="w-full h-full object-cover rounded-lg"
-            />
-          </div>
-        )}
+      <main className="mt-24 flex">
+        {/* 文章主体 */}
+        <div className="flex-1">
+          {/* 封面图片 */}
+          {frontmatter.cover && (
+            <div className="w-full h-48 md:h-64 mb-8"> {/* 缩小封面图 */}
+              <img
+                src={frontmatter.cover}
+                alt={frontmatter.title}
+                className="w-full h-full object-cover rounded-lg"
+              />
+            </div>
+          )}
 
-        <article className="prose max-w-4xl mx-auto dark:prose-invert">
-          <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
-            {frontmatter.title}
-          </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-8">
-            {frontmatter.date}
-          </p>
-          <div
-            className="text-gray-700 dark:text-gray-300"
-            dangerouslySetInnerHTML={{ __html: contentHtml }}
-          />
-        </article>
+          <article className="prose max-w-4xl mx-auto dark:prose-invert">
+            <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
+              {frontmatter.title}
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-8">
+              {frontmatter.date}
+            </p>
+            <div
+              className="text-gray-700 dark:text-gray-300"
+              dangerouslySetInnerHTML={{ __html: contentHtml }}
+            />
+          </article>
+        </div>
+
+        {/* 右侧目录 */}
+        <aside className="w-64 hidden lg:block pl-8 sticky top-24 self-start">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
+              目录
+            </h2>
+            <ul className="space-y-2">
+              {toc.map((item) => (
+                <li key={item.id}>
+                  <a
+                    href={`#${item.id}`}
+                    className={`block text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${
+                      item.level === 'h2' ? 'pl-4' : item.level === 'h3' ? 'pl-8' : ''
+                    }`}
+                  >
+                    {item.text}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
       </main>
 
       {/* 页脚 */}
