@@ -177,42 +177,66 @@ export default function Home({ allPostsData }) {
         </h1>
       </header>
 
-      {/* 保持原有main内容不变 */}
-      <main>
-        <ul className="space-y-6">
-          {allPostsData.map(({ slug, title, date, cover, excerpt }) => (
-            <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-105">
-              <div className="flex flex-col md:flex-row gap-6">
-                {/* 封面图片 */}
-                {cover && (
-                  <div className="md:w-1/3 cover-image-container">
-                    <img 
-                      src={cover}
-                      alt={title}
-                      className="w-full h-full object-cover rounded-lg transition-transform duration-300 hover:scale-105"
-                      loading="lazy"
-                    />
-                  </div>
-                )}
-                
-                {/* 文字内容 */}
-                <div className="flex-1">
-                  <a href={`/posts/${slug}`} className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
-                    {title}
+      {/* 页面主体内容 */}
+      <div className="flex">
+        {/* 左侧最新文章栏 */}
+        <aside className="w-1/4 pr-8 hidden lg:block">
+          <div className="sticky top-24">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
+              最新文章
+            </h2>
+            <ul className="space-y-4">
+              {allPostsData.slice(0, 5).map((post) => (
+                <li key={post.slug}>
+                  <a
+                    href={`/posts/${post.slug}`}
+                    className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  >
+                    {post.title}
                   </a>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{date}</p>
-                  {/* 显示摘要 */}
-                  {excerpt && (
-                    <p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">
-                      {excerpt}
-                    </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
+
+        {/* 右侧文章列表 */}
+        <main className="flex-1">
+          <ul className="space-y-6">
+            {allPostsData.map(({ slug, title, date, cover, excerpt }) => (
+              <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-105">
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* 封面图片 */}
+                  {cover && (
+                    <div className="md:w-1/3 cover-image-container">
+                      <img 
+                        src={cover}
+                        alt={title}
+                        className="w-full h-full object-cover rounded-lg transition-transform duration-300 hover:scale-105"
+                        loading="lazy"
+                      />
+                    </div>
                   )}
+                  
+                  {/* 文字内容 */}
+                  <div className="flex-1">
+                    <a href={`/posts/${slug}`} className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                      {title}
+                    </a>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{date}</p>
+                    {/* 显示摘要 */}
+                    {excerpt && (
+                      <p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">
+                        {excerpt}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </main>
+              </li>
+            ))}
+          </ul>
+        </main>
+      </div>
 
       {/* 保持原有footer内容不变 */}
       <footer className="text-center mt-12">
