@@ -3,8 +3,8 @@
 @tailwind utilities;
 @layer base {
   :root {
-    --color-text-primary: #2d2d2d;
-    --color-text-secondary: #737373;
+    --color-text-primary: #f5f5f5;
+    --color-text-secondary: #f5f5f5;
   }
 
   .dark {
