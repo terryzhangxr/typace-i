@@ -49,6 +49,7 @@ export async function getStaticProps({ params }) {
 
 export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [toc, setToc] = useState([]); // 存储目录
 
   useEffect(() => {
     // 检查本地存储或系统偏好设置
@@ -62,7 +63,10 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, []);
+
+    // 提取标题生成目录
+    generateToc();
+  }, [contentHtml]);
 
   // 切换暗黑模式
   const toggleDarkMode = () => {
@@ -70,6 +74,39 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     setIsDarkMode(newDarkMode);
     localStorage.setItem('darkMode', newDarkMode);
     document.documentElement.classList.toggle('dark', newDarkMode);
+  };
+
+  // 生成目录
+  const generateToc = () => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(contentHtml, 'text/html');
+    const headings = doc.querySelectorAll('h1, h2'); // 提取 h1 和 h2 标题
+    const tocItems = [];
+
+    headings.forEach((heading) => {
+      const id = heading.textContent.toLowerCase().replace(/\s+/g, '-'); // 生成 ID
+      heading.id = id; // 设置标题 ID
+      tocItems.push({
+        level: heading.tagName.toLowerCase(), // 标题层级（h1 或 h2）
+        text: heading.textContent,
+        id,
+      });
+    });
+
+    setToc(tocItems); // 更新目录状态
+  };
+
+  // 处理目录点击事件
+  const handleTocClick = (e, id) => {
+    e.preventDefault(); // 阻止默认跳转行为
+    const targetElement = document.getElementById(id); // 获取目标标题元素
+    if (targetElement) {
+      // 平滑滚动到目标位置
+      targetElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
   };
 
   return (
@@ -125,30 +162,57 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
       </nav>
 
       {/* 文章内容 */}
-      <main className="mt-24">
-        {/* 封面图片 */}
-        {frontmatter.cover && (
-          <div className="w-full h-48 md:h-64 mb-8">
-            <img
-              src={frontmatter.cover}
-              alt={frontmatter.title}
-              className="w-full h-full object-cover rounded-lg"
-            />
-          </div>
-        )}
+      <main className="mt-24 flex">
+        {/* 文章主体 */}
+        <div className="flex-1">
+          {/* 封面图片 */}
+          {frontmatter.cover && (
+            <div className="w-full h-48 md:h-64 mb-8">
+              <img
+                src={frontmatter.cover}
+                alt={frontmatter.title}
+                className="w-full h-full object-cover rounded-lg"
+              />
+            </div>
+          )}
 
-        <article className="prose max-w-4xl mx-auto dark:prose-invert">
-          <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
-            {frontmatter.title}
-          </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-8">
-            {frontmatter.date}
-          </p>
-          <div
-            className="text-gray-700 dark:text-gray-300"
-            dangerouslySetInnerHTML={{ __html: contentHtml }}
-          />
-        </article>
+          <article className="prose max-w-4xl mx-auto dark:prose-invert">
+            <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
+              {frontmatter.title}
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-8">
+              {frontmatter.date}
+            </p>
+            <div
+              className="text-gray-700 dark:text-gray-300"
+              dangerouslySetInnerHTML={{ __html: contentHtml }}
+            />
+          </article>
+        </div>
+
+        {/* 右侧目录 */}
+        <aside className="w-64 hidden lg:block pl-8 sticky top-24 self-start">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
+              目录
+            </h2>
+            <ul className="space-y-2">
+              {toc.map((item) => (
+                <li key={item.id}>
+                  <a
+                    href={`#${item.id}`}
+                    onClick={(e) => handleTocClick(e, item.id)} // 处理点击事件
+                    className={`block text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${
+                      item.level === 'h2' ? 'pl-4' : '' // h2 标题缩进
+                    }`}
+                  >
+                    {item.text}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
       </main>
 
       {/* 推荐文章 */}
