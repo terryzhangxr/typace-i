@@ -85,8 +85,10 @@ export default function Home({ allPostsData }) {
     if (typeof window !== 'undefined') {
       const fromInternal = sessionStorage.getItem('fromInternal');
       if (fromInternal) {
+        // 如果是站内访问，移除标记并不显示动画
         sessionStorage.removeItem('fromInternal');
       } else {
+        // 如果是首次访问或直接输入 URL，显示动画
         setShowSplash(true);
         const timer = setTimeout(() => setShowSplash(false), 2500);
         return () => clearTimeout(timer);
