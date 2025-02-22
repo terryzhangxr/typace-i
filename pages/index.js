@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { getSortedPostsData } from '../lib/posts';
 
 // 新增的样式定义
@@ -30,13 +31,75 @@ const addDynamicStyles = () => {
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
+    .splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      opacity: 1;
+      animation: splashFadeOut 0.5s ease-out 2s forwards;
+    }
+    .splash-text {
+      display: flex;
+      gap: 0.5rem;
+      font-size: 4rem;
+      font-weight: 800;
+      background: linear-gradient(45deg, #4F46E5, #2563EB);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .splash-char {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: charFadeInUp 0.3s ease-out forwards;
+      animation-delay: calc(0.1s * var(--index));
+    }
+    @keyframes charFadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes splashFadeOut {
+      to {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+    }
   `;
   document.head.appendChild(style);
 };
 
 export default function Home({ allPostsData }) {
+  const [showSplash, setShowSplash] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fromInternal = sessionStorage.getItem('fromInternal');
+    if (fromInternal) {
+      sessionStorage.removeItem('fromInternal');
+    } else {
+      setShowSplash(true);
+      const timer = setTimeout(() => setShowSplash(false), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   useEffect(() => {
     addDynamicStyles();
+
+    if (showSplash) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
 
     const colors = [
       'linear-gradient(45deg, #ee7752, #e73c7e)',
@@ -82,44 +145,69 @@ export default function Home({ allPostsData }) {
       bg2.remove();
       document.head.querySelector('style').remove();
     };
-  }, []);
+  }, [showSplash]);
 
   return (
     <div className="min-h-screen p-8 relative z-10">
+      {/* 开屏动画 */}
+      {showSplash && (
+        <div className="splash-screen">
+          <div className="splash-text">
+            {'Typace'.split('').map((char, index) => (
+              <span 
+                key={index}
+                className="splash-char"
+                style={{ '--index': index }}
+              >
+                {char}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 新增的导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white shadow-md z-20">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
-            <a 
-              href="/" 
-              className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600"
-            >
-              Typace
-            </a>
+            <Link href="/" passHref>
+              <a
+                className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600"
+                onClick={() => sessionStorage.setItem('fromInternal', 'true')}
+              >
+                Typace
+              </a>
+            </Link>
             <ul className="flex space-x-6">
               <li>
-                <a 
-                  href="/" 
-                  className="text-gray-600 hover:text-blue-600 transition-colors"
-                >
-                  首页
-                </a>
+                <Link href="/" passHref>
+                  <a 
+                    className="text-gray-600 hover:text-blue-600 transition-colors"
+                    onClick={() => sessionStorage.setItem('fromInternal', 'true')}
+                  >
+                    首页
+                  </a>
+                </Link>
               </li>
               <li>
-                <a 
-                  href="/about" 
-                  className="text-gray-600 hover:text-blue-600 transition-colors"
-                >
-                  关于
-                </a>
+                <Link href="/about" passHref>
+                  <a 
+                    className="text-gray-600 hover:text-blue-600 transition-colors"
+                    onClick={() => sessionStorage.setItem('fromInternal', 'true')}
+                  >
+                    关于
+                  </a>
+                </Link>
               </li>
               <li>
-                <a 
-                  href="/archive" 
-                  className="text-gray-600 hover:text-blue-600 transition-colors"
-                >
-                  归档
-                </a>
+                <Link href="/archive" passHref>
+                  <a 
+                    className="text-gray-600 hover:text-blue-600 transition-colors"
+                    onClick={() => sessionStorage.setItem('fromInternal', 'true')}
+                  >
+                    归档
+                  </a>
+                </Link>
               </li>
             </ul>
           </div>
