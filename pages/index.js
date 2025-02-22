@@ -57,6 +57,16 @@ const addDynamicStyles = () => {
         border-color: #4a5568;
       }
     }
+
+    /* 增加大标题与一言之间的间距 */
+    header h1 {
+      margin-bottom: 2rem; /* 调整标题与一言的间距 */
+    }
+
+    /* 增加一言与文章列表之间的间距 */
+    header {
+      margin-bottom: 4rem; /* 调整一言与文章列表的间距 */
+    }
   `;
   document.head.appendChild(style);
 };
@@ -106,6 +116,12 @@ export default function Home({ allPostsData }) {
         i++;
       } else {
         clearInterval(timer);
+        // 打字完成后移除光标闪烁动画
+        const typewriterElement = document.querySelector('.typewriter');
+        if (typewriterElement) {
+          typewriterElement.style.animation = 'none'; // 停止动画
+          typewriterElement.style.borderRight = 'none'; // 移除光标
+        }
       }
     }, speed);
   };
