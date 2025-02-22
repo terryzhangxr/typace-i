@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { getSortedPostsData } from '../../lib/posts';
 import fs from 'fs';
 import path from 'path';
@@ -32,8 +33,31 @@ export async function getStaticProps({ params }) {
   };
 }
 
-// 文章页组件
 export default function Post({ frontmatter, contentHtml }) {
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    // 检查本地存储或系统偏好设置
+    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+    const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setIsDarkMode(savedDarkMode || prefersDarkMode);
+
+    // 动态切换暗黑模式
+    if (savedDarkMode || prefersDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  // 切换暗黑模式
+  const toggleDarkMode = () => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    localStorage.setItem('darkMode', newDarkMode);
+    document.documentElement.classList.toggle('dark', newDarkMode);
+  };
+
   return (
     <div className="min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 transition-colors duration-300">
       {/* 导航栏 */}
@@ -70,6 +94,15 @@ export default function Post({ frontmatter, contentHtml }) {
                 >
                   归档
                 </a>
+              </li>
+              {/* 暗黑模式切换按钮 */}
+              <li>
+                <button
+                  onClick={toggleDarkMode}
+                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
+                >
+                  {isDarkMode ? '🌙' : '☀️'}
+                </button>
               </li>
             </ul>
           </div>
