@@ -140,4 +140,12 @@
   .prose tr:hover {
     background-color: var(--color-table-row-hover-bg); /* 行悬停背景色 */
   }
+
+  /* 移动端表格适配 */
+  @media (max-width: 640px) {
+    .prose table {
+      @apply block overflow-x-auto;
+      white-space: nowrap;
+    }
+  }
 }
