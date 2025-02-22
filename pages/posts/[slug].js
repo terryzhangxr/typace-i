@@ -35,14 +35,14 @@ export async function getStaticProps({ params }) {
 // 文章页组件
 export default function Post({ frontmatter, contentHtml }) {
   return (
-    <div className="min-h-screen p-8 relative z-10">
+    <div className="min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 transition-colors duration-300">
       {/* 导航栏 */}
-      <nav className="fixed top-0 left-0 w-full bg-white shadow-md z-20">
+      <nav className="fixed top-0 left-0 w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
             <a 
               href="/" 
-              className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600"
+              className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700"
             >
               Typace
             </a>
@@ -50,7 +50,7 @@ export default function Post({ frontmatter, contentHtml }) {
               <li>
                 <a 
                   href="/" 
-                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
                 >
                   首页
                 </a>
@@ -58,7 +58,7 @@ export default function Post({ frontmatter, contentHtml }) {
               <li>
                 <a 
                   href="/about" 
-                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
                 >
                   关于
                 </a>
@@ -66,7 +66,7 @@ export default function Post({ frontmatter, contentHtml }) {
               <li>
                 <a 
                   href="/archive" 
-                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
                 >
                   归档
                 </a>
@@ -78,20 +78,38 @@ export default function Post({ frontmatter, contentHtml }) {
 
       {/* 文章内容 */}
       <main className="mt-24">
-        <article className="prose max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold mb-4">{frontmatter.title}</h1>
-          <p className="text-sm text-gray-600 mb-8">{frontmatter.date}</p>
-          <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
+        <article className="prose max-w-4xl mx-auto dark:prose-invert">
+          <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+            {frontmatter.title}
+          </h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-8">
+            {frontmatter.date}
+          </p>
+          <div
+            className="text-gray-700 dark:text-gray-300"
+            dangerouslySetInnerHTML={{ __html: contentHtml }}
+          />
         </article>
       </main>
 
       {/* 页脚 */}
       <footer className="text-center mt-12">
         <a href="/api/sitemap" className="inline-block">
-          <img src="https://cdn.us.mrche.top/sitemap.svg" alt="Sitemap" className="block mx-auto w-8 h-8" />
+          <img 
+            src="https://cdn.us.mrche.top/sitemap.svg" 
+            alt="Sitemap" 
+            className="block mx-auto w-8 h-8 dark:invert"
+          />
         </a>
-        <p className="mt-4">
-          由MRCHE&terryzhang创建的<a href="https://www.mrche.top/typace" className="text-blue-600 hover:underline">Typace</a>强势驱动
+        <p className="mt-4 text-gray-600 dark:text-gray-400">
+          由MRCHE&terryzhang创建的
+          <a 
+            href="https://www.mrche.top/typace" 
+            className="text-blue-600 hover:underline dark:text-blue-400"
+          >
+            Typace
+          </a>
+          强势驱动
         </p>
       </footer>
     </div>
