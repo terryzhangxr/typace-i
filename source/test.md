@@ -10,7 +10,7 @@ cover: https://tse1-mm.cn.bing.net/th/id/OIP-C.rcDTfMo1mvd4MvaBW11G1AHaDt?dpr=2&
 #### 四级标题
 ##### 五级标题
 
-～～删除线～～～
+～～～删除线～～～
 
 - 带点句
 - adcd
@@ -24,6 +24,9 @@ print ("hello world")
 
 > [!NOTE]
 >这是注意区块
+
+
+
 
 | Syntax | Description |
 | ----------- | ----------- |
