@@ -15,7 +15,17 @@
     --color-quote-border: #e5e7eb; /* 浅色模式下的引用边框颜色 */
   }
 
-
+  .dark {
+    --color-text-primary: #ffffff; /* 深色模式下的文字主色改为白色 */
+    --color-text-secondary: #d1d5db; /* 深色模式下的文字副色改为浅灰色 */
+    --color-link: #93c5fd; /* 深色模式下的链接颜色 */
+    --color-link-hover: #bfdbfe; /* 深色模式下的链接悬停颜色 */
+    --color-border: #4b5563; /* 深色模式下的边框颜色 */
+    --color-code-bg: #1f2937; /* 深色模式下的代码块背景色 */
+    --color-code-text: #f3f4f6; /* 深色模式下的代码块文字颜色 */
+    --color-quote-bg: #374151; /* 深色模式下的引用背景色 */
+    --color-quote-border: #4b5563; /* 深色模式下的引用边框颜色 */
+  }
 
   body {
     @apply bg-white dark:bg-gray-900 transition-colors duration-300; /* 背景色切换 */
