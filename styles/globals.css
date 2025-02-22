@@ -9,7 +9,7 @@
   }
 
   .dark {
-    --color-text-primary: #f5f5f5; /* 暗黑模式下的文字主色 */
+    --color-text-primary: #ffffff; /* 暗黑模式下的文字主色改为白色 */
     --color-text-secondary: #a3a3a3; /* 暗黑模式下的文字副色 */
   }
 
