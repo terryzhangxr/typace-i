@@ -51,9 +51,11 @@ export default function Post({ frontmatter, contentHtml }) {
       document.documentElement.classList.remove('dark');
     }
 
-    // 提取标题生成目录
-    generateToc();
-  }, []);
+    // 确保内容已加载后生成目录
+    if (contentHtml) {
+      generateToc();
+    }
+  }, [contentHtml]);
 
   // 切换暗黑模式
   const toggleDarkMode = () => {
@@ -67,14 +69,14 @@ export default function Post({ frontmatter, contentHtml }) {
   const generateToc = () => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(contentHtml, 'text/html');
-    const headings = doc.querySelectorAll('h1, h2, h3'); // 提取 h1, h2, h3 标题
+    const headings = doc.querySelectorAll('h1, h2'); // 只提取 h1 和 h2 标题
     const tocItems = [];
 
     headings.forEach((heading) => {
       const id = heading.textContent.toLowerCase().replace(/\s+/g, '-'); // 生成 ID
       heading.id = id; // 设置标题 ID
       tocItems.push({
-        level: heading.tagName.toLowerCase(),
+        level: heading.tagName.toLowerCase(), // 标题层级（h1 或 h2）
         text: heading.textContent,
         id,
       });
@@ -194,7 +196,7 @@ export default function Post({ frontmatter, contentHtml }) {
                     href={`#${item.id}`}
                     onClick={(e) => handleTocClick(e, item.id)} // 处理点击事件
                     className={`block text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${
-                      item.level === 'h2' ? 'pl-4' : item.level === 'h3' ? 'pl-8' : ''
+                      item.level === 'h2' ? 'pl-4' : '' // h2 标题缩进
                     }`}
                   >
                     {item.text}
