@@ -5,7 +5,7 @@ import path from 'path';
 import matter from 'gray-matter';
 import { remark } from 'remark';
 import html from 'remark-html';
-import Head from 'next/head'; // 引入 Head 组件
+import Head from 'next/head';
 
 // 获取所有文章的路径
 export async function getStaticPaths() {
@@ -81,6 +81,19 @@ export default function Post({ frontmatter, contentHtml }) {
     });
 
     setToc(tocItems); // 更新目录状态
+  };
+
+  // 处理目录点击事件
+  const handleTocClick = (e, id) => {
+    e.preventDefault(); // 阻止默认跳转行为
+    const targetElement = document.getElementById(id); // 获取目标标题元素
+    if (targetElement) {
+      // 平滑滚动到目标位置
+      targetElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
   };
 
   return (
@@ -179,6 +192,7 @@ export default function Post({ frontmatter, contentHtml }) {
                 <li key={item.id}>
                   <a
                     href={`#${item.id}`}
+                    onClick={(e) => handleTocClick(e, item.id)} // 处理点击事件
                     className={`block text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${
                       item.level === 'h2' ? 'pl-4' : item.level === 'h3' ? 'pl-8' : ''
                     }`}
