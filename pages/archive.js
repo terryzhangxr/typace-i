@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getSortedPostsData } from '../lib/posts';
 import { useEffect, useState } from 'react';
+import Head from 'next/head'; // 引入 Head 组件
 
 export default function ArchivePage({ postsByYear }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -29,6 +30,11 @@ export default function ArchivePage({ postsByYear }) {
 
   return (
     <div className="min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 transition-colors duration-300">
+      {/* 动态设置标签页 title */}
+      <Head>
+        <title>归档 - Typace</title>
+      </Head>
+
       {/* 导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
         <div className="container mx-auto px-8 py-4">
