@@ -36,7 +36,7 @@ export async function getStaticProps({ params }) {
 export default function Post({ frontmatter, contentHtml }) {
   return (
     <div className="min-h-screen p-8 relative z-10">
-      {/* 新增的导航栏 */}
+      {/* 导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white shadow-md z-20">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
