@@ -32,16 +32,6 @@
     color: var(--color-text-primary); /* 使用自定义文字主色 */
   }
 
-  /* 毛玻璃特效 */
-  .glass-effect {
-    @apply bg-white/20 dark:bg-gray-800/20 backdrop-blur-sm border border-white/10 dark:border-gray-700/20 shadow-lg;
-  }
-
-  /* 灵动岛转场 */
-  .page-transition {
-    @apply transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)];
-  }
-
   /* 文章内容样式 */
   .prose {
     color: var(--color-text-primary);
@@ -134,36 +124,5 @@
 
   .prose tr:hover {
     @apply bg-gray-50 dark:bg-gray-800/50;
-  }
-}
-
-@layer components {
-  /* 自定义按钮样式 */
-  .btn-primary {
-    @apply px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors;
-  }
-
-  .btn-secondary {
-    @apply px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors;
-  }
-}
-
-@layer utilities {
-  /* 自定义文字颜色 */
-  .text-primary {
-    color: var(--color-text-primary);
-  }
-
-  .text-secondary {
-    color: var(--color-text-secondary);
-  }
-
-  /* 自定义背景颜色 */
-  .bg-glass {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-
-  .dark .bg-glass {
-    background-color: rgba(0, 0, 0, 0.1);
   }
 }
