@@ -6,6 +6,7 @@ import matter from 'gray-matter';
 import { remark } from 'remark';
 import html from 'remark-html';
 import Head from 'next/head';
+import Link from 'next/link';
 
 // 获取所有文章的路径
 export async function getStaticPaths() {
@@ -26,17 +27,28 @@ export async function getStaticProps({ params }) {
   const processedContent = await remark().use(html).process(content);
   const contentHtml = processedContent.toString();
 
+  // 获取所有文章数据
+  const allPostsData = getSortedPostsData();
+
+  // 排除当前文章
+  const filteredPosts = allPostsData.filter((post) => post.slug !== params.slug);
+
+  // 随机选择最多 3 篇文章
+  const recommendedPosts = filteredPosts
+    .sort(() => 0.5 - Math.random()) // 随机排序
+    .slice(0, 3); // 取前 3 篇
+
   return {
     props: {
       frontmatter: data,
       contentHtml,
+      recommendedPosts, // 推荐文章数据
     },
   };
 }
 
-export default function Post({ frontmatter, contentHtml }) {
+export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [toc, setToc] = useState([]); // 存储目录
 
   useEffect(() => {
     // 检查本地存储或系统偏好设置
@@ -50,12 +62,7 @@ export default function Post({ frontmatter, contentHtml }) {
     } else {
       document.documentElement.classList.remove('dark');
     }
-
-    // 确保内容已加载后生成目录
-    if (contentHtml) {
-      generateToc();
-    }
-  }, [contentHtml]);
+  }, []);
 
   // 切换暗黑模式
   const toggleDarkMode = () => {
@@ -63,39 +70,6 @@ export default function Post({ frontmatter, contentHtml }) {
     setIsDarkMode(newDarkMode);
     localStorage.setItem('darkMode', newDarkMode);
     document.documentElement.classList.toggle('dark', newDarkMode);
-  };
-
-  // 生成目录
-  const generateToc = () => {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(contentHtml, 'text/html');
-    const headings = doc.querySelectorAll('h1, h2'); // 只提取 h1 和 h2 标题
-    const tocItems = [];
-
-    headings.forEach((heading) => {
-      const id = heading.textContent.toLowerCase().replace(/\s+/g, '-'); // 生成 ID
-      heading.id = id; // 设置标题 ID
-      tocItems.push({
-        level: heading.tagName.toLowerCase(), // 标题层级（h1 或 h2）
-        text: heading.textContent,
-        id,
-      });
-    });
-
-    setToc(tocItems); // 更新目录状态
-  };
-
-  // 处理目录点击事件
-  const handleTocClick = (e, id) => {
-    e.preventDefault(); // 阻止默认跳转行为
-    const targetElement = document.getElementById(id); // 获取目标标题元素
-    if (targetElement) {
-      // 平滑滚动到目标位置
-      targetElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }
   };
 
   return (
@@ -109,36 +83,32 @@ export default function Post({ frontmatter, contentHtml }) {
       <nav className="fixed top-0 left-0 w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
-            <a
-              href="/"
-              className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700"
-            >
-              Typace
-            </a>
+            <Link href="/">
+              <a className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
+                Typace
+              </a>
+            </Link>
             <ul className="flex space-x-6">
               <li>
-                <a
-                  href="/"
-                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
-                >
-                  首页
-                </a>
+                <Link href="/">
+                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                    首页
+                  </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="/about"
-                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
-                >
-                  关于
-                </a>
+                <Link href="/about">
+                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                    关于
+                  </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="/archive"
-                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
-                >
-                  归档
-                </a>
+                <Link href="/archive">
+                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                    归档
+                  </a>
+                </Link>
               </li>
               {/* 暗黑模式切换按钮 */}
               <li>
@@ -155,58 +125,65 @@ export default function Post({ frontmatter, contentHtml }) {
       </nav>
 
       {/* 文章内容 */}
-      <main className="mt-24 flex">
-        {/* 文章主体 */}
-        <div className="flex-1">
-          {/* 封面图片 */}
-          {frontmatter.cover && (
-            <div className="w-full h-48 md:h-64 mb-8"> {/* 缩小封面图 */}
-              <img
-                src={frontmatter.cover}
-                alt={frontmatter.title}
-                className="w-full h-full object-cover rounded-lg"
-              />
-            </div>
-          )}
-
-          <article className="prose max-w-4xl mx-auto dark:prose-invert">
-            <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
-              {frontmatter.title}
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-8">
-              {frontmatter.date}
-            </p>
-            <div
-              className="text-gray-700 dark:text-gray-300"
-              dangerouslySetInnerHTML={{ __html: contentHtml }}
+      <main className="mt-24">
+        {/* 封面图片 */}
+        {frontmatter.cover && (
+          <div className="w-full h-48 md:h-64 mb-8">
+            <img
+              src={frontmatter.cover}
+              alt={frontmatter.title}
+              className="w-full h-full object-cover rounded-lg"
             />
-          </article>
-        </div>
-
-        {/* 右侧目录 */}
-        <aside className="w-64 hidden lg:block pl-8 sticky top-24 self-start">
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
-              目录
-            </h2>
-            <ul className="space-y-2">
-              {toc.map((item) => (
-                <li key={item.id}>
-                  <a
-                    href={`#${item.id}`}
-                    onClick={(e) => handleTocClick(e, item.id)} // 处理点击事件
-                    className={`block text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${
-                      item.level === 'h2' ? 'pl-4' : '' // h2 标题缩进
-                    }`}
-                  >
-                    {item.text}
-                  </a>
-                </li>
-              ))}
-            </ul>
           </div>
-        </aside>
+        )}
+
+        <article className="prose max-w-4xl mx-auto dark:prose-invert">
+          <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
+            {frontmatter.title}
+          </h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-8">
+            {frontmatter.date}
+          </p>
+          <div
+            className="text-gray-700 dark:text-gray-300"
+            dangerouslySetInnerHTML={{ __html: contentHtml }}
+          />
+        </article>
       </main>
+
+      {/* 推荐文章 */}
+      {recommendedPosts.length > 0 && (
+        <section className="mt-12">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">
+            推荐文章
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {recommendedPosts.map((post) => (
+              <Link key={post.slug} href={`/posts/${post.slug}`}>
+                <a className="block bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition transform hover:scale-105">
+                  {post.cover && (
+                    <div className="w-full h-48">
+                      <img
+                        src={post.cover}
+                        alt={post.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+                      {post.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                      {post.date}
+                    </p>
+                  </div>
+                </a>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 页脚 */}
       <footer className="text-center mt-12">
