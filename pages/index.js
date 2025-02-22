@@ -181,7 +181,7 @@ export default function Home({ allPostsData }) {
       <div className="flex">
         {/* 左侧最新文章栏 */}
         <aside className="w-1/4 pr-8 hidden lg:block">
-          <div className="sticky top-24">
+          <div className="sticky top-24 p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
               最新文章
             </h2>
@@ -190,11 +190,9 @@ export default function Home({ allPostsData }) {
                 <li key={post.slug}>
                   <a
                     href={`/posts/${post.slug}`}
-                    className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow"
+                    className="block text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                   >
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                      {post.title}
-                    </h3>
+                    <h3 className="text-lg font-semibold">{post.title}</h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                       {post.date}
                     </p>
