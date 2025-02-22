@@ -79,72 +79,76 @@ const addDynamicStyles = () => {
 
 export default function Home({ allPostsData }) {
   const [showSplash, setShowSplash] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
-    const fromInternal = sessionStorage.getItem('fromInternal');
-    if (fromInternal) {
-      sessionStorage.removeItem('fromInternal');
-    } else {
-      setShowSplash(true);
-      const timer = setTimeout(() => setShowSplash(false), 2500);
-      return () => clearTimeout(timer);
+    // 确保代码只在客户端运行
+    if (typeof window !== 'undefined') {
+      const fromInternal = sessionStorage.getItem('fromInternal');
+      if (fromInternal) {
+        sessionStorage.removeItem('fromInternal');
+      } else {
+        setShowSplash(true);
+        const timer = setTimeout(() => setShowSplash(false), 2500);
+        return () => clearTimeout(timer);
+      }
     }
   }, []);
 
   useEffect(() => {
-    addDynamicStyles();
+    if (typeof window !== 'undefined') {
+      addDynamicStyles();
 
-    if (showSplash) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
+      if (showSplash) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = 'auto';
+      }
+
+      const colors = [
+        'linear-gradient(45deg, #ee7752, #e73c7e)',
+        'linear-gradient(45deg, #e73c7e, #23a6d5)',
+        'linear-gradient(45deg, #23a6d5, #23d5ab)',
+        'linear-gradient(45deg, #23d5ab, #ee7752)',
+      ];
+
+      // 创建两个背景层
+      const bg1 = document.createElement('div');
+      const bg2 = document.createElement('div');
+      bg1.className = bg2.className = 'bg-transition';
+      document.body.append(bg1, bg2);
+
+      let currentIndex = 0;
+      let activeBg = bg1;
+
+      // 初始化第一个背景
+      activeBg.style.backgroundImage = colors[currentIndex];
+      activeBg.classList.add('bg-visible');
+
+      const changeBackground = () => {
+        const nextIndex = (currentIndex + 1) % colors.length;
+        const nextBg = activeBg === bg1 ? bg2 : bg1;
+
+        // 预加载下一个背景
+        nextBg.style.backgroundImage = colors[nextIndex];
+        
+        // 触发过渡
+        setTimeout(() => {
+          activeBg.classList.remove('bg-visible');
+          nextBg.classList.add('bg-visible');
+          activeBg = nextBg;
+          currentIndex = nextIndex;
+        }, 100);
+      };
+
+      const intervalId = setInterval(changeBackground, 3000);
+
+      return () => {
+        clearInterval(intervalId);
+        bg1.remove();
+        bg2.remove();
+        document.head.querySelector('style').remove();
+      };
     }
-
-    const colors = [
-      'linear-gradient(45deg, #ee7752, #e73c7e)',
-      'linear-gradient(45deg, #e73c7e, #23a6d5)',
-      'linear-gradient(45deg, #23a6d5, #23d5ab)',
-      'linear-gradient(45deg, #23d5ab, #ee7752)',
-    ];
-
-    // 创建两个背景层
-    const bg1 = document.createElement('div');
-    const bg2 = document.createElement('div');
-    bg1.className = bg2.className = 'bg-transition';
-    document.body.append(bg1, bg2);
-
-    let currentIndex = 0;
-    let activeBg = bg1;
-
-    // 初始化第一个背景
-    activeBg.style.backgroundImage = colors[currentIndex];
-    activeBg.classList.add('bg-visible');
-
-    const changeBackground = () => {
-      const nextIndex = (currentIndex + 1) % colors.length;
-      const nextBg = activeBg === bg1 ? bg2 : bg1;
-
-      // 预加载下一个背景
-      nextBg.style.backgroundImage = colors[nextIndex];
-      
-      // 触发过渡
-      setTimeout(() => {
-        activeBg.classList.remove('bg-visible');
-        nextBg.classList.add('bg-visible');
-        activeBg = nextBg;
-        currentIndex = nextIndex;
-      }, 100);
-    };
-
-    const intervalId = setInterval(changeBackground, 3000);
-
-    return () => {
-      clearInterval(intervalId);
-      bg1.remove();
-      bg2.remove();
-      document.head.querySelector('style').remove();
-    };
   }, [showSplash]);
 
   return (
