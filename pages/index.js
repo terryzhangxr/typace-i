@@ -36,6 +36,7 @@ const addDynamicStyles = () => {
 
 export default function Home({ allPostsData }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [hitokoto, setHitokoto] = useState(''); // 存储一言
 
   useEffect(() => {
     addDynamicStyles();
@@ -51,6 +52,17 @@ export default function Home({ allPostsData }) {
     } else {
       document.documentElement.classList.remove('dark');
     }
+
+    // 获取一言
+    fetch('https://v1.hitokoto.cn')
+      .then((response) => response.json())
+      .then((data) => {
+        setHitokoto(data.hitokoto); // 设置一言
+      })
+      .catch((error) => {
+        console.error('获取一言失败:', error);
+        setHitokoto('生活不止眼前的苟且，还有诗和远方的田野。'); // 默认一言
+      });
   }, []);
 
   useEffect(() => {
@@ -175,6 +187,10 @@ export default function Home({ allPostsData }) {
         <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
           Typace
         </h1>
+        {/* 一言 */}
+        <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 italic">
+          {hitokoto}
+        </p>
       </header>
 
       {/* 页面主体内容 */}
