@@ -1,7 +1,7 @@
 ---
 title: theme typace主题文章测试
 date: 2025-2-20
-cover: https://img-blog.csdnimg.cn/img_convert/c2fa7a0afe54e10de9ef46d4284b5010.png#averageHue=%23cecece&clientId=u6c0ea7f4-39e1-4&from=ui&id=u1f7c9a45&originHeight=640&originWidth=1280&originalType=binary&ratio=2&rotation=0&showTitle=false&size=250623&status=done&style=none&taskId=ub0581649-f564-4c8a-8366-f04b39ecd26&title=
+cover: https://tse1-mm.cn.bing.net/th/id/OIP-C.rcDTfMo1mvd4MvaBW11G1AHaDt?dpr=2&pid=ImgDetMain
 ---
 
 # 一级标题
