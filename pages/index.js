@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getSortedPostsData } from '../lib/posts';
+import Head from 'next/head'; // 引入 Head 组件
+import Link from 'next/link';
 
 // 新增的样式定义
 const addDynamicStyles = () => {
@@ -194,6 +196,11 @@ export default function Home({ allPostsData }) {
 
   return (
     <div className="min-h-screen p-8 relative z-10">
+      {/* 动态设置标签页 title */}
+      <Head>
+        <title>首页 - Typace</title>
+      </Head>
+
       {/* 新增的导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-20">
         <div className="container mx-auto px-8 py-4">
