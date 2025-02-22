@@ -7,7 +7,7 @@ class MyDocument extends Document {
         <Head>
           {/* 添加 favicon */}
           <link rel="icon" href="/favicon.ico" />
-          typace
+          <title>typace博客主题</title>
         </Head>
         <body>
           <Main />
