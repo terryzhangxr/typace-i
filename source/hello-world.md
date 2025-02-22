@@ -9,6 +9,6 @@ This is my first blog post!
 
 Welcome to [Typace](https://github.com/terryzhangxr/typace-i)! This is my very first post. 
 
-## welcome!
+# welcome!
 
 we will develop more projects!
