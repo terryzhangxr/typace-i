@@ -30,6 +30,33 @@ const addDynamicStyles = () => {
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
+    /* 打字机效果 */
+    .typewriter {
+      display: inline-block;
+      overflow: hidden;
+      border-right: 0.15em solid #4a5568; /* 光标 */
+      white-space: nowrap;
+      margin: 0 auto;
+      letter-spacing: 0.15em;
+      animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+    }
+    @keyframes typing {
+      from {
+        width: 0;
+      }
+      to {
+        width: 100%;
+      }
+    }
+    @keyframes blink-caret {
+      from,
+      to {
+        border-color: transparent;
+      }
+      50% {
+        border-color: #4a5568;
+      }
+    }
   `;
   document.head.appendChild(style);
 };
@@ -37,6 +64,7 @@ const addDynamicStyles = () => {
 export default function Home({ allPostsData }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [hitokoto, setHitokoto] = useState(''); // 存储一言
+  const [displayText, setDisplayText] = useState(''); // 用于打字机效果的动态文本
 
   useEffect(() => {
     addDynamicStyles();
@@ -58,12 +86,29 @@ export default function Home({ allPostsData }) {
       .then((response) => response.json())
       .then((data) => {
         setHitokoto(data.hitokoto); // 设置一言
+        typeWriterEffect(data.hitokoto); // 启动打字机效果
       })
       .catch((error) => {
         console.error('获取一言失败:', error);
-        setHitokoto('生活不止眼前的苟且，还有诗和远方的田野。'); // 默认一言
+        const defaultHitokoto = '生活不止眼前的苟且，还有诗和远方的田野。';
+        setHitokoto(defaultHitokoto);
+        typeWriterEffect(defaultHitokoto); // 启动打字机效果
       });
   }, []);
+
+  // 打字机效果
+  const typeWriterEffect = (text) => {
+    let i = 0;
+    const speed = 100; // 打字速度（毫秒）
+    const timer = setInterval(() => {
+      if (i < text.length) {
+        setDisplayText(text.slice(0, i + 1));
+        i++;
+      } else {
+        clearInterval(timer);
+      }
+    }, speed);
+  };
 
   useEffect(() => {
     // 亮色模式下的渐变颜色
@@ -189,7 +234,7 @@ export default function Home({ allPostsData }) {
         </h1>
         {/* 一言 */}
         <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 italic">
-          {hitokoto}
+          <span className="typewriter">{displayText}</span>
         </p>
       </header>
 
