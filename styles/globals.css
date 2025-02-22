@@ -11,16 +11,20 @@
     --color-border: #e5e7eb; /* 浅色模式下的边框颜色 */
     --color-code-bg: #f3f4f6; /* 浅色模式下的代码块背景色 */
     --color-code-text: #1f2937; /* 浅色模式下的代码块文字颜色 */
+    --color-quote-bg: #f9fafb; /* 浅色模式下的引用背景色 */
+    --color-quote-border: #e5e7eb; /* 浅色模式下的引用边框颜色 */
   }
 
   .dark {
     --color-text-primary: #ffffff; /* 深色模式下的文字主色改为白色 */
-    --color-text-secondary: #a3a3a3; /* 深色模式下的文字副色 */
-    --color-link: #60a5fa; /* 深色模式下的链接颜色 */
-    --color-link-hover: #93c5fd; /* 深色模式下的链接悬停颜色 */
-    --color-border: #374151; /* 深色模式下的边框颜色 */
+    --color-text-secondary: #d1d5db; /* 深色模式下的文字副色改为浅灰色 */
+    --color-link: #93c5fd; /* 深色模式下的链接颜色 */
+    --color-link-hover: #bfdbfe; /* 深色模式下的链接悬停颜色 */
+    --color-border: #4b5563; /* 深色模式下的边框颜色 */
     --color-code-bg: #1f2937; /* 深色模式下的代码块背景色 */
     --color-code-text: #f3f4f6; /* 深色模式下的代码块文字颜色 */
+    --color-quote-bg: #374151; /* 深色模式下的引用背景色 */
+    --color-quote-border: #4b5563; /* 深色模式下的引用边框颜色 */
   }
 
   body {
@@ -61,7 +65,36 @@
   }
 
   .prose p {
-    color: var(--color-text-secondary);
+    color: var(--color-text-primary); /* 正文文字颜色 */
+  }
+
+  .prose strong {
+    color: var(--color-text-primary); /* 加粗文字颜色 */
+  }
+
+  .prose em {
+    color: var(--color-text-primary); /* 斜体文字颜色 */
+  }
+
+  .prose blockquote {
+    @apply border-l-4 pl-4 italic;
+    background-color: var(--color-quote-bg);
+    border-color: var(--color-quote-border);
+    color: var(--color-text-primary);
+  }
+
+  .prose ul,
+  .prose ol {
+    color: var(--color-text-primary); /* 列表文字颜色 */
+  }
+
+  .prose li {
+    color: var(--color-text-primary); /* 列表项文字颜色 */
+  }
+
+  .prose hr {
+    @apply border-t;
+    border-color: var(--color-border);
   }
 
   /* 代码块样式 */
@@ -72,12 +105,18 @@
     color: var(--color-code-text);
   }
 
+  .prose code {
+    @apply px-2 py-1 rounded;
+    background-color: var(--color-code-bg);
+    color: var(--color-code-text);
+  }
+
   .prose code::before,
   .prose code::after {
     content: '';
   }
 
-  /* 暗黑模式下的表格样式 */
+  /* 表格样式 */
   .prose table {
     @apply w-full border-collapse;
   }
@@ -86,6 +125,7 @@
   .prose td {
     @apply border p-2;
     border-color: var(--color-border);
+    color: var(--color-text-primary); /* 表格文字颜色 */
   }
 
   .prose th {
