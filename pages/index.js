@@ -30,6 +30,23 @@ const addDynamicStyles = () => {
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
+    .splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      opacity: 1;
+      transition: opacity 1s ease-in-out;
+    }
+    .splash-screen.hidden {
+      opacity: 0;
+    }
   `;
   document.head.appendChild(style);
 };
@@ -76,11 +93,23 @@ export default function Home({ allPostsData }) {
 
     const intervalId = setInterval(changeBackground, 3000);
 
+    // 添加开屏动画
+    const splashScreen = document.createElement('div');
+    splashScreen.className = 'splash-screen';
+    splashScreen.innerHTML = `<div>Loading...</div>`;
+    document.body.append(splashScreen);
+
+    setTimeout(() => {
+      splashScreen.classList.add('hidden');
+      setTimeout(() => splashScreen.remove(), 1000);
+    }, 2000);
+
     return () => {
       clearInterval(intervalId);
       bg1.remove();
       bg2.remove();
       document.head.querySelector('style').remove();
+      splashScreen.remove();
     };
   }, []);
 
@@ -194,4 +223,4 @@ export async function getStaticProps() {
       }))
     },
   };
-}
+} 
