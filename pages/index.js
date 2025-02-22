@@ -190,9 +190,14 @@ export default function Home({ allPostsData }) {
                 <li key={post.slug}>
                   <a
                     href={`/posts/${post.slug}`}
-                    className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow"
                   >
-                    {post.title}
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                      {post.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                      {post.date}
+                    </p>
                   </a>
                 </li>
               ))}
