@@ -13,6 +13,9 @@
     --color-code-text: #1f2937; /* 浅色模式下的代码块文字颜色 */
     --color-quote-bg: #f9fafb; /* 浅色模式下的引用背景色 */
     --color-quote-border: #e5e7eb; /* 浅色模式下的引用边框颜色 */
+    --color-table-header-bg: #f3f4f6; /* 浅色模式下的表头背景色 */
+    --color-table-row-bg: #ffffff; /* 浅色模式下的表格行背景色 */
+    --color-table-row-hover-bg: #f9fafb; /* 浅色模式下的表格行悬停背景色 */
   }
 
   .dark {
@@ -25,6 +28,9 @@
     --color-code-text: #f3f4f6; /* 深色模式下的代码块文字颜色 */
     --color-quote-bg: #374151; /* 深色模式下的引用背景色 */
     --color-quote-border: #4b5563; /* 深色模式下的引用边框颜色 */
+    --color-table-header-bg: #1f2937; /* 深色模式下的表头背景色 */
+    --color-table-row-bg: #111827; /* 深色模式下的表格行背景色 */
+    --color-table-row-hover-bg: #1a202c; /* 深色模式下的表格行悬停背景色 */
   }
 
   body {
@@ -104,5 +110,34 @@
   .prose code::before,
   .prose code::after {
     content: '';
+  }
+
+  /* 表格样式 */
+  .prose table {
+    @apply w-full border-collapse my-6; /* 表格宽度、边框合并和外边距 */
+    color: var(--color-text-primary); /* 表格文字颜色 */
+  }
+
+  .prose th,
+  .prose td {
+    @apply p-3 border; /* 单元格内边距和边框 */
+    border-color: var(--color-border); /* 边框颜色 */
+  }
+
+  .prose th {
+    @apply font-semibold text-left; /* 表头文字加粗和左对齐 */
+    background-color: var(--color-table-header-bg); /* 表头背景色 */
+  }
+
+  .prose tr {
+    background-color: var(--color-table-row-bg); /* 表格行背景色 */
+  }
+
+  .prose tr:nth-child(even) {
+    background-color: var(--color-table-row-hover-bg); /* 偶数行背景色 */
+  }
+
+  .prose tr:hover {
+    background-color: var(--color-table-row-hover-bg); /* 行悬停背景色 */
   }
 }
