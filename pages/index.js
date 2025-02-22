@@ -102,7 +102,7 @@ export default function Home({ allPostsData }) {
       }, 100);
     };
 
-    const intervalId = setInterval(changeBackground, 3000);
+    const intervalId = setInterval(changeBackground, 2500); // 2.5 秒切换一次背景
 
     return () => {
       clearInterval(intervalId);
