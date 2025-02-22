@@ -64,8 +64,10 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
       document.documentElement.classList.remove('dark');
     }
 
-    // 提取标题生成目录
-    generateToc();
+    // 确保内容已加载后生成目录
+    if (contentHtml) {
+      generateToc();
+    }
   }, [contentHtml]);
 
   // 切换暗黑模式
@@ -261,7 +263,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         <p className="mt-4 text-gray-600 dark:text-gray-400">
           由MRCHE&terryzhang创建的
           <a
-            href="https://www.mrche.top/typace"
+            href="https://github.com/terryzhangxr/typace-i"
             className="text-blue-600 hover:underline dark:text-blue-400"
           >
             Typace
