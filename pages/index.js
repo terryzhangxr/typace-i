@@ -13,7 +13,7 @@ const addDynamicStyles = () => {
       height: 100%;
       opacity: 0;
       transition: opacity 1.5s ease-in-out;
-      z-index: -1;
+      z-index: -1; /* 确保背景在页面内容下方 */
     }
     .bg-visible {
       opacity: 1;
@@ -52,12 +52,24 @@ export default function Home({ allPostsData }) {
       document.documentElement.classList.remove('dark');
     }
 
-    const colors = [
+    // 亮色模式下的渐变颜色
+    const lightColors = [
       'linear-gradient(45deg, #ee7752, #e73c7e)',
       'linear-gradient(45deg, #e73c7e, #23a6d5)',
       'linear-gradient(45deg, #23a6d5, #23d5ab)',
       'linear-gradient(45deg, #23d5ab, #ee7752)',
     ];
+
+    // 暗黑模式下的渐变颜色
+    const darkColors = [
+      'linear-gradient(45deg, #1e3a8a, #9f7aea)',
+      'linear-gradient(45deg, #9f7aea, #3b82f6)',
+      'linear-gradient(45deg, #3b82f6, #60a5fa)',
+      'linear-gradient(45deg, #60a5fa, #1e3a8a)',
+    ];
+
+    // 获取当前模式下的渐变颜色
+    const colors = isDarkMode ? darkColors : lightColors;
 
     // 创建两个背景层
     const bg1 = document.createElement('div');
@@ -96,7 +108,7 @@ export default function Home({ allPostsData }) {
       bg2.remove();
       document.head.querySelector('style').remove();
     };
-  }, []);
+  }, [isDarkMode]); // 依赖 isDarkMode，当模式切换时重新初始化背景
 
   // 切换暗黑模式
   const toggleDarkMode = () => {
@@ -107,9 +119,9 @@ export default function Home({ allPostsData }) {
   };
 
   return (
-    <div className="min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 transition-colors duration-300">
+    <div className="min-h-screen p-8 relative z-10">
       {/* 新增的导航栏 */}
-      <nav className="fixed top-0 left-0 w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
+      <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-20">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
             <a 
@@ -168,7 +180,7 @@ export default function Home({ allPostsData }) {
       <main>
         <ul className="space-y-6">
           {allPostsData.map(({ slug, title, date, cover, excerpt }) => (
-            <li key={slug} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 transition transform hover:scale-105">
+            <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-105">
               <div className="flex flex-col md:flex-row gap-6">
                 {/* 封面图片 */}
                 {cover && (
