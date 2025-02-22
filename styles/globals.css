@@ -105,24 +105,4 @@
   .prose code::after {
     content: '';
   }
-
-  /* 表格样式 */
-  .prose table {
-    @apply w-full border-collapse;
-  }
-
-  .prose th,
-  .prose td {
-    @apply border p-2;
-    border-color: var(--color-border);
-    color: var(--color-text-primary); /* 表格文字颜色 */
-  }
-
-  .prose th {
-    @apply bg-gray-100 dark:bg-gray-800;
-  }
-
-  .prose tr:hover {
-    @apply bg-gray-50 dark:bg-gray-800/50;
-  }
 }
