@@ -51,7 +51,9 @@ export default function Home({ allPostsData }) {
     } else {
       document.documentElement.classList.remove('dark');
     }
+  }, []);
 
+  useEffect(() => {
     // 亮色模式下的渐变颜色
     const lightColors = [
       'linear-gradient(45deg, #ee7752, #e73c7e)',
@@ -106,7 +108,6 @@ export default function Home({ allPostsData }) {
       clearInterval(intervalId);
       bg1.remove();
       bg2.remove();
-      document.head.querySelector('style').remove();
     };
   }, [isDarkMode]); // 依赖 isDarkMode，当模式切换时重新初始化背景
 
