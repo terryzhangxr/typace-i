@@ -111,6 +111,17 @@ export default function Post({ frontmatter, contentHtml }) {
 
       {/* 文章内容 */}
       <main className="mt-24">
+        {/* 封面图片 */}
+        {frontmatter.cover && (
+          <div className="w-full h-64 md:h-96 mb-8">
+            <img
+              src={frontmatter.cover}
+              alt={frontmatter.title}
+              className="w-full h-full object-cover rounded-lg"
+            />
+          </div>
+        )}
+
         <article className="prose max-w-4xl mx-auto dark:prose-invert">
           <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
             {frontmatter.title}
