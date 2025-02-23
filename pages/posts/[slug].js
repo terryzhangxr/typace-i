@@ -51,67 +51,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [toc, setToc] = useState([]); // 存储目录
 
-  useEffect(() => {
-    // 检查本地存储或系统偏好设置
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setIsDarkMode(savedDarkMode || prefersDarkMode);
-
-    // 动态切换暗黑模式
-    if (savedDarkMode || prefersDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-
-    // 确保内容已加载后生成目录
-    if (contentHtml) {
-      generateToc();
-    }
-
-    // 动态加载 highlight.js
-    const loadHighlightJS = async () => {
-      // 加载 highlight.js 脚本
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
-      script.onload = () => {
-        // 加载 highlight.js 样式
-        const lightTheme = document.createElement('link');
-        lightTheme.rel = 'stylesheet';
-        lightTheme.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
-        document.head.appendChild(lightTheme);
-
-        const darkTheme = document.createElement('link');
-        darkTheme.rel = 'stylesheet';
-        darkTheme.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css';
-        document.head.appendChild(darkTheme);
-
-        // 初始化 highlight.js
-        window.hljs.highlightAll();
-
-        // 添加语言标签
-        addLanguageLabels();
-      };
-      document.head.appendChild(script);
-    };
-
-    loadHighlightJS();
-  }, [contentHtml]);
-
-  // 添加语言标签
-  const addLanguageLabels = () => {
-    const codeBlocks = document.querySelectorAll('pre code');
-    codeBlocks.forEach((block) => {
-      const language = block.className.split('language-')[1]; // 提取语言类型
-      if (language) {
-        const label = document.createElement('div');
-        label.className = 'code-language-label';
-        label.textContent = language;
-        block.parentElement.insertBefore(label, block);
-      }
-    });
-  };
-
   // 切换暗黑模式
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
@@ -139,27 +78,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     });
 
     setToc(tocItems); // 更新目录状态
-
-    // 添加滚动监听
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY;
-      const updatedToc = tocItems.map((item) => {
-        const targetElement = document.getElementById(item.id);
-        if (targetElement) {
-          const rect = targetElement.getBoundingClientRect();
-          const isActive =
-            rect.top <= 100 && rect.bottom >= 0; // 100 是一个偏移量，可以根据需要调整
-          return { ...item, active: isActive };
-        }
-        return item;
-      });
-      setToc(updatedToc);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
   };
 
   // 处理目录点击事件
@@ -177,6 +95,72 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
       window.history.pushState(null, '', `#${id}`);
     }
   };
+
+  useEffect(() => {
+    // 检查本地存储或系统偏好设置
+    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+    const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setIsDarkMode(savedDarkMode || prefersDarkMode);
+
+    // 动态切换暗黑模式
+    if (savedDarkMode || prefersDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+
+    // 确保内容已加载后生成目录
+    if (contentHtml) {
+      generateToc();
+    }
+
+    // 动态加载 highlight.js
+    const loadHighlightJS = async () => {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
+      script.onload = () => {
+        const lightTheme = document.createElement('link');
+        lightTheme.rel = 'stylesheet';
+        lightTheme.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
+        document.head.appendChild(lightTheme);
+
+        const darkTheme = document.createElement('link');
+        darkTheme.rel = 'stylesheet';
+        darkTheme.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css';
+        document.head.appendChild(darkTheme);
+
+        window.hljs.highlightAll();
+      };
+      document.head.appendChild(script);
+    };
+
+    loadHighlightJS();
+
+    // 添加滚动监听
+    const handleScroll = () => {
+      const headings = document.querySelectorAll('h1, h2');
+      let currentActiveId = null;
+
+      headings.forEach((heading) => {
+        const rect = heading.getBoundingClientRect();
+        if (rect.top <= 200 && rect.bottom >= 100) {
+          currentActiveId = heading.id;
+        }
+      });
+
+      setToc((prevToc) =>
+        prevToc.map((item) => ({
+          ...item,
+          active: item.id === currentActiveId,
+        }))
+      );
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [contentHtml]);
 
   return (
     <div className="min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 transition-colors duration-300">
@@ -270,10 +254,12 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
                 <li key={item.id}>
                   <a
                     href={`#${item.id}`}
-                    onClick={(e) => handleTocClick(e, item.id)} // 处理点击事件
-                    className={`block text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${
-                      item.level === 'h2' ? 'pl-4' : '' // h2 标题缩进
-                    } ${item.active ? 'text-blue-600 dark:text-blue-400 font-bold' : ''}`}
+                    onClick={(e) => handleTocClick(e, item.id)}
+                    className={`block transition-colors duration-200 ${
+                      item.active
+                        ? 'text-blue-600 dark:text-blue-400 font-semibold scale-105'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-blue-500'
+                    } ${item.level === 'h2' ? 'pl-4 text-sm' : 'pl-2 text-base'}`}
                   >
                     {item.text}
                   </a>
