@@ -69,6 +69,15 @@ const addDynamicStyles = () => {
     header {
       margin-bottom: 4rem; /* 调整一言与文章列表的间距 */
     }
+
+    /* 一言自动换行 */
+    .hitokoto-container {
+      max-width: 80%; /* 限制一言的最大宽度 */
+      margin: 0 auto; /* 居中显示 */
+      overflow-wrap: break-word; /* 自动换行 */
+      word-wrap: break-word; /* 兼容性 */
+      white-space: normal; /* 允许换行 */
+    }
   `;
   document.head.appendChild(style);
 };
@@ -256,9 +265,11 @@ export default function Home({ allPostsData }) {
           Typace
         </h1>
         {/* 一言 */}
-        <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 italic">
-          <span className="typewriter">{displayText}</span>
-        </p>
+        <div className="hitokoto-container">
+          <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 italic">
+            <span className="typewriter">{displayText}</span>
+          </p>
+        </div>
       </header>
 
       {/* 页面主体内容 */}
