@@ -15,7 +15,7 @@ cover: https://tse1-mm.cn.bing.net/th/id/OIP-C.rcDTfMo1mvd4MvaBW11G1AHaDt?dpr=2&
 - 带点句
 - adcd
 
-```python
+```Python
 print ("hello world")
 ```
 
