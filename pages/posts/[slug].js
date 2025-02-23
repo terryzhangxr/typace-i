@@ -88,12 +88,29 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
 
         // 初始化 highlight.js
         window.hljs.highlightAll();
+
+        // 添加语言标签
+        addLanguageLabels();
       };
       document.head.appendChild(script);
     };
 
     loadHighlightJS();
   }, [contentHtml]);
+
+  // 添加语言标签
+  const addLanguageLabels = () => {
+    const codeBlocks = document.querySelectorAll('pre code');
+    codeBlocks.forEach((block) => {
+      const language = block.className.split('language-')[1]; // 提取语言类型
+      if (language) {
+        const label = document.createElement('div');
+        label.className = 'code-language-label';
+        label.textContent = language;
+        block.parentElement.insertBefore(label, block);
+      }
+    });
+  };
 
   // 切换暗黑模式
   const toggleDarkMode = () => {
