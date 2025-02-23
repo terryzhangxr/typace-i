@@ -90,7 +90,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     if (typeof window !== 'undefined' && window.Waline) {
       const waline = new window.Waline({
         el: '#waline-comments',
-        serverURL: 'https://your-waline-server-url', // 替换为你的 Waline 服务端地址
+        serverURL: 'https://comment.mrzxr.top', // 替换为你的 Waline 服务端地址
         dark: isDarkMode ? 'html.dark' : false,
         path: frontmatter.slug,
         locale: {
