@@ -42,6 +42,7 @@ export async function getStaticProps({ params }) {
 export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [toc, setToc] = useState([]);
+  const [walineInstance, setWalineInstance] = useState(null); // 保存 Waline 实例
 
   // 切换暗黑模式
   const toggleDarkMode = () => {
@@ -49,6 +50,13 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     setIsDarkMode(newDarkMode);
     localStorage.setItem('darkMode', newDarkMode);
     document.documentElement.classList.toggle('dark', newDarkMode);
+
+    // 更新 Waline 主题
+    if (walineInstance) {
+      walineInstance.update({
+        dark: newDarkMode ? 'html.dark' : false,
+      });
+    }
   };
 
   // 生成目录
@@ -85,38 +93,66 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     }
   };
 
-  // 初始化 Waline 评论系统
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // 动态加载 Waline CSS
-      const walineCSS = document.createElement('link');
-      walineCSS.rel = 'stylesheet';
-      walineCSS.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
-      document.head.appendChild(walineCSS);
-
-      // 动态加载 Waline JS
-      const walineJS = document.createElement('script');
-      walineJS.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
-      walineJS.onload = () => {
-        window.Waline.init({
-          el: '#waline-comment-container',
-          serverURL: 'https://comment.mrzxr.top/', // 替换为你的服务端地址
-          dark: isDarkMode ? 'html.dark' : false,
-          path: location.pathname,
-          locale: {
-            placeholder: '欢迎留言讨论...',
-          },
-        });
-      };
-      document.body.appendChild(walineJS);
-
-      return () => {
-        document.head.removeChild(walineCSS);
-        document.body.removeChild(walineJS);
-      };
+  // 初始化/更新 Waline 评论系统
+  const initWaline = async () => {
+    // 销毁旧实例
+    if (walineInstance) {
+      walineInstance.destroy();
+      setWalineInstance(null);
     }
-  }, [isDarkMode]);
 
+    // 动态加载 Waline
+    const Waline = (await import('@waline/client')).default;
+    const instance = Waline.init({
+      el: '#waline-comment-container',
+      serverURL: 'https://comment.mrzxr.top/', // 替换为你的服务端地址
+      dark: isDarkMode ? 'html.dark' : false,
+      path: window.location.pathname, // 使用当前路径
+      locale: {
+        placeholder: '欢迎留言讨论...',
+      },
+      // 新增过渡效果
+      pageview: true,
+      emoji: [
+        'https://cdn.jsdelivr.net/gh/walinejs/emojis@latest/weibo',
+        'https://cdn.jsdelivr.net/gh/walinejs/emojis@latest/qq',
+      ],
+      // 新增 CSS 过渡类
+      style: {
+        transition: 'all 0.3s ease',
+      },
+    });
+
+    setWalineInstance(instance);
+  };
+
+  // 监听路由变化和暗黑模式
+  useEffect(() => {
+    const handleRouteChange = () => {
+      // 路由变化时重新初始化
+      initWaline();
+    };
+
+    // 添加路由监听
+    window.addEventListener('popstate', handleRouteChange);
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+    };
+  }, []);
+
+  // 初始化 Waline
+  useEffect(() => {
+    initWaline();
+
+    // 组件卸载时清理
+    return () => {
+      if (walineInstance) {
+        walineInstance.destroy();
+      }
+    };
+  }, [isDarkMode]); // 当暗黑模式变化时重新初始化
+
+  // 初始化页面
   useEffect(() => {
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
     const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -335,7 +371,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         <p className="mt-4 text-gray-600 dark:text-gray-400">
           由MRCHE&terryzhang创建的
           <a
-            href="https://github.com/terryzhangxr/typace-i"
+            href="https://bgithub.xyz/terryzhangxr/typace-i"
             className="text-blue-600 hover:underline dark:text-blue-400"
           >
             Typace
