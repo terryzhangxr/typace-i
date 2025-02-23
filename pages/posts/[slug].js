@@ -87,22 +87,35 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
 
   // 初始化 Waline 评论系统
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Waline) {
-      const waline = new window.Waline({
-        el: '#waline-comments',
-        serverURL: 'https://your-waline-server-url', // 替换为你的 Waline 服务端地址
-        dark: isDarkMode ? 'html.dark' : false,
-        path: frontmatter.slug,
-        locale: {
-          placeholder: '欢迎留言讨论...',
-        },
-      });
+    if (typeof window !== 'undefined') {
+      // 动态加载 Waline CSS
+      const walineCSS = document.createElement('link');
+      walineCSS.rel = 'stylesheet';
+      walineCSS.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
+      document.head.appendChild(walineCSS);
+
+      // 动态加载 Waline JS
+      const walineJS = document.createElement('script');
+      walineJS.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
+      walineJS.onload = () => {
+        window.Waline.init({
+          el: '#waline-comment-container',
+          serverURL: 'https://comment.mrzxr.top/', // 替换为你的服务端地址
+          dark: isDarkMode ? 'html.dark' : false,
+          path: location.pathname,
+          locale: {
+            placeholder: '欢迎留言讨论...',
+          },
+        });
+      };
+      document.body.appendChild(walineJS);
 
       return () => {
-        waline.destroy();
+        document.head.removeChild(walineCSS);
+        document.body.removeChild(walineJS);
       };
     }
-  }, [isDarkMode, frontmatter.slug]);
+  }, [isDarkMode]);
 
   useEffect(() => {
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
@@ -169,16 +182,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     <div className="min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 transition-colors duration-300">
       <Head>
         <title>{frontmatter.title} - Typace</title>
-        {/* 引入 Waline CSS */}
-        <link
-          rel="stylesheet"
-          href="https://unpkg.com/@waline/client@v2/dist/waline.css"
-        />
-        {/* 引入 Waline JS */}
-        <script
-          src="https://unpkg.com/@waline/client@v2/dist/waline.js"
-          defer
-        ></script>
       </Head>
 
       {/* 导航栏 */}
@@ -314,11 +317,10 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
       )}
 
       {/* Waline 评论系统 */}
-      <section id="waline-comments" className="mt-12 max-w-4xl mx-auto px-4">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">
-          评论
-        </h2>
-        <div id="waline-comments"></div>
+      <section className="mt-12 max-w-4xl mx-auto">
+        <div id="waline-comment-container" className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">评论</h3>
+        </div>
       </section>
 
       {/* 页脚 */}
@@ -333,7 +335,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         <p className="mt-4 text-gray-600 dark:text-gray-400">
           由MRCHE&terryzhang创建的
           <a
-            href="https://bgithub.xyz/terryzhangxr/typace-i"
+            href="https://github.com/terryzhangxr/typace-i"
             className="text-blue-600 hover:underline dark:text-blue-400"
           >
             Typace
