@@ -142,7 +142,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
 
   // 处理目录点击事件
   const handleTocClick = (e, id) => {
-    e.preventDefault(); // 阻止默认跳转行为
     const targetElement = document.getElementById(id); // 获取目标标题元素
     if (targetElement) {
       // 平滑滚动到目标位置
@@ -305,7 +304,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         <p className="mt-4 text-gray-600 dark:text-gray-400">
           由MRCHE&terryzhang创建的
           <a
-            href="https://github.com/terryzhangxr/typace-i"
+            href="https://bgithub.xyz/terryzhangxr/typace-i"
             className="text-blue-600 hover:underline dark:text-blue-400"
           >
             Typace
