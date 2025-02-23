@@ -277,7 +277,7 @@ export default function Home({ allPostsData }) {
       <div className="flex">
         {/* 左侧最新文章栏 */}
         <aside className="w-1/4 pr-8 hidden lg:block">
-          <div className="sticky top-24 p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
+          <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
               最新文章
             </h2>
@@ -300,7 +300,7 @@ export default function Home({ allPostsData }) {
         </aside>
 
         {/* 右侧文章列表 */}
-        <main className="flex-1 mt-12"> {/* 增加 margin-top */}
+        <main className="flex-1 pl-8"> {/* 增加左侧内边距 */}
           <ul className="space-y-6">
             {allPostsData.map(({ slug, title, date, cover, excerpt }) => (
               <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-105">
