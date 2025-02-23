@@ -8,17 +8,14 @@ import html from 'remark-html';
 import Head from 'next/head';
 import Link from 'next/link';
 
-// 获取所有文章的路径
 export async function getStaticPaths() {
   const posts = getSortedPostsData();
   const paths = posts.map((post) => ({
     params: { slug: post.slug },
   }));
-
   return { paths, fallback: false };
 }
 
-// 获取文章内容
 export async function getStaticProps({ params }) {
   const filePath = path.join(process.cwd(), 'source', `${params.slug}.md`);
   const fileContents = fs.readFileSync(filePath, 'utf8');
@@ -27,29 +24,24 @@ export async function getStaticProps({ params }) {
   const processedContent = await remark().use(html).process(content);
   const contentHtml = processedContent.toString();
 
-  // 获取所有文章数据
   const allPostsData = getSortedPostsData();
-
-  // 排除当前文章
   const filteredPosts = allPostsData.filter((post) => post.slug !== params.slug);
-
-  // 随机选择最多 3 篇文章
   const recommendedPosts = filteredPosts
-    .sort(() => 0.5 - Math.random()) // 随机排序
-    .slice(0, 3); // 取前 3 篇
+    .sort(() => 0.5 - Math.random())
+    .slice(0, 3);
 
   return {
     props: {
       frontmatter: data,
       contentHtml,
-      recommendedPosts, // 推荐文章数据
+      recommendedPosts,
     },
   };
 }
 
 export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [toc, setToc] = useState([]); // 存储目录
+  const [toc, setToc] = useState([]);
 
   // 切换暗黑模式
   const toggleDarkMode = () => {
@@ -63,58 +55,70 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const generateToc = () => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(contentHtml, 'text/html');
-    const headings = doc.querySelectorAll('h1, h2'); // 提取 h1 和 h2 标题
+    const headings = doc.querySelectorAll('h1, h2');
     const tocItems = [];
 
     headings.forEach((heading) => {
-      const id = heading.textContent.toLowerCase().replace(/\s+/g, '-'); // 生成 ID
-      heading.id = id; // 设置标题 ID
+      const id = heading.textContent.toLowerCase().replace(/\s+/g, '-');
+      heading.id = id;
       tocItems.push({
-        level: heading.tagName.toLowerCase(), // 标题层级（h1 或 h2）
+        level: heading.tagName.toLowerCase(),
         text: heading.textContent,
         id,
-        active: false, // 初始状态为非高亮
+        active: false,
       });
     });
 
-    setToc(tocItems); // 更新目录状态
+    setToc(tocItems);
   };
 
   // 处理目录点击事件
   const handleTocClick = (e, id) => {
-    e.preventDefault(); // 阻止默认跳转行为
-    const targetElement = document.getElementById(id); // 获取目标标题元素
+    e.preventDefault();
+    const targetElement = document.getElementById(id);
     if (targetElement) {
-      // 平滑滚动到目标位置
       targetElement.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
       });
-
-      // 手动更新 URL（可选）
       window.history.pushState(null, '', `#${id}`);
     }
   };
 
+  // 初始化 Waline 评论系统
   useEffect(() => {
-    // 检查本地存储或系统偏好设置
+    if (typeof window !== 'undefined' && window.Waline) {
+      const waline = new window.Waline({
+        el: '#waline-comments',
+        serverURL: 'https://your-waline-server-url', // 替换为你的 Waline 服务端地址
+        dark: isDarkMode ? 'html.dark' : false,
+        path: frontmatter.slug,
+        locale: {
+          placeholder: '欢迎留言讨论...',
+        },
+      });
+
+      return () => {
+        waline.destroy();
+      };
+    }
+  }, [isDarkMode, frontmatter.slug]);
+
+  useEffect(() => {
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
     const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
     setIsDarkMode(savedDarkMode || prefersDarkMode);
 
-    // 动态切换暗黑模式
     if (savedDarkMode || prefersDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
 
-    // 确保内容已加载后生成目录
     if (contentHtml) {
       generateToc();
     }
 
-    // 动态加载 highlight.js
     const loadHighlightJS = async () => {
       const script = document.createElement('script');
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
@@ -136,7 +140,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
 
     loadHighlightJS();
 
-    // 添加滚动监听
     const handleScroll = () => {
       const headings = document.querySelectorAll('h1, h2');
       let currentActiveId = null;
@@ -164,9 +167,18 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
 
   return (
     <div className="min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 transition-colors duration-300">
-      {/* 动态设置标签页 title */}
       <Head>
         <title>{frontmatter.title} - Typace</title>
+        {/* 引入 Waline CSS */}
+        <link
+          rel="stylesheet"
+          href="https://unpkg.com/@waline/client@v2/dist/waline.css"
+        />
+        {/* 引入 Waline JS */}
+        <script
+          src="https://unpkg.com/@waline/client@v2/dist/waline.js"
+          defer
+        ></script>
       </Head>
 
       {/* 导航栏 */}
@@ -200,7 +212,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
                   </a>
                 </Link>
               </li>
-              {/* 暗黑模式切换按钮 */}
               <li>
                 <button
                   onClick={toggleDarkMode}
@@ -216,9 +227,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
 
       {/* 文章内容 */}
       <main className="mt-24 flex">
-        {/* 文章主体 */}
         <div className="flex-1">
-          {/* 封面图片 */}
           {frontmatter.cover && (
             <div className="w-full h-48 md:h-64 mb-8">
               <img
@@ -303,6 +312,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
           </div>
         </section>
       )}
+
+      {/* Waline 评论系统 */}
+      <section id="waline-comments" className="mt-12 max-w-4xl mx-auto px-4">
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">
+          评论
+        </h2>
+        <div id="waline-comments"></div>
+      </section>
 
       {/* 页脚 */}
       <footer className="text-center mt-12">
