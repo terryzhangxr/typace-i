@@ -95,7 +95,7 @@
 
   /* 代码块样式 */
   .prose pre {
-    @apply rounded-xl border p-6;
+    @apply rounded-xl border p-6 relative;
     background-color: var(--color-code-bg);
     border-color: var(--color-border);
     color: var(--color-code-text);
@@ -112,36 +112,49 @@
     content: '';
   }
 
+  /* 代码块语言标签样式 */
+  .code-language-label {
+    @apply bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm px-3 py-1 rounded-t-lg;
+    font-family: monospace;
+    display: inline-block;
+    position: absolute;
+    top: 0;
+    right: 0;
+    transform: translateY(-100%);
+  }
+
   /* 表格样式 */
   .prose table {
     @apply w-full border-collapse my-6; /* 表格宽度、边框合并和外边距 */
-    color: var(--color-text-primary); /* 表格文字颜色 */
+    border-color: var(--color-border);
   }
 
   .prose th,
   .prose td {
-    @apply p-3 border; /* 单元格内边距和边框 */
-    border-color: var(--color-border); /* 边框颜色 */
+    @apply p-3 text-left align-top border;
+    border-color: var(--color-border);
+    color: var(--color-text-primary);
   }
 
   .prose th {
-    @apply font-semibold text-left; /* 表头文字加粗和左对齐 */
-    background-color: var(--color-table-header-bg); /* 表头背景色 */
+    @apply font-semibold;
+    background-color: var(--color-table-header-bg);
   }
 
   .prose tr {
-    background-color: var(--color-table-row-bg); /* 表格行背景色 */
+    background-color: var(--color-table-row-bg);
+    transition: background-color 0.2s ease;
   }
 
   .prose tr:nth-child(even) {
-    background-color: var(--color-table-row-hover-bg); /* 偶数行背景色 */
+    background-color: var(--color-table-row-hover-bg);
   }
 
   .prose tr:hover {
-    background-color: var(--color-table-row-hover-bg); /* 行悬停背景色 */
+    background-color: var(--color-table-row-hover-bg);
   }
 
-  /* 移动端表格适配 */
+  /* 移动端适配 */
   @media (max-width: 640px) {
     .prose table {
       @apply block overflow-x-auto;
