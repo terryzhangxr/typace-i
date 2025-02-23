@@ -58,7 +58,7 @@ const addDynamicStyles = () => {
 
     /* 增加一言与文章列表之间的间距 */
     header {
-      margin-bottom: 4rem; /* 调整一言与文章列表的间距 */
+      margin-bottom: 6rem; /* 调整一言与文章列表的间距 */
     }
 
     /* 一言自动换行 */
@@ -300,7 +300,7 @@ export default function Home({ allPostsData }) {
         </aside>
 
         {/* 右侧文章列表 */}
-        <main className="flex-1">
+        <main className="flex-1 mt-12"> {/* 增加 margin-top */}
           <ul className="space-y-6">
             {allPostsData.map(({ slug, title, date, cover, excerpt }) => (
               <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-105">
