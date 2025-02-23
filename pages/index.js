@@ -35,20 +35,11 @@ const addDynamicStyles = () => {
     /* 打字机效果 */
     .typewriter {
       display: inline-block;
-      overflow: hidden;
-      border-right: 0.15em solid #4a5568; /* 光标 */
-      white-space: normal; /* 允许换行 */
+      white-space: pre-wrap; /* 允许在空格处换行 */
       margin: 0 auto;
       letter-spacing: 0.15em;
-      animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
-    }
-    @keyframes typing {
-      from {
-        width: 0;
-      }
-      to {
-        width: 100%;
-      }
+      border-right: 0.15em solid #4a5568; /* 光标 */
+      animation: blink-caret 0.75s step-end infinite;
     }
     @keyframes blink-caret {
       from,
@@ -121,14 +112,24 @@ export default function Home({ allPostsData }) {
   const typeWriterEffect = (text) => {
     let i = 0;
     const speed = 100; // 打字速度（毫秒）
+    const container = document.querySelector('.hitokoto-container');
+    const typewriterElement = document.querySelector('.typewriter');
+
     const timer = setInterval(() => {
       if (i < text.length) {
+        // 更新显示的文本
         setDisplayText(text.slice(0, i + 1));
+
+        // 检测文本宽度是否超过容器宽度
+        if (typewriterElement.scrollWidth > container.clientWidth) {
+          // 如果超过宽度，则换行
+          typewriterElement.style.whiteSpace = 'pre-wrap';
+        }
+
         i++;
       } else {
         clearInterval(timer);
         // 打字完成后移除光标闪烁动画
-        const typewriterElement = document.querySelector('.typewriter');
         if (typewriterElement) {
           typewriterElement.style.animation = 'none'; // 停止动画
           typewriterElement.style.borderRight = 'none'; // 移除光标
