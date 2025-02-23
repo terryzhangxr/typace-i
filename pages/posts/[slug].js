@@ -134,14 +134,37 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         level: heading.tagName.toLowerCase(), // 标题层级（h1 或 h2）
         text: heading.textContent,
         id,
+        active: false, // 初始状态为非高亮
       });
     });
 
     setToc(tocItems); // 更新目录状态
+
+    // 添加滚动监听
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      const updatedToc = tocItems.map((item) => {
+        const targetElement = document.getElementById(item.id);
+        if (targetElement) {
+          const rect = targetElement.getBoundingClientRect();
+          const isActive =
+            rect.top <= 100 && rect.bottom >= 0; // 100 是一个偏移量，可以根据需要调整
+          return { ...item, active: isActive };
+        }
+        return item;
+      });
+      setToc(updatedToc);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
   };
 
   // 处理目录点击事件
   const handleTocClick = (e, id) => {
+    e.preventDefault(); // 阻止默认跳转行为
     const targetElement = document.getElementById(id); // 获取目标标题元素
     if (targetElement) {
       // 平滑滚动到目标位置
@@ -149,6 +172,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         behavior: 'smooth',
         block: 'start',
       });
+
+      // 手动更新 URL（可选）
+      window.history.pushState(null, '', `#${id}`);
     }
   };
 
@@ -247,7 +273,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
                     onClick={(e) => handleTocClick(e, item.id)} // 处理点击事件
                     className={`block text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${
                       item.level === 'h2' ? 'pl-4' : '' // h2 标题缩进
-                    }`}
+                    } ${item.active ? 'text-blue-600 dark:text-blue-400 font-bold' : ''}`}
                   >
                     {item.text}
                   </a>
