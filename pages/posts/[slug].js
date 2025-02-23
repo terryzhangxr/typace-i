@@ -68,6 +68,31 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     if (contentHtml) {
       generateToc();
     }
+
+    // 动态加载 highlight.js
+    const loadHighlightJS = async () => {
+      // 加载 highlight.js 脚本
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
+      script.onload = () => {
+        // 加载 highlight.js 样式
+        const lightTheme = document.createElement('link');
+        lightTheme.rel = 'stylesheet';
+        lightTheme.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
+        document.head.appendChild(lightTheme);
+
+        const darkTheme = document.createElement('link');
+        darkTheme.rel = 'stylesheet';
+        darkTheme.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css';
+        document.head.appendChild(darkTheme);
+
+        // 初始化 highlight.js
+        window.hljs.highlightAll();
+      };
+      document.head.appendChild(script);
+    };
+
+    loadHighlightJS();
   }, [contentHtml]);
 
   // 切换暗黑模式
