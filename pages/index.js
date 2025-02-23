@@ -37,7 +37,7 @@ const addDynamicStyles = () => {
       display: inline-block;
       overflow: hidden;
       border-right: 0.15em solid #4a5568; /* 光标 */
-      white-space: nowrap;
+      white-space: normal; /* 允许换行 */
       margin: 0 auto;
       letter-spacing: 0.15em;
       animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
