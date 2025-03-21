@@ -44,24 +44,60 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [toc, setToc] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [routeChanging, setRouteChanging] = useState(false);
+  const [transitionStage, setTransitionStage] = useState('enter');
+  const [isMounted, setIsMounted] = useState(false);
 
-  // 路由切换事件监听
+  // 路由切换处理
   useEffect(() => {
-    const handleRouteStart = () => setRouteChanging(true);
-    const handleRouteComplete = () => setRouteChanging(false);
+    const handleRouteChange = (url) => {
+      setTransitionStage('exit');
+    };
 
-    router.events.on('routeChangeStart', handleRouteStart);
+    const handleRouteComplete = () => {
+      setIsMounted(false);
+      setTimeout(() => {
+        setTransitionStage('enter');
+        setIsMounted(true);
+      }, 100);
+    };
+
+    router.events.on('routeChangeStart', handleRouteChange);
     router.events.on('routeChangeComplete', handleRouteComplete);
-    router.events.on('routeChangeError', handleRouteComplete);
 
     return () => {
-      router.events.off('routeChangeStart', handleRouteStart);
+      router.events.off('routeChangeStart', handleRouteChange);
       router.events.off('routeChangeComplete', handleRouteComplete);
-      router.events.off('routeChangeError', handleRouteComplete);
     };
-  }, [router]);
+  }, []);
+
+  // 初始加载处理
+  useEffect(() => {
+    setIsMounted(true);
+    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+    setIsDarkMode(savedDarkMode);
+    document.documentElement.classList.toggle('dark', savedDarkMode);
+
+    if (contentHtml) {
+      generateToc();
+    }
+
+    const loadHighlightJS = async () => {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
+      script.onload = () => {
+        const theme = document.createElement('link');
+        theme.rel = 'stylesheet';
+        theme.href = isDarkMode
+          ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
+          : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
+        document.head.appendChild(theme);
+        window.hljs.highlightAll();
+      };
+      document.head.appendChild(script);
+    };
+
+    loadHighlightJS();
+  }, [contentHtml, isDarkMode]);
 
   // 切换暗黑模式
   const toggleDarkMode = () => {
@@ -135,100 +171,19 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     }
   }, [isDarkMode, router.asPath]);
 
-  // 初始化效果
-  useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    setIsDarkMode(savedDarkMode);
-    document.documentElement.classList.toggle('dark', savedDarkMode);
-
-    // 模拟加载延迟
-    const timer = setTimeout(() => {
-      if (contentHtml) {
-        generateToc();
-        setIsLoading(false);
-      }
-    }, 800);
-
-    // 加载 highlight.js
-    const loadHighlightJS = async () => {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
-      script.onload = () => {
-        const theme = document.createElement('link');
-        theme.rel = 'stylesheet';
-        theme.href = isDarkMode 
-          ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
-          : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
-        document.head.appendChild(theme);
-        window.hljs.highlightAll();
-      };
-      document.head.appendChild(script);
-    };
-
-    loadHighlightJS();
-
-    return () => clearTimeout(timer);
-  }, [contentHtml, isDarkMode]);
-
-  // 滚动监听
-  useEffect(() => {
-    const handleScroll = () => {
-      const headings = document.querySelectorAll('h1, h2');
-      let currentActiveId = null;
-
-      headings.forEach((heading) => {
-        const rect = heading.getBoundingClientRect();
-        if (rect.top <= 200 && rect.bottom >= 100) {
-          currentActiveId = heading.id;
-        }
-      });
-
-      setToc((prevToc) =>
-        prevToc.map((item) => ({
-          ...item,
-          active: item.id === currentActiveId,
-        }))
-      );
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [contentHtml]);
-
-  // 加载动画组件
-  const LoadingOverlay = () => (
-    <div className="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex items-center justify-center transition-opacity duration-300">
-      <div className="relative">
-        <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-500 border-t-transparent"></div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <svg
-            className="animate-pulse w-10 h-10 text-blue-600 dark:text-blue-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 transition-colors duration-300">
+    <div
+      className={`fixed inset-0 z-10 bg-white dark:bg-gray-900 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] 
+        ${transitionStage === 'enter' ? 'translate-y-0' : 'translate-y-full'}`}
+      style={{
+        overflowY: 'scroll',
+        WebkitOverflowScrolling: 'touch',
+        display: isMounted ? 'block' : 'none',
+      }}
+    >
       <Head>
         <title>{frontmatter.title} - Typace</title>
       </Head>
-
-      {/* 加载动画 */}
-      {(isLoading || routeChanging) && <LoadingOverlay />}
 
       {/* 导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
@@ -274,125 +229,138 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </div>
       </nav>
 
-      {/* 文章内容 */}
-      <main className="mt-24 flex">
-        <div className="flex-1">
-          {frontmatter.cover && (
-            <div className="w-full h-48 md:h-64 mb-8">
-              <img
-                src={frontmatter.cover}
-                alt={frontmatter.title}
-                className="w-full h-full object-cover rounded-lg"
+      {/* 内容容器 */}
+      <div className="pt-24 pb-16">
+        {/* 文章内容区块 */}
+        <main className="mt-24 flex">
+          <div className="flex-1">
+            {frontmatter.cover && (
+              <div className="w-full h-48 md:h-64 mb-8">
+                <img
+                  src={frontmatter.cover}
+                  alt={frontmatter.title}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              </div>
+            )}
+
+            <article className="prose max-w-4xl mx-auto dark:prose-invert">
+              <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
+                {frontmatter.title}
+              </h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-8">
+                {frontmatter.date}
+              </p>
+              <div
+                className="text-gray-700 dark:text-gray-300"
+                dangerouslySetInnerHTML={{ __html: contentHtml }}
               />
-            </div>
-          )}
-
-          <article className="prose max-w-4xl mx-auto dark:prose-invert">
-            <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
-              {frontmatter.title}
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-8">
-              {frontmatter.date}
-            </p>
-            <div
-              className="text-gray-700 dark:text-gray-300"
-              dangerouslySetInnerHTML={{ __html: contentHtml }}
-            />
-          </article>
-        </div>
-
-        {/* 右侧目录 */}
-        <aside className="w-64 hidden lg:block pl-8 sticky top-24 self-start">
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
-              目录
-            </h2>
-            <ul className="space-y-2">
-              {toc.map((item) => (
-                <li key={item.id}>
-                  <a
-                    href={`#${item.id}`}
-                    onClick={(e) => handleTocClick(e, item.id)}
-                    className={`block transition-colors duration-200 ${
-                      item.active
-                        ? 'text-blue-600 dark:text-blue-400 font-semibold scale-105'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-blue-500'
-                    } ${item.level === 'h2' ? 'pl-4 text-sm' : 'pl-2 text-base'}`}
-                  >
-                    {item.text}
-                  </a>
-                </li>
-              ))}
-            </ul>
+            </article>
           </div>
-        </aside>
-      </main>
 
-      {/* 推荐文章 */}
-      {recommendedPosts.length > 0 && (
-        <section className="mt-12">
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">
-            推荐文章
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {recommendedPosts.map((post) => (
-              <Link 
-                key={post.slug} 
-                href={`/posts/${post.slug}`}
-                legacyBehavior
-              >
-                <a className="block bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition transform hover:scale-105">
-                  {post.cover && (
-                    <div className="w-full h-48">
-                      <img
-                        src={post.cover}
-                        alt={post.title}
-                        className="w-full h-full object-cover"
-                      />
+          {/* 右侧目录 */}
+          <aside className="w-64 hidden lg:block pl-8 sticky top-24 self-start">
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
+              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
+                目录
+              </h2>
+              <ul className="space-y-2">
+                {toc.map((item) => (
+                  <li key={item.id}>
+                    <a
+                      href={`#${item.id}`}
+                      onClick={(e) => handleTocClick(e, item.id)}
+                      className={`block transition-colors duration-200 ${
+                        item.active
+                          ? 'text-blue-600 dark:text-blue-400 font-semibold scale-105'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-blue-500'
+                      } ${item.level === 'h2' ? 'pl-4 text-sm' : 'pl-2 text-base'}`}
+                    >
+                      {item.text}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </aside>
+        </main>
+
+        {/* 推荐文章区块 */}
+        {recommendedPosts.length > 0 && (
+          <section className="mt-12">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">
+              推荐文章
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {recommendedPosts.map((post) => (
+                <Link key={post.slug} href={`/posts/${post.slug}`} legacyBehavior>
+                  <a className="block bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition transform hover:scale-105">
+                    {post.cover && (
+                      <div className="w-full h-48">
+                        <img
+                          src={post.cover}
+                          alt={post.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="p-6">
+                      <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+                        {post.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                        {post.date}
+                      </p>
                     </div>
-                  )}
-                  <div className="p-6">
-                    <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-                      {post.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                      {post.date}
-                    </p>
-                  </div>
-                </a>
-              </Link>
-            ))}
+                  </a>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Waline 评论系统 */}
+        <section className="mt-12 max-w-4xl mx-auto">
+          <div id="waline-comment-container" className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+            <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">评论</h3>
           </div>
         </section>
-      )}
 
-      {/* Waline 评论系统 */}
-      <section className="mt-12 max-w-4xl mx-auto">
-        <div id="waline-comment-container" className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-          <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">评论</h3>
-        </div>
-      </section>
-
-      {/* 页脚 */}
-      <footer className="text-center mt-12">
-        <a href="/api/sitemap" className="inline-block">
-          <img
-            src="https://cdn.us.mrche.top/sitemap.svg"
-            alt="Sitemap"
-            className="block mx-auto w-8 h-8 dark:invert"
-          />
-        </a>
-        <p className="mt-4 text-gray-600 dark:text-gray-400">
-          由MRCHE&terryzhang创建的
-          <a
-            href="https://github.com/terryzhangxr/typace-i"
-            className="text-blue-600 hover:underline dark:text-blue-400"
-          >
-            Typace
+        {/* 页脚 */}
+        <footer className="text-center mt-12">
+          <a href="/api/sitemap" className="inline-block">
+            <img
+              src="https://cdn.us.mrche.top/sitemap.svg"
+              alt="Sitemap"
+              className="block mx-auto w-8 h-8 dark:invert"
+            />
           </a>
-          强势驱动
-        </p>
-      </footer>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            由MRCHE&terryzhang创建的
+            <a
+              href="https://github.com/terryzhangxr/typace-i"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              Typace
+            </a>
+            强势驱动
+          </p>
+        </footer>
+      </div>
+
+      {/* 返回按钮 */}
+      <button
+        onClick={() => {
+          setTransitionStage('exit');
+          setTimeout(() => router.push('/'), 400);
+        }}
+        className="fixed bottom-8 right-8 w-12 h-12 rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-lg 
+          flex items-center justify-center transition-all duration-300 hover:scale-110 z-30"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+      </button>
     </div>
   );
 }
