@@ -45,18 +45,18 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [toc, setToc] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [contentVisible, setContentVisible] = useState(false);
+  const [transitionState, setTransitionState] = useState('enter');
 
   // 路由切换处理
   useEffect(() => {
     const handleStart = () => {
       setIsLoading(true);
-      setContentVisible(false);
+      setTransitionState('exit');
     };
 
     const handleComplete = () => {
       setIsLoading(false);
-      setTimeout(() => setContentVisible(true), 50);
+      setTransitionState('enter');
     };
 
     router.events.on('routeChangeStart', handleStart);
@@ -80,10 +80,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
       if (contentHtml) {
         generateToc();
         await loadDependencies();
-        setTimeout(() => {
-          setIsLoading(false);
-          setContentVisible(true);
-        }, 600);
+        setIsLoading(false);
       }
     };
 
@@ -184,25 +181,19 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     }
   };
 
-  // 加载动画组件
-  const LoadingOverlay = () => (
-    <div className="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex items-center justify-center transition-opacity duration-300">
-      <div className="animate-pulse flex flex-col items-center space-y-4">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent"></div>
-        <p className="text-blue-500 dark:text-blue-400 text-lg font-medium">welcome to our world...</p>
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900">
       <Head>
         <title>{frontmatter.title} - Typace</title>
       </Head>
 
-      {isLoading && <LoadingOverlay />}
-
-      <div className={`${contentVisible ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
+      <div
+        className={`transition-transform duration-500 ease-in-out ${
+          transitionState === 'enter'
+            ? 'translate-y-0 opacity-100'
+            : 'translate-y-20 opacity-0'
+        }`}
+      >
         {/* 导航栏 */}
         <nav className="fixed top-0 left-0 w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
           <div className="container mx-auto px-8 py-4">
