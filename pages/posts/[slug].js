@@ -119,10 +119,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
 
   useEffect(() => {
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setIsDarkMode(savedDarkMode || prefersDarkMode);
+    setIsDarkMode(savedDarkMode);
 
-    if (savedDarkMode || prefersDarkMode) {
+    if (savedDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
@@ -291,7 +290,10 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {recommendedPosts.map((post) => (
               <Link key={post.slug} href={`/posts/${post.slug}`}>
-                <a className="block bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition transform hover:scale-105">
+                <a
+                  onClick={() => window.location.href = `/posts/${post.slug}`}
+                  className="block bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition transform hover:scale-105"
+                >
                   {post.cover && (
                     <div className="w-full h-48">
                       <img
