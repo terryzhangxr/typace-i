@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useLayoutEffect } from 'react';
 import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../../lib/posts';
 import fs from 'fs';
@@ -44,45 +44,59 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [toc, setToc] = useState([]);
-  const [transitionState, setTransitionState] = useState('enter');
+  const [transitionState, setTransitionState] = useState('exit'); // 初始状态为 exit
 
-  // 添加动态样式
-  useEffect(() => {
+  // 动态样式处理
+  useLayoutEffect(() => {
+    // 创建样式标签
     const style = document.createElement('style');
     style.textContent = `
       .page-container {
         opacity: 0;
-        transform: translateY(100px);
-        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateY(300px); /* 增大滑动幅度 */
+        transition: all 1s cubic-bezier(0.4, 0, 0.2, 1); /* 延长动画时间 */
       }
       .page-active {
         opacity: 1;
         transform: translateY(0);
       }
     `;
+    
+    // 插入样式
     document.head.appendChild(style);
-
-    // 初始加载立即触发动画
-    setTimeout(() => setTransitionState('active'), 50);
+    
+    // 组件卸载时移除样式
+    return () => {
+      document.head.removeChild(style);
+    };
   }, []);
 
-  // 路由事件处理
+  // 路由和动画控制
   useEffect(() => {
+    // 初始加载立即触发动画
+    setTransitionState('active');
+
     const handleRouteChangeStart = () => {
       setTransitionState('exit');
     };
 
     const handleRouteChangeComplete = () => {
-      setTransitionState('enter');
-      setTimeout(() => setTransitionState('active'), 50);
+      setTransitionState('active');
+    };
+
+    // 监听页面刷新
+    const handleBeforeUnload = () => {
+      setTransitionState('exit');
     };
 
     router.events.on('routeChangeStart', handleRouteChangeStart);
     router.events.on('routeChangeComplete', handleRouteChangeComplete);
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
       router.events.off('routeChangeStart', handleRouteChangeStart);
       router.events.off('routeChangeComplete', handleRouteChangeComplete);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [router]);
 
@@ -108,7 +122,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     await initializeWaline();
   };
 
-  // 加载代码高亮（保持不变）
+  // 加载代码高亮
   const loadHighlightJS = () => {
     return new Promise((resolve) => {
       const script = document.createElement('script');
@@ -127,7 +141,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     });
   };
 
-  // 初始化评论系统（保持不变）
+  // 初始化评论系统
   const initializeWaline = () => {
     return new Promise((resolve) => {
       if (typeof window !== 'undefined') {
@@ -153,7 +167,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     });
   };
 
-  // 暗黑模式切换（保持不变）
+  // 切换暗黑模式
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
     setIsDarkMode(newDarkMode);
@@ -162,7 +176,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     loadHighlightJS();
   };
 
-  // 生成目录（保持不变）
+  // 生成目录
   const generateToc = () => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(contentHtml, 'text/html');
@@ -183,7 +197,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     setToc(tocItems);
   };
 
-  // 处理目录点击（保持不变）
+  // 处理目录点击
   const handleTocClick = (e, id) => {
     e.preventDefault();
     const targetElement = document.getElementById(id);
@@ -196,15 +210,20 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     }
   };
 
+  // 修改根容器className
+  const getContainerClasses = () => {
+    let classes = 'min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 page-container';
+    if (transitionState === 'active') classes += ' page-active';
+    return classes;
+  };
+
   return (
-    <div className={`min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 page-container ${
-      transitionState === 'active' ? 'page-active' : ''
-    }`}>
+    <div className={getContainerClasses()}>
       <Head>
         <title>{frontmatter.title} - Typace</title>
       </Head>
 
-      {/* 导航栏（保持不变） */}
+      {/* 导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
@@ -248,7 +267,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </div>
       </nav>
 
-      {/* 文章内容（保持不变） */}
+      {/* 主要内容 */}
       <main className="mt-24 flex">
         <div className="flex-1">
           {frontmatter.cover && (
@@ -275,7 +294,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
           </article>
         </div>
 
-        {/* 侧边目录（保持不变） */}
+        {/* 侧边目录 */}
         <aside className="w-64 hidden lg:block pl-8 sticky top-24 self-start">
           <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
@@ -300,7 +319,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </aside>
       </main>
 
-      {/* 推荐文章（保持不变） */}
+      {/* 推荐文章 */}
       {recommendedPosts.length > 0 && (
         <section className="mt-12">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">推荐文章</h2>
@@ -330,15 +349,15 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </section>
       )}
 
-      {/* 评论系统（保持不变） */}
+      {/* 评论系统 */}
       <section className="mt-12 max-w-4xl mx-auto">
         <div id="waline-comment-container" className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
           <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">评论</h3>
         </div>
       </section>
 
-      {/* 页脚（保持不变） */}
-      <footer className="text-center mt-12">
+      {/* 页脚 */}
+      <footer className="text-center mt-12 transition-opacity duration-500">
         <a href="/api/sitemap" className="inline-block">
           <img
             src="https://cdn.us.mrche.top/sitemap.svg"
