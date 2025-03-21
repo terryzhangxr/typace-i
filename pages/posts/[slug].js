@@ -380,7 +380,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
           <p className="mt-4 text-gray-600 dark:text-gray-400">
             由MRCHE&terryzhang创建的
             <a
-              href="https://bgithub.xyz/terryzhangxr/typace-i"
+              href="https://github.com/terryzhangxr/typace-i"
               className="text-blue-600 hover:underline dark:text-blue-400"
             >
               Typace
