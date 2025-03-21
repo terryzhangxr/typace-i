@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getSortedPostsData } from '../lib/posts';
-import Head from 'next/head'; // 引入 Head 组件
+import Head from 'next/head';
 import Link from 'next/link';
 
 // 新增的样式定义
@@ -75,19 +75,18 @@ const addDynamicStyles = () => {
 
 export default function Home({ allPostsData }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [hitokoto, setHitokoto] = useState(''); // 存储一言
-  const [displayText, setDisplayText] = useState(''); // 用于打字机效果的动态文本
+  const [hitokoto, setHitokoto] = useState('');
+  const [displayText, setDisplayText] = useState('');
 
   useEffect(() => {
     addDynamicStyles();
 
-    // 检查本地存储或系统偏好设置
+    // 仅从本地存储获取暗黑模式设置
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setIsDarkMode(savedDarkMode || prefersDarkMode);
+    setIsDarkMode(savedDarkMode);
 
-    // 动态切换暗黑模式
-    if (savedDarkMode || prefersDarkMode) {
+    // 根据本地存储设置暗黑模式
+    if (savedDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
@@ -97,14 +96,14 @@ export default function Home({ allPostsData }) {
     fetch('https://v1.hitokoto.cn')
       .then((response) => response.json())
       .then((data) => {
-        setHitokoto(data.hitokoto); // 设置一言
-        typeWriterEffect(data.hitokoto); // 启动打字机效果
+        setHitokoto(data.hitokoto);
+        typeWriterEffect(data.hitokoto);
       })
       .catch((error) => {
         console.error('获取一言失败:', error);
         const defaultHitokoto = '生活不止眼前的苟且，还有诗和远方的田野。';
         setHitokoto(defaultHitokoto);
-        typeWriterEffect(defaultHitokoto); // 启动打字机效果
+        typeWriterEffect(defaultHitokoto);
       });
   }, []);
 
@@ -117,22 +116,18 @@ export default function Home({ allPostsData }) {
 
     const timer = setInterval(() => {
       if (i < text.length) {
-        // 更新显示的文本
         setDisplayText(text.slice(0, i + 1));
 
-        // 检测文本宽度是否超过容器宽度
         if (typewriterElement.scrollWidth > container.clientWidth) {
-          // 如果超过宽度，则换行
           typewriterElement.style.whiteSpace = 'pre-wrap';
         }
 
         i++;
       } else {
         clearInterval(timer);
-        // 打字完成后移除光标闪烁动画
         if (typewriterElement) {
-          typewriterElement.style.animation = 'none'; // 停止动画
-          typewriterElement.style.borderRight = 'none'; // 移除光标
+          typewriterElement.style.animation = 'none';
+          typewriterElement.style.borderRight = 'none';
         }
       }
     }, speed);
@@ -177,7 +172,7 @@ export default function Home({ allPostsData }) {
 
       // 预加载下一个背景
       nextBg.style.backgroundImage = colors[nextIndex];
-      
+
       // 触发过渡
       setTimeout(() => {
         activeBg.classList.remove('bg-visible');
@@ -194,7 +189,7 @@ export default function Home({ allPostsData }) {
       bg1.remove();
       bg2.remove();
     };
-  }, [isDarkMode]); // 依赖 isDarkMode，当模式切换时重新初始化背景
+  }, [isDarkMode]);
 
   // 切换暗黑模式
   const toggleDarkMode = () => {
@@ -215,32 +210,32 @@ export default function Home({ allPostsData }) {
       <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-20">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
-            <a 
-              href="/" 
+            <a
+              href="/"
               className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700"
             >
               Typace
             </a>
             <ul className="flex space-x-6">
               <li>
-                <a 
-                  href="/" 
+                <a
+                  href="/"
                   className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
                 >
                   首页
                 </a>
               </li>
               <li>
-                <a 
-                  href="/about" 
+                <a
+                  href="/about"
                   className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
                 >
                   关于
                 </a>
               </li>
               <li>
-                <a 
-                  href="/archive" 
+                <a
+                  href="/archive"
                   className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
                 >
                   归档
@@ -308,7 +303,7 @@ export default function Home({ allPostsData }) {
                   {/* 封面图片 */}
                   {cover && (
                     <div className="md:w-1/3 cover-image-container">
-                      <img 
+                      <img
                         src={cover}
                         alt={title}
                         className="w-full h-full object-cover rounded-lg transition-transform duration-300 hover:scale-105"
@@ -316,7 +311,7 @@ export default function Home({ allPostsData }) {
                       />
                     </div>
                   )}
-                  
+
                   {/* 文字内容 */}
                   <div className="flex-1">
                     <a href={`/posts/${slug}`} className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
@@ -349,7 +344,7 @@ export default function Home({ allPostsData }) {
         <p className="mt-4 text-gray-600 dark:text-gray-400">
           由MRCHE&terryzhang创建的
           <a
-            href="https://github.com/terryzhangxr/typace-i"
+            href="https://www.mrche.top/typace"
             className="text-blue-600 hover:underline dark:text-blue-400"
           >
             Typace
@@ -367,7 +362,6 @@ export async function getStaticProps() {
     props: {
       allPostsData: allPostsData.map(post => ({
         ...post,
-        // 确保每篇文章都有content字段
         content: post.content || ""
       }))
     },
