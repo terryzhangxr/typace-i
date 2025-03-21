@@ -1,12 +1,36 @@
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../lib/posts';
 import Head from 'next/head';
 import Link from 'next/link';
 
-// 新增的样式定义
+// 动态样式定义
 const addDynamicStyles = () => {
   const style = document.createElement('style');
   style.textContent = `
+    /* 页面切换动画 */
+    .page-transition {
+      opacity: 1;
+      transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+    }
+    .page-transition-exit {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .page-transition-exit-active {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .page-transition-enter {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    .page-transition-enter-active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* 背景渐变过渡 */
     .bg-transition {
       position: fixed;
       top: 0;
@@ -15,30 +39,27 @@ const addDynamicStyles = () => {
       height: 100%;
       opacity: 0;
       transition: opacity 1.5s ease-in-out;
-      z-index: -1; /* 确保背景在页面内容下方 */
+      z-index: -1;
     }
     .bg-visible {
       opacity: 1;
     }
+
+    /* 响应式布局 */
     @media (max-width: 767px) {
       .cover-image-container {
         width: 100%;
         height: 200px;
       }
     }
-    .line-clamp-3 {
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
+
     /* 打字机效果 */
     .typewriter {
       display: inline-block;
-      white-space: pre-wrap; /* 允许在空格处换行 */
+      white-space: pre-wrap;
       margin: 0 auto;
       letter-spacing: 0.15em;
-      border-right: 0.15em solid #4a5568; /* 光标 */
+      border-right: 0.15em solid #4a5568;
       animation: blink-caret 0.75s step-end infinite;
     }
     @keyframes blink-caret {
@@ -51,29 +72,33 @@ const addDynamicStyles = () => {
       }
     }
 
-    /* 增加大标题与一言之间的间距 */
+    /* 其他样式 */
+    .line-clamp-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
     header h1 {
-      margin-bottom: 2rem; /* 调整标题与一言的间距 */
+      margin-bottom: 2rem;
     }
-
-    /* 增加一言与文章列表之间的间距 */
     header {
-      margin-bottom: 4rem; /* 调整一言与文章列表的间距 */
+      margin-bottom: 4rem;
     }
-
-    /* 一言自动换行 */
     .hitokoto-container {
-      max-width: 80%; /* 限制一言的最大宽度 */
-      margin: 0 auto; /* 居中显示 */
-      overflow-wrap: break-word; /* 自动换行 */
-      word-wrap: break-word; /* 兼容性 */
-      white-space: normal; /* 允许换行 */
+      max-width: 80%;
+      margin: 0 auto;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+      white-space: normal;
     }
   `;
   document.head.appendChild(style);
 };
 
 export default function Home({ allPostsData }) {
+  const router = useRouter();
+  const [transitionState, setTransitionState] = useState('idle');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [hitokoto, setHitokoto] = useState('');
   const [displayText, setDisplayText] = useState('');
@@ -81,16 +106,10 @@ export default function Home({ allPostsData }) {
   useEffect(() => {
     addDynamicStyles();
 
-    // 仅从本地存储获取暗黑模式设置
+    // 从本地存储获取暗黑模式设置
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
     setIsDarkMode(savedDarkMode);
-
-    // 根据本地存储设置暗黑模式
-    if (savedDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.toggle('dark', savedDarkMode);
 
     // 获取一言
     fetch('https://v1.hitokoto.cn')
@@ -105,23 +124,39 @@ export default function Home({ allPostsData }) {
         setHitokoto(defaultHitokoto);
         typeWriterEffect(defaultHitokoto);
       });
-  }, []);
+
+    // 路由事件监听
+    const handleRouteChangeStart = () => {
+      setTransitionState('exiting');
+    };
+
+    const handleRouteChangeComplete = () => {
+      setTransitionState('entering');
+      setTimeout(() => setTransitionState('idle'), 300);
+    };
+
+    router.events.on('routeChangeStart', handleRouteChangeStart);
+    router.events.on('routeChangeComplete', handleRouteChangeComplete);
+
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChangeStart);
+      router.events.off('routeChangeComplete', handleRouteChangeComplete);
+    };
+  }, [router]);
 
   // 打字机效果
   const typeWriterEffect = (text) => {
     let i = 0;
-    const speed = 100; // 打字速度（毫秒）
+    const speed = 100;
     const container = document.querySelector('.hitokoto-container');
     const typewriterElement = document.querySelector('.typewriter');
 
     const timer = setInterval(() => {
       if (i < text.length) {
         setDisplayText(text.slice(0, i + 1));
-
         if (typewriterElement.scrollWidth > container.clientWidth) {
           typewriterElement.style.whiteSpace = 'pre-wrap';
         }
-
         i++;
       } else {
         clearInterval(timer);
@@ -133,8 +168,8 @@ export default function Home({ allPostsData }) {
     }, speed);
   };
 
+  // 动态背景渐变
   useEffect(() => {
-    // 亮色模式下的渐变颜色
     const lightColors = [
       'linear-gradient(45deg, #ee7752, #e73c7e)',
       'linear-gradient(45deg, #e73c7e, #23a6d5)',
@@ -142,7 +177,6 @@ export default function Home({ allPostsData }) {
       'linear-gradient(45deg, #23d5ab, #ee7752)',
     ];
 
-    // 暗黑模式下的渐变颜色
     const darkColors = [
       'linear-gradient(45deg, #1e3a8a, #9f7aea)',
       'linear-gradient(45deg, #9f7aea, #3b82f6)',
@@ -150,10 +184,8 @@ export default function Home({ allPostsData }) {
       'linear-gradient(45deg, #60a5fa, #1e3a8a)',
     ];
 
-    // 获取当前模式下的渐变颜色
     const colors = isDarkMode ? darkColors : lightColors;
 
-    // 创建两个背景层
     const bg1 = document.createElement('div');
     const bg2 = document.createElement('div');
     bg1.className = bg2.className = 'bg-transition';
@@ -162,7 +194,6 @@ export default function Home({ allPostsData }) {
     let currentIndex = 0;
     let activeBg = bg1;
 
-    // 初始化第一个背景
     activeBg.style.backgroundImage = colors[currentIndex];
     activeBg.classList.add('bg-visible');
 
@@ -170,10 +201,8 @@ export default function Home({ allPostsData }) {
       const nextIndex = (currentIndex + 1) % colors.length;
       const nextBg = activeBg === bg1 ? bg2 : bg1;
 
-      // 预加载下一个背景
       nextBg.style.backgroundImage = colors[nextIndex];
 
-      // 触发过渡
       setTimeout(() => {
         activeBg.classList.remove('bg-visible');
         nextBg.classList.add('bg-visible');
@@ -182,7 +211,7 @@ export default function Home({ allPostsData }) {
       }, 100);
     };
 
-    const intervalId = setInterval(changeBackground, 2500); // 2.5 秒切换一次背景
+    const intervalId = setInterval(changeBackground, 2500);
 
     return () => {
       clearInterval(intervalId);
@@ -199,49 +228,55 @@ export default function Home({ allPostsData }) {
     document.documentElement.classList.toggle('dark', newDarkMode);
   };
 
+  // 获取过渡类名
+  const getTransitionClass = () => {
+    switch (transitionState) {
+      case 'exiting':
+        return 'page-transition-exit';
+      case 'entering':
+        return 'page-transition-enter';
+      default:
+        return '';
+    }
+  };
+
   return (
-    <div className="min-h-screen p-8 relative z-10">
-      {/* 动态设置标签页 title */}
+    <div className={`min-h-screen p-8 relative z-10 page-transition ${getTransitionClass()}`}>
       <Head>
         <title>首页 - Typace</title>
       </Head>
 
-      {/* 新增的导航栏 */}
+      {/* 导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-20">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
-            <a
-              href="/"
-              className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700"
-            >
-              Typace
-            </a>
+            <Link href="/" passHref>
+              <a className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
+                Typace
+              </a>
+            </Link>
             <ul className="flex space-x-6">
               <li>
-                <a
-                  href="/"
-                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
-                >
-                  首页
-                </a>
+                <Link href="/" passHref prefetch>
+                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                    首页
+                  </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="/about"
-                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
-                >
-                  关于
-                </a>
+                <Link href="/about" passHref prefetch>
+                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                    关于
+                  </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="/archive"
-                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
-                >
-                  归档
-                </a>
+                <Link href="/archive" passHref prefetch>
+                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                    归档
+                  </a>
+                </Link>
               </li>
-              {/* 暗黑模式切换按钮 */}
               <li>
                 <button
                   onClick={toggleDarkMode}
@@ -255,12 +290,11 @@ export default function Home({ allPostsData }) {
         </div>
       </nav>
 
-      {/* 调整原有header的上边距 */}
+      {/* 页面内容 */}
       <header className="text-center mb-8 mt-24">
         <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
           Typace
         </h1>
-        {/* 一言 */}
         <div className="hitokoto-container">
           <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 italic">
             <span className="typewriter">{displayText}</span>
@@ -268,9 +302,8 @@ export default function Home({ allPostsData }) {
         </div>
       </header>
 
-      {/* 页面主体内容 */}
+      {/* 文章列表 */}
       <div className="flex">
-        {/* 左侧最新文章栏 */}
         <aside className="w-1/4 pr-8 hidden lg:block">
           <div className="sticky top-24 p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
@@ -279,28 +312,25 @@ export default function Home({ allPostsData }) {
             <ul className="space-y-4">
               {allPostsData.slice(0, 5).map((post) => (
                 <li key={post.slug}>
-                  <a
-                    href={`/posts/${post.slug}`}
-                    className="block text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                  >
-                    <h3 className="text-lg font-semibold">{post.title}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                      {post.date}
-                    </p>
-                  </a>
+                  <Link href={`/posts/${post.slug}`} passHref>
+                    <a className="block text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                      <h3 className="text-lg font-semibold">{post.title}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                        {post.date}
+                      </p>
+                    </a>
+                  </Link>
                 </li>
               ))}
             </ul>
           </div>
         </aside>
 
-        {/* 右侧文章列表 */}
         <main className="flex-1">
           <ul className="space-y-6">
             {allPostsData.map(({ slug, title, date, cover, excerpt }) => (
               <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-105">
                 <div className="flex flex-col md:flex-row gap-6">
-                  {/* 封面图片 */}
                   {cover && (
                     <div className="md:w-1/3 cover-image-container">
                       <img
@@ -311,14 +341,13 @@ export default function Home({ allPostsData }) {
                       />
                     </div>
                   )}
-
-                  {/* 文字内容 */}
                   <div className="flex-1">
-                    <a href={`/posts/${slug}`} className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
-                      {title}
-                    </a>
+                    <Link href={`/posts/${slug}`} passHref>
+                      <a className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                        {title}
+                      </a>
+                    </Link>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{date}</p>
-                    {/* 显示摘要 */}
                     {excerpt && (
                       <p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">
                         {excerpt}
@@ -332,7 +361,7 @@ export default function Home({ allPostsData }) {
         </main>
       </div>
 
-      {/* 保持原有footer内容不变 */}
+      {/* 页脚 */}
       <footer className="text-center mt-12">
         <a href="/api/sitemap" className="inline-block">
           <img
