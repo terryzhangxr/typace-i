@@ -44,29 +44,19 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [toc, setToc] = useState([]);
-  const [transitionStage, setTransitionStage] = useState('enter');
   const [isMounted, setIsMounted] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
   // 路由切换处理
   useEffect(() => {
-    const handleRouteChange = (url) => {
-      setTransitionStage('exit');
-    };
-
-    const handleRouteComplete = () => {
-      setIsMounted(false);
-      setTimeout(() => {
-        setTransitionStage('enter');
-        setIsMounted(true);
-      }, 100);
+    const handleRouteChange = () => {
+      setIsExiting(true);
     };
 
     router.events.on('routeChangeStart', handleRouteChange);
-    router.events.on('routeChangeComplete', handleRouteComplete);
 
     return () => {
       router.events.off('routeChangeStart', handleRouteChange);
-      router.events.off('routeChangeComplete', handleRouteComplete);
     };
   }, []);
 
@@ -174,11 +164,16 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   return (
     <div
       className={`fixed inset-0 z-10 bg-white dark:bg-gray-900 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] 
-        ${transitionStage === 'enter' ? 'translate-y-0' : 'translate-y-full'}`}
+        ${isMounted ? 'translate-y-0' : 'translate-y-full'}
+        ${isExiting ? 'translate-y-full' : ''}`}
       style={{
         overflowY: 'scroll',
         WebkitOverflowScrolling: 'touch',
-        display: isMounted ? 'block' : 'none',
+      }}
+      onTransitionEnd={() => {
+        if (isExiting) {
+          router.push('/');
+        }
       }}
     >
       <Head>
@@ -350,10 +345,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
 
       {/* 返回按钮 */}
       <button
-        onClick={() => {
-          setTransitionStage('exit');
-          setTimeout(() => router.push('/'), 400);
-        }}
+        onClick={() => setIsExiting(true)}
         className="fixed bottom-8 right-8 w-12 h-12 rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-lg 
           flex items-center justify-center transition-all duration-300 hover:scale-110 z-30"
       >
