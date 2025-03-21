@@ -57,7 +57,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     const handleRouteComplete = () => {
       setIsMounted(false);
       setTimeout(() => {
-        setTransitionStage('enter');
         setIsMounted(true);
       }, 100);
     };
@@ -118,7 +117,77 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     loadHighlightJS();
   }, [contentHtml, isDarkMode]);
 
-  // ... 其他函数保持不变 ...
+  // 切换暗黑模式
+  const toggleDarkMode = () => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    localStorage.setItem('darkMode', newDarkMode);
+    document.documentElement.classList.toggle('dark', newDarkMode);
+  };
+
+  // 生成目录
+  const generateToc = () => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(contentHtml, 'text/html');
+    const headings = doc.querySelectorAll('h1, h2');
+    const tocItems = [];
+
+    headings.forEach((heading) => {
+      const id = heading.textContent.toLowerCase().replace(/\s+/g, '-');
+      heading.id = id;
+      tocItems.push({
+        level: heading.tagName.toLowerCase(),
+        text: heading.textContent,
+        id,
+        active: false,
+      });
+    });
+
+    setToc(tocItems);
+  };
+
+  // 处理目录点击事件
+  const handleTocClick = (e, id) => {
+    e.preventDefault();
+    const targetElement = document.getElementById(id);
+    if (targetElement) {
+      targetElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+      window.history.pushState(null, '', `#${id}`);
+    }
+  };
+
+  // 初始化 Waline 评论系统
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const walineCSS = document.createElement('link');
+      walineCSS.rel = 'stylesheet';
+      walineCSS.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
+      document.head.appendChild(walineCSS);
+
+      const walineJS = document.createElement('script');
+      walineJS.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
+      walineJS.onload = () => {
+        window.Waline.init({
+          el: '#waline-comment-container',
+          serverURL: 'https://comment.mrzxr.top/',
+          dark: isDarkMode ? 'html.dark' : false,
+          path: router.asPath,
+          locale: {
+            placeholder: '欢迎留言讨论...',
+          },
+        });
+      };
+      document.body.appendChild(walineJS);
+
+      return () => {
+        document.head.removeChild(walineCSS);
+        document.body.removeChild(walineJS);
+      };
+    }
+  }, [isDarkMode, router.asPath]);
 
   return (
     <div
