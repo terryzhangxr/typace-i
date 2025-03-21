@@ -44,62 +44,61 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [toc, setToc] = useState([]);
-  const [isMounted, setIsMounted] = useState(false);
-  const [isExiting, setIsExiting] = useState(false);
-  const [nextPost, setNextPost] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [contentVisible, setContentVisible] = useState(false);
 
   // 路由切换处理
   useEffect(() => {
-    const handleRouteChange = (url) => {
-      setIsExiting(true);
+    const handleStart = () => {
+      setIsLoading(true);
+      setContentVisible(false);
     };
 
-    const handleRouteComplete = () => {
-      setIsMounted(false);
-      setTimeout(() => {
-        setIsMounted(true);
-      }, 100);
+    const handleComplete = () => {
+      setIsLoading(false);
+      setTimeout(() => setContentVisible(true), 50);
     };
 
-    router.events.on('routeChangeStart', handleRouteChange);
-    router.events.on('routeChangeComplete', handleRouteComplete);
+    router.events.on('routeChangeStart', handleStart);
+    router.events.on('routeChangeComplete', handleComplete);
+    router.events.on('routeChangeError', handleComplete);
 
     return () => {
-      router.events.off('routeChangeStart', handleRouteChange);
-      router.events.off('routeChangeComplete', handleRouteComplete);
+      router.events.off('routeChangeStart', handleStart);
+      router.events.off('routeChangeComplete', handleComplete);
+      router.events.off('routeChangeError', handleComplete);
     };
   }, []);
 
-  // 处理推荐文章点击
-  const handleRecommendedClick = (e, slug) => {
-    e.preventDefault();
-    setNextPost(slug);
-    setIsExiting(true);
+  // 初始化处理
+  useEffect(() => {
+    const initializePage = async () => {
+      const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+      setIsDarkMode(savedDarkMode);
+      document.documentElement.classList.toggle('dark', savedDarkMode);
+
+      if (contentHtml) {
+        generateToc();
+        await loadDependencies();
+        setTimeout(() => {
+          setIsLoading(false);
+          setContentVisible(true);
+        }, 600);
+      }
+    };
+
+    initializePage();
+  }, [contentHtml]);
+
+  // 加载依赖
+  const loadDependencies = async () => {
+    await loadHighlightJS();
+    await initializeWaline();
   };
 
-  // 动画结束处理
-  useEffect(() => {
-    if (isExiting && nextPost) {
-      const timer = setTimeout(() => {
-        router.push(`/posts/${nextPost}`);
-      }, 500); // 等待动画完成
-
-      return () => clearTimeout(timer);
-    }
-  }, [isExiting, nextPost]);
-
-  // 初始加载处理
-  useEffect(() => {
-    setIsMounted(true);
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    setIsDarkMode(savedDarkMode);
-    document.documentElement.classList.toggle('dark', savedDarkMode);
-
-    if (contentHtml) {
-      generateToc();
-    }
-
-    const loadHighlightJS = async () => {
+  // 加载代码高亮
+  const loadHighlightJS = () => {
+    return new Promise((resolve) => {
       const script = document.createElement('script');
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
       script.onload = () => {
@@ -110,12 +109,37 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
           : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
         document.head.appendChild(theme);
         window.hljs.highlightAll();
+        resolve();
       };
       document.head.appendChild(script);
-    };
+    });
+  };
 
-    loadHighlightJS();
-  }, [contentHtml, isDarkMode]);
+  // 初始化评论系统
+  const initializeWaline = () => {
+    return new Promise((resolve) => {
+      if (typeof window !== 'undefined') {
+        const walineCSS = document.createElement('link');
+        walineCSS.rel = 'stylesheet';
+        walineCSS.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
+        document.head.appendChild(walineCSS);
+
+        const walineJS = document.createElement('script');
+        walineJS.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
+        walineJS.onload = () => {
+          window.Waline.init({
+            el: '#waline-comment-container',
+            serverURL: 'https://comment.mrzxr.top/',
+            dark: isDarkMode ? 'html.dark' : false,
+            path: router.asPath,
+            locale: { placeholder: '欢迎留言讨论...' },
+          });
+          resolve();
+        };
+        document.body.appendChild(walineJS);
+      }
+    });
+  };
 
   // 切换暗黑模式
   const toggleDarkMode = () => {
@@ -123,6 +147,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     setIsDarkMode(newDarkMode);
     localStorage.setItem('darkMode', newDarkMode);
     document.documentElement.classList.toggle('dark', newDarkMode);
+    loadHighlightJS(); // 重新加载高亮主题
   };
 
   // 生成目录
@@ -146,7 +171,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     setToc(tocItems);
   };
 
-  // 处理目录点击事件
+  // 处理目录点击
   const handleTocClick = (e, id) => {
     e.preventDefault();
     const targetElement = document.getElementById(id);
@@ -159,97 +184,70 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     }
   };
 
-  // 初始化 Waline 评论系统
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const walineCSS = document.createElement('link');
-      walineCSS.rel = 'stylesheet';
-      walineCSS.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
-      document.head.appendChild(walineCSS);
-
-      const walineJS = document.createElement('script');
-      walineJS.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
-      walineJS.onload = () => {
-        window.Waline.init({
-          el: '#waline-comment-container',
-          serverURL: 'https://comment.mrzxr.top/',
-          dark: isDarkMode ? 'html.dark' : false,
-          path: router.asPath,
-          locale: {
-            placeholder: '欢迎留言讨论...',
-          },
-        });
-      };
-      document.body.appendChild(walineJS);
-
-      return () => {
-        document.head.removeChild(walineCSS);
-        document.body.removeChild(walineJS);
-      };
-    }
-  }, [isDarkMode, router.asPath]);
+  // 加载动画组件
+  const LoadingOverlay = () => (
+    <div className="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex items-center justify-center transition-opacity duration-300">
+      <div className="animate-pulse flex flex-col items-center space-y-4">
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent"></div>
+        <p className="text-blue-500 dark:text-blue-400 text-lg font-medium">正在加载内容...</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div
-      className={`fixed inset-0 z-10 bg-white dark:bg-gray-900 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] 
-        ${isMounted ? 'translate-y-0' : 'translate-y-full'}
-        ${isExiting ? 'translate-y-full' : ''}`}
-      style={{
-        overflowY: 'scroll',
-        WebkitOverflowScrolling: 'touch',
-      }}
-    >
+    <div className="min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900">
       <Head>
         <title>{frontmatter.title} - Typace</title>
       </Head>
 
-      {/* 导航栏 */}
-      <nav className="fixed top-0 left-0 w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
-        <div className="container mx-auto px-8 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/" legacyBehavior>
-              <a className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
-                Typace
-              </a>
-            </Link>
-            <ul className="flex space-x-6">
-              <li>
-                <Link href="/" legacyBehavior>
-                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
-                    首页
-                  </a>
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" legacyBehavior>
-                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
-                    关于
-                  </a>
-                </Link>
-              </li>
-              <li>
-                <Link href="/archive" legacyBehavior>
-                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
-                    归档
-                  </a>
-                </Link>
-              </li>
-              <li>
-                <button
-                  onClick={toggleDarkMode}
-                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
-                >
-                  {isDarkMode ? '🌙' : '☀️'}
-                </button>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </nav>
+      {isLoading && <LoadingOverlay />}
 
-      {/* 内容容器 */}
-      <div className="pt-24 pb-16">
-        {/* 文章内容区块 */}
+      <div className={`${contentVisible ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
+        {/* 导航栏 */}
+        <nav className="fixed top-0 left-0 w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
+          <div className="container mx-auto px-8 py-4">
+            <div className="flex justify-between items-center">
+              <Link href="/" legacyBehavior>
+                <a className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
+                  Typace
+                </a>
+              </Link>
+              <ul className="flex space-x-6">
+                <li>
+                  <Link href="/" legacyBehavior>
+                    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                      首页
+                    </a>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/about" legacyBehavior>
+                    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                      关于
+                    </a>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/archive" legacyBehavior>
+                    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                      归档
+                    </a>
+                  </Link>
+                </li>
+                <li>
+                  <button
+                    onClick={toggleDarkMode}
+                    className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
+                  >
+                    {isDarkMode ? '🌙' : '☀️'}
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </nav>
+
+        {/* 主要内容 */}
         <main className="mt-24 flex">
           <div className="flex-1">
             {frontmatter.cover && (
@@ -276,12 +274,10 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
             </article>
           </div>
 
-          {/* 右侧目录 */}
+          {/* 侧边目录 */}
           <aside className="w-64 hidden lg:block pl-8 sticky top-24 self-start">
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
-                目录
-              </h2>
+              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
               <ul className="space-y-2">
                 {toc.map((item) => (
                   <li key={item.id}>
@@ -303,23 +299,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
           </aside>
         </main>
 
-        {/* 推荐文章区块 */}
+        {/* 推荐文章 */}
         {recommendedPosts.length > 0 && (
           <section className="mt-12">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">
-              推荐文章
-            </h2>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">推荐文章</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {recommendedPosts.map((post) => (
-                <Link
-                  key={post.slug}
-                  href={`/posts/${post.slug}`}
-                  legacyBehavior
-                >
-                  <a
-                    onClick={(e) => handleRecommendedClick(e, post.slug)}
-                    className="block bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition transform hover:scale-105"
-                  >
+                <Link key={post.slug} href={`/posts/${post.slug}`} legacyBehavior>
+                  <a className="block bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition transform hover:scale-105">
                     {post.cover && (
                       <div className="w-full h-48">
                         <img
@@ -333,9 +320,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
                       <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
                         {post.title}
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                        {post.date}
-                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{post.date}</p>
                     </div>
                   </a>
                 </Link>
@@ -344,7 +329,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
           </section>
         )}
 
-        {/* Waline 评论系统 */}
+        {/* 评论系统 */}
         <section className="mt-12 max-w-4xl mx-auto">
           <div id="waline-comment-container" className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
             <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">评论</h3>
@@ -368,21 +353,10 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
             >
               Typace
             </a>
-            强势驱动
+            强力驱动
           </p>
         </footer>
       </div>
-
-      {/* 返回按钮 */}
-      <button
-        onClick={() => setIsExiting(true)}
-        className="fixed bottom-8 right-8 w-12 h-12 rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-lg 
-          flex items-center justify-center transition-all duration-300 hover:scale-110 z-30"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-      </button>
     </div>
   );
 }
