@@ -44,33 +44,56 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [toc, setToc] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [transitionState, setTransitionState] = useState('enter');
 
-  // 路由切换处理
+  const addDynamicStyles = () => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .page-container {
+        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s ease;
+      }
+      .page-enter {
+        transform: translateY(100px);
+        opacity: 0;
+      }
+      .page-enter-active {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      .page-exit {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      .page-exit-active {
+        transform: translateY(100px);
+        opacity: 0;
+      }
+    `;
+    document.head.appendChild(style);
+  };
+
   useEffect(() => {
-    const handleStart = () => {
-      setIsLoading(true);
+    addDynamicStyles();
+    
+    const handleRouteChangeStart = () => {
       setTransitionState('exit');
     };
 
-    const handleComplete = () => {
-      setIsLoading(false);
+    const handleRouteChangeComplete = () => {
       setTransitionState('enter');
     };
 
-    router.events.on('routeChangeStart', handleStart);
-    router.events.on('routeChangeComplete', handleComplete);
-    router.events.on('routeChangeError', handleComplete);
+    router.events.on('routeChangeStart', handleRouteChangeStart);
+    router.events.on('routeChangeComplete', handleRouteChangeComplete);
+    router.events.on('routeChangeError', handleRouteChangeComplete);
 
     return () => {
-      router.events.off('routeChangeStart', handleStart);
-      router.events.off('routeChangeComplete', handleComplete);
-      router.events.off('routeChangeError', handleComplete);
+      router.events.off('routeChangeStart', handleRouteChangeStart);
+      router.events.off('routeChangeComplete', handleRouteChangeComplete);
+      router.events.off('routeChangeError', handleRouteChangeComplete);
     };
   }, []);
 
-  // 初始化处理
   useEffect(() => {
     const initializePage = async () => {
       const savedDarkMode = localStorage.getItem('darkMode') === 'true';
@@ -80,20 +103,17 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
       if (contentHtml) {
         generateToc();
         await loadDependencies();
-        setIsLoading(false);
       }
     };
 
     initializePage();
   }, [contentHtml]);
 
-  // 加载依赖
   const loadDependencies = async () => {
     await loadHighlightJS();
     await initializeWaline();
   };
 
-  // 加载代码高亮
   const loadHighlightJS = () => {
     return new Promise((resolve) => {
       const script = document.createElement('script');
@@ -112,7 +132,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     });
   };
 
-  // 初始化评论系统
   const initializeWaline = () => {
     return new Promise((resolve) => {
       if (typeof window !== 'undefined') {
@@ -138,16 +157,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     });
   };
 
-  // 切换暗黑模式
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
     setIsDarkMode(newDarkMode);
     localStorage.setItem('darkMode', newDarkMode);
     document.documentElement.classList.toggle('dark', newDarkMode);
-    loadHighlightJS(); // 重新加载高亮主题
+    loadHighlightJS();
   };
 
-  // 生成目录
   const generateToc = () => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(contentHtml, 'text/html');
@@ -168,7 +185,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     setToc(tocItems);
   };
 
-  // 处理目录点击
   const handleTocClick = (e, id) => {
     e.preventDefault();
     const targetElement = document.getElementById(id);
@@ -182,172 +198,160 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   };
 
   return (
-    <div className="min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900">
+    <div className={`min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 page-container ${
+      transitionState === 'enter' ? 'page-enter-active' : 'page-exit-active'
+    }`}>
       <Head>
         <title>{frontmatter.title} - Typace</title>
       </Head>
 
-      <div
-        className={`transition-transform duration-500 ease-in-out ${
-          transitionState === 'enter'
-            ? 'translate-y-0 opacity-100'
-            : 'translate-y-20 opacity-0'
-        }`}
-      >
-        {/* 导航栏 */}
-        <nav className="fixed top-0 left-0 w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
-          <div className="container mx-auto px-8 py-4">
-            <div className="flex justify-between items-center">
-              <Link href="/" legacyBehavior>
-                <a className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
-                  Typace
-                </a>
-              </Link>
-              <ul className="flex space-x-6">
-                <li>
-                  <Link href="/" legacyBehavior>
-                    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
-                      首页
-                    </a>
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about" legacyBehavior>
-                    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
-                      关于
-                    </a>
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/archive" legacyBehavior>
-                    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
-                      归档
-                    </a>
-                  </Link>
-                </li>
-                <li>
-                  <button
-                    onClick={toggleDarkMode}
-                    className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
-                  >
-                    {isDarkMode ? '🌙' : '☀️'}
-                  </button>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </nav>
-
-        {/* 主要内容 */}
-        <main className="mt-24 flex">
-          <div className="flex-1">
-            {frontmatter.cover && (
-              <div className="w-full h-48 md:h-64 mb-8">
-                <img
-                  src={frontmatter.cover}
-                  alt={frontmatter.title}
-                  className="w-full h-full object-cover rounded-lg"
-                />
-              </div>
-            )}
-
-            <article className="prose max-w-4xl mx-auto dark:prose-invert">
-              <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
-                {frontmatter.title}
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-8">
-                {frontmatter.date}
-              </p>
-              <div
-                className="text-gray-700 dark:text-gray-300"
-                dangerouslySetInnerHTML={{ __html: contentHtml }}
-              />
-            </article>
-          </div>
-
-          {/* 侧边目录 */}
-          <aside className="w-64 hidden lg:block pl-8 sticky top-24 self-start">
-            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
-              <ul className="space-y-2">
-                {toc.map((item) => (
-                  <li key={item.id}>
-                    <a
-                      href={`#${item.id}`}
-                      onClick={(e) => handleTocClick(e, item.id)}
-                      className={`block transition-colors duration-200 ${
-                        item.active
-                          ? 'text-blue-600 dark:text-blue-400 font-semibold scale-105'
-                          : 'text-gray-600 dark:text-gray-400 hover:text-blue-500'
-                      } ${item.level === 'h2' ? 'pl-4 text-sm' : 'pl-2 text-base'}`}
-                    >
-                      {item.text}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </aside>
-        </main>
-
-        {/* 推荐文章 */}
-        {recommendedPosts.length > 0 && (
-          <section className="mt-12">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">推荐文章</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {recommendedPosts.map((post) => (
-                <Link key={post.slug} href={`/posts/${post.slug}`} legacyBehavior>
-                  <a className="block bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition transform hover:scale-105">
-                    {post.cover && (
-                      <div className="w-full h-48">
-                        <img
-                          src={post.cover}
-                          alt={post.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                    <div className="p-6">
-                      <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-                        {post.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{post.date}</p>
-                    </div>
+      <nav className="fixed top-0 left-0 w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
+        <div className="container mx-auto px-8 py-4">
+          <div className="flex justify-between items-center">
+            <Link href="/" legacyBehavior>
+              <a className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
+                Typace
+              </a>
+            </Link>
+            <ul className="flex space-x-6">
+              <li>
+                <Link href="/" legacyBehavior>
+                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                    首页
                   </a>
                 </Link>
-              ))}
-            </div>
-          </section>
-        )}
+              </li>
+              <li>
+                <Link href="/about" legacyBehavior>
+                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                    关于
+                  </a>
+                </Link>
+              </li>
+              <li>
+                <Link href="/archive" legacyBehavior>
+                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                    归档
+                  </a>
+                </Link>
+              </li>
+              <li>
+                <button
+                  onClick={toggleDarkMode}
+                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
+                >
+                  {isDarkMode ? '🌙' : '☀️'}
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
 
-        {/* 评论系统 */}
-        <section className="mt-12 max-w-4xl mx-auto">
-          <div id="waline-comment-container" className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-            <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">评论</h3>
+      <main className="mt-24 flex">
+        <div className="flex-1">
+          {frontmatter.cover && (
+            <div className="w-full h-48 md:h-64 mb-8">
+              <img
+                src={frontmatter.cover}
+                alt={frontmatter.title}
+                className="w-full h-full object-cover rounded-lg"
+              />
+            </div>
+          )}
+
+          <article className="prose max-w-4xl mx-auto dark:prose-invert">
+            <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
+              {frontmatter.title}
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-8">
+              {frontmatter.date}
+            </p>
+            <div
+              className="text-gray-700 dark:text-gray-300"
+              dangerouslySetInnerHTML={{ __html: contentHtml }}
+            />
+          </article>
+        </div>
+
+        <aside className="w-64 hidden lg:block pl-8 sticky top-24 self-start">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
+            <ul className="space-y-2">
+              {toc.map((item) => (
+                <li key={item.id}>
+                  <a
+                    href={`#${item.id}`}
+                    onClick={(e) => handleTocClick(e, item.id)}
+                    className={`block transition-colors duration-200 ${
+                      item.active
+                        ? 'text-blue-600 dark:text-blue-400 font-semibold scale-105'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-blue-500'
+                    } ${item.level === 'h2' ? 'pl-4 text-sm' : 'pl-2 text-base'}`}
+                  >
+                    {item.text}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
+      </main>
+
+      {recommendedPosts.length > 0 && (
+        <section className="mt-12">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">推荐文章</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {recommendedPosts.map((post) => (
+              <Link key={post.slug} href={`/posts/${post.slug}`} legacyBehavior>
+                <a className="block bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition transform hover:scale-105">
+                  {post.cover && (
+                    <div className="w-full h-48">
+                      <img
+                        src={post.cover}
+                        alt={post.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+                      {post.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{post.date}</p>
+                  </div>
+                </a>
+              </Link>
+            ))}
           </div>
         </section>
+      )}
 
-        {/* 页脚 */}
-        <footer className="text-center mt-12">
-          <a href="/api/sitemap" className="inline-block">
-            <img
-              src="https://cdn.us.mrche.top/sitemap.svg"
-              alt="Sitemap"
-              className="block mx-auto w-8 h-8 dark:invert"
-            />
+      <section className="mt-12 max-w-4xl mx-auto">
+        <div id="waline-comment-container" className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">评论</h3>
+        </div>
+      </section>
+
+      <footer className="text-center mt-12">
+        <a href="/api/sitemap" className="inline-block">
+          <img
+            src="https://cdn.us.mrche.top/sitemap.svg"
+            alt="Sitemap"
+            className="block mx-auto w-8 h-8 dark:invert"
+          />
+        </a>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">
+          由MRCHE&terryzhang创建的
+          <a
+            href="https://bgithub.xyz/terryzhangxr/typace-i"
+            className="text-blue-600 hover:underline dark:text-blue-400"
+          >
+            Typace
           </a>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">
-            由MRCHE&terryzhang创建的
-            <a
-              href="https://bgithub.xyz/terryzhangxr/typace-i"
-              className="text-blue-600 hover:underline dark:text-blue-400"
-            >
-              Typace
-            </a>
-            强力驱动
-          </p>
-        </footer>
-      </div>
+          强力驱动
+        </p>
+      </footer>
     </div>
   );
 }
