@@ -1,12 +1,22 @@
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../lib/posts';
-import Head from 'next/head'; // 引入 Head 组件
+import Head from 'next/head';
 import Link from 'next/link';
 
-// 新增的样式定义
+// 动态样式添加函数
 const addDynamicStyles = () => {
   const style = document.createElement('style');
   style.textContent = `
+    .page-transition {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .page-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
     .bg-transition {
       position: fixed;
       top: 0;
@@ -15,7 +25,7 @@ const addDynamicStyles = () => {
       height: 100%;
       opacity: 0;
       transition: opacity 1.5s ease-in-out;
-      z-index: -1; /* 确保背景在页面内容下方 */
+      z-index: -1;
     }
     .bg-visible {
       opacity: 1;
@@ -32,13 +42,12 @@ const addDynamicStyles = () => {
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
-    /* 打字机效果 */
     .typewriter {
       display: inline-block;
-      white-space: pre-wrap; /* 允许在空格处换行 */
+      white-space: pre-wrap;
       margin: 0 auto;
       letter-spacing: 0.15em;
-      border-right: 0.15em solid #4a5568; /* 光标 */
+      border-right: 0.15em solid #4a5568;
       animation: blink-caret 0.75s step-end infinite;
     }
     @keyframes blink-caret {
@@ -50,96 +59,106 @@ const addDynamicStyles = () => {
         border-color: #4a5568;
       }
     }
-
-    /* 增加大标题与一言之间的间距 */
     header h1 {
-      margin-bottom: 2rem; /* 调整标题与一言的间距 */
+      margin-bottom: 2rem;
     }
-
-    /* 增加一言与文章列表之间的间距 */
     header {
-      margin-bottom: 4rem; /* 调整一言与文章列表的间距 */
+      margin-bottom: 4rem;
     }
-
-    /* 一言自动换行 */
     .hitokoto-container {
-      max-width: 80%; /* 限制一言的最大宽度 */
-      margin: 0 auto; /* 居中显示 */
-      overflow-wrap: break-word; /* 自动换行 */
-      word-wrap: break-word; /* 兼容性 */
-      white-space: normal; /* 允许换行 */
+      max-width: 80%;
+      margin: 0 auto;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+      white-space: normal;
     }
   `;
   document.head.appendChild(style);
 };
 
 export default function Home({ allPostsData }) {
+  const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [hitokoto, setHitokoto] = useState(''); // 存储一言
-  const [displayText, setDisplayText] = useState(''); // 用于打字机效果的动态文本
+  const [hitokoto, setHitokoto] = useState('');
+  const [displayText, setDisplayText] = useState('');
+  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // 初始化处理
   useEffect(() => {
     addDynamicStyles();
 
-    // 检查本地存储或系统偏好设置
+    // 仅从localStorage读取设置
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setIsDarkMode(savedDarkMode || prefersDarkMode);
-
-    // 动态切换暗黑模式
-    if (savedDarkMode || prefersDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    setIsDarkMode(savedDarkMode);
+    document.documentElement.classList.toggle('dark', savedDarkMode);
 
     // 获取一言
     fetch('https://v1.hitokoto.cn')
       .then((response) => response.json())
       .then((data) => {
-        setHitokoto(data.hitokoto); // 设置一言
-        typeWriterEffect(data.hitokoto); // 启动打字机效果
+        setHitokoto(data.hitokoto);
+        typeWriterEffect(data.hitokoto);
       })
       .catch((error) => {
         console.error('获取一言失败:', error);
         const defaultHitokoto = '生活不止眼前的苟且，还有诗和远方的田野。';
         setHitokoto(defaultHitokoto);
-        typeWriterEffect(defaultHitokoto); // 启动打字机效果
+        typeWriterEffect(defaultHitokoto);
       });
+
+    // 路由切换处理
+    const handleRouteChange = () => {
+      setIsMounted(false);
+    };
+
+    router.events.on('routeChangeStart', handleRouteChange);
+
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChange);
+    };
   }, []);
+
+  // 页面切换动画逻辑
+  useEffect(() => {
+    if (isMounted) {
+      const timer = setTimeout(() => {
+        document.querySelectorAll('.page-transition').forEach(el => {
+          el.classList.add('page-visible');
+        });
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isMounted]);
 
   // 打字机效果
   const typeWriterEffect = (text) => {
     let i = 0;
-    const speed = 100; // 打字速度（毫秒）
+    const speed = 100;
     const container = document.querySelector('.hitokoto-container');
     const typewriterElement = document.querySelector('.typewriter');
 
     const timer = setInterval(() => {
       if (i < text.length) {
-        // 更新显示的文本
         setDisplayText(text.slice(0, i + 1));
 
-        // 检测文本宽度是否超过容器宽度
         if (typewriterElement.scrollWidth > container.clientWidth) {
-          // 如果超过宽度，则换行
           typewriterElement.style.whiteSpace = 'pre-wrap';
         }
 
         i++;
       } else {
         clearInterval(timer);
-        // 打字完成后移除光标闪烁动画
         if (typewriterElement) {
-          typewriterElement.style.animation = 'none'; // 停止动画
-          typewriterElement.style.borderRight = 'none'; // 移除光标
+          typewriterElement.style.animation = 'none';
+          typewriterElement.style.borderRight = 'none';
         }
       }
     }, speed);
   };
 
+  // 背景渐变效果
   useEffect(() => {
-    // 亮色模式下的渐变颜色
     const lightColors = [
       'linear-gradient(45deg, #ee7752, #e73c7e)',
       'linear-gradient(45deg, #e73c7e, #23a6d5)',
@@ -147,7 +166,6 @@ export default function Home({ allPostsData }) {
       'linear-gradient(45deg, #23d5ab, #ee7752)',
     ];
 
-    // 暗黑模式下的渐变颜色
     const darkColors = [
       'linear-gradient(45deg, #1e3a8a, #9f7aea)',
       'linear-gradient(45deg, #9f7aea, #3b82f6)',
@@ -155,10 +173,8 @@ export default function Home({ allPostsData }) {
       'linear-gradient(45deg, #60a5fa, #1e3a8a)',
     ];
 
-    // 获取当前模式下的渐变颜色
     const colors = isDarkMode ? darkColors : lightColors;
 
-    // 创建两个背景层
     const bg1 = document.createElement('div');
     const bg2 = document.createElement('div');
     bg1.className = bg2.className = 'bg-transition';
@@ -167,7 +183,6 @@ export default function Home({ allPostsData }) {
     let currentIndex = 0;
     let activeBg = bg1;
 
-    // 初始化第一个背景
     activeBg.style.backgroundImage = colors[currentIndex];
     activeBg.classList.add('bg-visible');
 
@@ -175,10 +190,8 @@ export default function Home({ allPostsData }) {
       const nextIndex = (currentIndex + 1) % colors.length;
       const nextBg = activeBg === bg1 ? bg2 : bg1;
 
-      // 预加载下一个背景
       nextBg.style.backgroundImage = colors[nextIndex];
-      
-      // 触发过渡
+
       setTimeout(() => {
         activeBg.classList.remove('bg-visible');
         nextBg.classList.add('bg-visible');
@@ -187,14 +200,14 @@ export default function Home({ allPostsData }) {
       }, 100);
     };
 
-    const intervalId = setInterval(changeBackground, 2500); // 2.5 秒切换一次背景
+    const intervalId = setInterval(changeBackground, 2500);
 
     return () => {
       clearInterval(intervalId);
       bg1.remove();
       bg2.remove();
     };
-  }, [isDarkMode]); // 依赖 isDarkMode，当模式切换时重新初始化背景
+  }, [isDarkMode]);
 
   // 切换暗黑模式
   const toggleDarkMode = () => {
@@ -204,49 +217,44 @@ export default function Home({ allPostsData }) {
     document.documentElement.classList.toggle('dark', newDarkMode);
   };
 
+  if (!isMounted) return null;
+
   return (
     <div className="min-h-screen p-8 relative z-10">
-      {/* 动态设置标签页 title */}
       <Head>
         <title>首页 - Typace</title>
       </Head>
 
-      {/* 新增的导航栏 */}
-      <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-20">
+      <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-20 page-transition">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
-            <a 
-              href="/" 
-              className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700"
-            >
-              Typace
-            </a>
+            <Link href="/" legacyBehavior>
+              <a className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
+                Typace
+              </a>
+            </Link>
             <ul className="flex space-x-6">
               <li>
-                <a 
-                  href="/" 
-                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
-                >
-                  首页
-                </a>
+                <Link href="/" legacyBehavior>
+                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                    首页
+                  </a>
+                </Link>
               </li>
               <li>
-                <a 
-                  href="/about" 
-                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
-                >
-                  关于
-                </a>
+                <Link href="/about" legacyBehavior>
+                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                    关于
+                  </a>
+                </Link>
               </li>
               <li>
-                <a 
-                  href="/archive" 
-                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
-                >
-                  归档
-                </a>
+                <Link href="/archive" legacyBehavior>
+                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                    归档
+                  </a>
+                </Link>
               </li>
-              {/* 暗黑模式切换按钮 */}
               <li>
                 <button
                   onClick={toggleDarkMode}
@@ -260,12 +268,10 @@ export default function Home({ allPostsData }) {
         </div>
       </nav>
 
-      {/* 调整原有header的上边距 */}
-      <header className="text-center mb-8 mt-24">
+      <header className="text-center mb-8 mt-24 page-transition">
         <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
           Typace
         </h1>
-        {/* 一言 */}
         <div className="hitokoto-container">
           <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 italic">
             <span className="typewriter">{displayText}</span>
@@ -273,10 +279,8 @@ export default function Home({ allPostsData }) {
         </div>
       </header>
 
-      {/* 页面主体内容 */}
       <div className="flex">
-        {/* 左侧最新文章栏 */}
-        <aside className="w-1/4 pr-8 hidden lg:block">
+        <aside className="w-1/4 pr-8 hidden lg:block page-transition">
           <div className="sticky top-24 p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
               最新文章
@@ -284,28 +288,25 @@ export default function Home({ allPostsData }) {
             <ul className="space-y-4">
               {allPostsData.slice(0, 5).map((post) => (
                 <li key={post.slug}>
-                  <a
-                    href={`/posts/${post.slug}`}
-                    className="block text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                  >
-                    <h3 className="text-lg font-semibold">{post.title}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                      {post.date}
-                    </p>
-                  </a>
+                  <Link href={`/posts/${post.slug}`} legacyBehavior>
+                    <a className="block text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                      <h3 className="text-lg font-semibold">{post.title}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                        {post.date}
+                      </p>
+                    </a>
+                  </Link>
                 </li>
               ))}
             </ul>
           </div>
         </aside>
 
-        {/* 右侧文章列表 */}
         <main className="flex-1">
           <ul className="space-y-6">
             {allPostsData.map(({ slug, title, date, cover, excerpt }) => (
-              <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-105">
+              <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-105 page-transition">
                 <div className="flex flex-col md:flex-row gap-6">
-                  {/* 封面图片 */}
                   {cover && (
                     <div className="md:w-1/3 cover-image-container">
                       <img 
@@ -316,14 +317,13 @@ export default function Home({ allPostsData }) {
                       />
                     </div>
                   )}
-                  
-                  {/* 文字内容 */}
                   <div className="flex-1">
-                    <a href={`/posts/${slug}`} className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
-                      {title}
-                    </a>
+                    <Link href={`/posts/${slug}`} legacyBehavior>
+                      <a className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                        {title}
+                      </a>
+                    </Link>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{date}</p>
-                    {/* 显示摘要 */}
                     {excerpt && (
                       <p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">
                         {excerpt}
@@ -337,8 +337,7 @@ export default function Home({ allPostsData }) {
         </main>
       </div>
 
-      {/* 保持原有footer内容不变 */}
-      <footer className="text-center mt-12">
+      <footer className="text-center mt-12 page-transition">
         <a href="/api/sitemap" className="inline-block">
           <img
             src="https://cdn.us.mrche.top/sitemap.svg"
@@ -354,7 +353,7 @@ export default function Home({ allPostsData }) {
           >
             Typace
           </a>
-          强势驱动
+          强力驱动
         </p>
       </footer>
     </div>
@@ -367,7 +366,6 @@ export async function getStaticProps() {
     props: {
       allPostsData: allPostsData.map(post => ({
         ...post,
-        // 确保每篇文章都有content字段
         content: post.content || ""
       }))
     },
