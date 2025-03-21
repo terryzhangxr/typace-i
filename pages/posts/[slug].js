@@ -189,7 +189,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     <div className="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex items-center justify-center transition-opacity duration-300">
       <div className="animate-pulse flex flex-col items-center space-y-4">
         <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent"></div>
-        <p className="text-blue-500 dark:text-blue-400 text-lg font-medium">正在加载内容...</p>
+        <p className="text-blue-500 dark:text-blue-400 text-lg font-medium">welcome to our world...</p>
       </div>
     </div>
   );
