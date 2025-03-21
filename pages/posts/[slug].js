@@ -40,54 +40,23 @@ export async function getStaticProps({ params }) {
   };
 }
 
-// 添加全局样式
-const addDynamicStyles = () => {
-  const style = document.createElement('style');
-  style.textContent = `
-    /* 新增页面过渡动画 */
-    .page-slide-enter {
-      opacity: 0;
-      transform: translateY(100px);
-    }
-    .page-slide-enter-active {
-      opacity: 1;
-      transform: translateY(0);
-      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .page-slide-exit {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    .page-slide-exit-active {
-      opacity: 0;
-      transform: translateY(100px);
-      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* 原有其他样式保持不动... */
-  `;
-  document.head.appendChild(style);
-};
-
 export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [toc, setToc] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [transitionState, setTransitionState] = useState('enter');
+  const [contentVisible, setContentVisible] = useState(false);
 
   // 路由切换处理
   useEffect(() => {
-    addDynamicStyles();
-
     const handleStart = () => {
       setIsLoading(true);
-      setTransitionState('exit');
+      setContentVisible(false);
     };
 
     const handleComplete = () => {
       setIsLoading(false);
-      setTransitionState('enter');
+      setTimeout(() => setContentVisible(true), 50);
     };
 
     router.events.on('routeChangeStart', handleStart);
@@ -111,7 +80,10 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
       if (contentHtml) {
         generateToc();
         await loadDependencies();
-        setIsLoading(false);
+        setTimeout(() => {
+          setIsLoading(false);
+          setContentVisible(true);
+        }, 600);
       }
     };
 
@@ -230,11 +202,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
 
       {isLoading && <LoadingOverlay />}
 
-      <div
-        className={`${
-          transitionState === 'enter' ? 'page-slide-enter-active' : 'page-slide-exit-active'
-        }`}
-      >
+      <div className={`${contentVisible ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
         {/* 导航栏 */}
         <nav className="fixed top-0 left-0 w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
           <div className="container mx-auto px-8 py-4">
@@ -380,7 +348,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
           <p className="mt-4 text-gray-600 dark:text-gray-400">
             由MRCHE&terryzhang创建的
             <a
-              href="https://github.com/terryzhangxr/typace-i"
+              href="https://bgithub.xyz/terryzhangxr/typace-i"
               className="text-blue-600 hover:underline dark:text-blue-400"
             >
               Typace
