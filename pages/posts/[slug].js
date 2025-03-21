@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../../lib/posts';
 import fs from 'fs';
 import path from 'path';
@@ -40,8 +41,27 @@ export async function getStaticProps({ params }) {
 }
 
 export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
+  const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [toc, setToc] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [routeChanging, setRouteChanging] = useState(false);
+
+  // 路由切换事件监听
+  useEffect(() => {
+    const handleRouteStart = () => setRouteChanging(true);
+    const handleRouteComplete = () => setRouteChanging(false);
+
+    router.events.on('routeChangeStart', handleRouteStart);
+    router.events.on('routeChangeComplete', handleRouteComplete);
+    router.events.on('routeChangeError', handleRouteComplete);
+
+    return () => {
+      router.events.off('routeChangeStart', handleRouteStart);
+      router.events.off('routeChangeComplete', handleRouteComplete);
+      router.events.off('routeChangeError', handleRouteComplete);
+    };
+  }, [router]);
 
   // 切换暗黑模式
   const toggleDarkMode = () => {
@@ -88,21 +108,19 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   // 初始化 Waline 评论系统
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // 动态加载 Waline CSS
       const walineCSS = document.createElement('link');
       walineCSS.rel = 'stylesheet';
       walineCSS.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
       document.head.appendChild(walineCSS);
 
-      // 动态加载 Waline JS
       const walineJS = document.createElement('script');
       walineJS.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
       walineJS.onload = () => {
         window.Waline.init({
           el: '#waline-comment-container',
-          serverURL: 'https://comment.mrzxr.top/', // 替换为你的服务端地址
+          serverURL: 'https://comment.mrzxr.top/',
           dark: isDarkMode ? 'html.dark' : false,
-          path: location.pathname,
+          path: router.asPath,
           locale: {
             placeholder: '欢迎留言讨论...',
           },
@@ -115,36 +133,33 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         document.body.removeChild(walineJS);
       };
     }
-  }, [isDarkMode]);
+  }, [isDarkMode, router.asPath]);
 
+  // 初始化效果
   useEffect(() => {
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
     setIsDarkMode(savedDarkMode);
+    document.documentElement.classList.toggle('dark', savedDarkMode);
 
-    if (savedDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    // 模拟加载延迟
+    const timer = setTimeout(() => {
+      if (contentHtml) {
+        generateToc();
+        setIsLoading(false);
+      }
+    }, 800);
 
-    if (contentHtml) {
-      generateToc();
-    }
-
+    // 加载 highlight.js
     const loadHighlightJS = async () => {
       const script = document.createElement('script');
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
       script.onload = () => {
-        const lightTheme = document.createElement('link');
-        lightTheme.rel = 'stylesheet';
-        lightTheme.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
-        document.head.appendChild(lightTheme);
-
-        const darkTheme = document.createElement('link');
-        darkTheme.rel = 'stylesheet';
-        darkTheme.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css';
-        document.head.appendChild(darkTheme);
-
+        const theme = document.createElement('link');
+        theme.rel = 'stylesheet';
+        theme.href = isDarkMode 
+          ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
+          : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
+        document.head.appendChild(theme);
         window.hljs.highlightAll();
       };
       document.head.appendChild(script);
@@ -152,6 +167,11 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
 
     loadHighlightJS();
 
+    return () => clearTimeout(timer);
+  }, [contentHtml, isDarkMode]);
+
+  // 滚动监听
+  useEffect(() => {
     const handleScroll = () => {
       const headings = document.querySelectorAll('h1, h2');
       let currentActiveId = null;
@@ -177,38 +197,65 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     };
   }, [contentHtml]);
 
+  // 加载动画组件
+  const LoadingOverlay = () => (
+    <div className="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex items-center justify-center transition-opacity duration-300">
+      <div className="relative">
+        <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-500 border-t-transparent"></div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <svg
+            className="animate-pulse w-10 h-10 text-blue-600 dark:text-blue-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 transition-colors duration-300">
       <Head>
         <title>{frontmatter.title} - Typace</title>
       </Head>
 
+      {/* 加载动画 */}
+      {(isLoading || routeChanging) && <LoadingOverlay />}
+
       {/* 导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
-            <Link href="/">
+            <Link href="/" legacyBehavior>
               <a className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
                 Typace
               </a>
             </Link>
             <ul className="flex space-x-6">
               <li>
-                <Link href="/">
+                <Link href="/" legacyBehavior>
                   <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
                     首页
                   </a>
                 </Link>
               </li>
               <li>
-                <Link href="/about">
+                <Link href="/about" legacyBehavior>
                   <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
                     关于
                   </a>
                 </Link>
               </li>
               <li>
-                <Link href="/archive">
+                <Link href="/archive" legacyBehavior>
                   <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
                     归档
                   </a>
@@ -289,11 +336,12 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {recommendedPosts.map((post) => (
-              <Link key={post.slug} href={`/posts/${post.slug}`}>
-                <a
-                  onClick={() => window.location.href = `/posts/${post.slug}`}
-                  className="block bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition transform hover:scale-105"
-                >
+              <Link 
+                key={post.slug} 
+                href={`/posts/${post.slug}`}
+                legacyBehavior
+              >
+                <a className="block bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition transform hover:scale-105">
                   {post.cover && (
                     <div className="w-full h-48">
                       <img
@@ -337,7 +385,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         <p className="mt-4 text-gray-600 dark:text-gray-400">
           由MRCHE&terryzhang创建的
           <a
-            href="https://bgithub.xyz/terryzhangxr/typace-i"
+            href="https://github.com/terryzhangxr/typace-i"
             className="text-blue-600 hover:underline dark:text-blue-400"
           >
             Typace
