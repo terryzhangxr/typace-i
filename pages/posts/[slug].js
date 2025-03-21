@@ -189,7 +189,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     <div className="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex items-center justify-center transition-opacity duration-300">
       <div className="animate-pulse flex flex-col items-center space-y-4">
         <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent"></div>
-        <p className="text-blue-500 dark:text-blue-400 text-lg font-medium">Welcome to our world...</p>
+        <p className="text-blue-500 dark:text-blue-400 text-lg font-medium">正在加载内容...</p>
       </div>
     </div>
   );
@@ -348,7 +348,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
           <p className="mt-4 text-gray-600 dark:text-gray-400">
             由MRCHE&terryzhang创建的
             <a
-              href="https://bgithub.xyz/terryzhangxr/typace-i"
+              href="https://github.com/terryzhangxr/typace-i"
               className="text-blue-600 hover:underline dark:text-blue-400"
             >
               Typace
