@@ -44,7 +44,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [toc, setToc] = useState([]);
-  const [transitionState, setTransitionState] = useState('enter');
+  const [isMounted, setIsMounted] = useState(false); // 新增：用于控制动画状态
 
   // 添加动态样式
   useEffect(() => {
@@ -55,7 +55,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         transform: translateY(100px);
         transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
       }
-      .page-active {
+      .page-container.mounted {
         opacity: 1;
         transform: translateY(0);
       }
@@ -63,18 +63,21 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     document.head.appendChild(style);
 
     // 初始加载立即触发动画
-    setTimeout(() => setTransitionState('active'), 50);
+    setIsMounted(true);
+
+    return () => {
+      document.head.removeChild(style); // 清理样式
+    };
   }, []);
 
   // 路由事件处理
   useEffect(() => {
     const handleRouteChangeStart = () => {
-      setTransitionState('exit');
+      setIsMounted(false); // 路由切换时重置动画状态
     };
 
     const handleRouteChangeComplete = () => {
-      setTransitionState('active');
-      setTimeout(() => setTransitionState('active'), 50);
+      setIsMounted(true); // 路由切换完成后触发动画
     };
 
     router.events.on('routeChangeStart', handleRouteChangeStart);
@@ -198,7 +201,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
 
   return (
     <div className={`min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 page-container ${
-      transitionState === 'active' ? 'page-active' : ''
+      isMounted ? 'mounted' : ''
     }`}>
       <Head>
         <title>{frontmatter.title} - Typace</title>
