@@ -146,6 +146,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
             el: '#waline-comment-container',
             serverURL: 'https://comment.mrzxr.top/',
             dark: isDarkMode ? 'html.dark' : true,
+            light: isLightMode ? 'html.light' : true,
             path: router.asPath,
             locale: { placeholder: '欢迎留言讨论...' },
           });
