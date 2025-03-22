@@ -1,7 +1,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@tailwind base;
 
 @layer base {
   :root {
@@ -154,38 +153,7 @@
   .prose tr:hover {
     background-color: var(--color-table-row-hover-bg);
   }
-  /* 平滑滚动 */
-html {
-  scroll-behavior: smooth;
-}
 
-/* 动画优化 */
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-  .transition-transform {
-    transition: none !important;
-  }
-}
-
-/* 滚动条样式 */
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background-color: #f1f5f9;
-}
-.dark ::-webkit-scrollbar-track {
-  background-color: #1e293b;
-}
-::-webkit-scrollbar-thumb {
-  background-color: #94a3b8;
-  border-radius: 9999px;
-}
-.dark ::-webkit-scrollbar-thumb {
-  background-color: #475569;
-}
   /* 移动端适配 */
   @media (max-width: 640px) {
     .prose table {
