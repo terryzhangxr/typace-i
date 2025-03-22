@@ -145,7 +145,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
           window.Waline.init({
             el: '#waline-comment-container',
             serverURL: 'https://comment.mrzxr.top/',
-            dark: isDarkMode ? 'html.dark' : false,
+            dark: isDarkMode ? 'html.dark' : true,
             path: router.asPath,
             locale: { placeholder: '欢迎留言讨论...' },
           });
@@ -207,32 +207,32 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         <title>{frontmatter.title} - Typace</title>
       </Head>
 
-      {/* 导航栏（保持不变） */}
-      <nav className="fixed top-0 left-0 w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
+  
+      <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-20">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
-            <Link href="/" legacyBehavior>
+            <Link href="/" passHref>
               <a className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
                 Typace
               </a>
             </Link>
             <ul className="flex space-x-6">
               <li>
-                <Link href="/" legacyBehavior>
+                <Link href="/" passHref prefetch>
                   <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
                     首页
                   </a>
                 </Link>
               </li>
               <li>
-                <Link href="/about" legacyBehavior>
+                <Link href="/about" passHref prefetch>
                   <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
                     关于
                   </a>
                 </Link>
               </li>
               <li>
-                <Link href="/archive" legacyBehavior>
+                <Link href="/archive" passHref prefetch>
                   <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
                     归档
                   </a>
