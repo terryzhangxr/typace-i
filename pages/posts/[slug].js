@@ -122,14 +122,17 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const initializeWaline = () => {
     return new Promise((resolve) => {
       if (typeof window !== 'undefined') {
+        // 加载 Waline CSS
         const walineCSS = document.createElement('link');
         walineCSS.rel = 'stylesheet';
         walineCSS.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
         document.head.appendChild(walineCSS);
 
+        // 加载 Waline JS
         const walineJS = document.createElement('script');
         walineJS.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
         walineJS.onload = () => {
+          // 初始化 Waline
           window.Waline.init({
             el: '#waline-comment-container',
             serverURL: 'https://comment.mrzxr.top/',
@@ -137,6 +140,10 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
             path: router.asPath,
             locale: { placeholder: '欢迎留言讨论...' },
           });
+          resolve();
+        };
+        walineJS.onerror = (error) => {
+          console.error('Waline 脚本加载失败:', error);
           resolve();
         };
         document.body.appendChild(walineJS);
