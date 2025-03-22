@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../../lib/posts';
 import fs from 'fs';
 import path from 'path';
-import matter from 'gray-matter';
+import matter from 'gray-matter'; 
 import { remark } from 'remark';
 import html from 'remark-html';
 import Head from 'next/head';
