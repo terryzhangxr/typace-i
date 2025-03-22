@@ -44,93 +44,81 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [toc, setToc] = useState([]);
-  const [isMounted, setIsMounted] = useState(false); // 新增：用于控制动画状态
+  const [isMounted, setIsMounted] = useState(false);
 
-  // 添加动态样式
+  // 统一处理主题切换和页面刷新
+  const applyTheme = (isDark) => {
+    document.documentElement.classList.toggle('dark', isDark);
+    localStorage.setItem('darkMode', isDark);
+    window.location.reload(); // 强制刷新页面
+  };
+
+  // 优化后的暗黑模式切换
+  const toggleDarkMode = () => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    applyTheme(newDarkMode);
+  };
+
+  // 增强的页面动画控制
   useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      .page-container {
-        opacity: 0;
-        transform: translateY(100px);
-        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      .page-container.mounted {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    `;
-    document.head.appendChild(style);
+    const handleStart = () => setIsMounted(false);
+    const handleComplete = () => setIsMounted(true);
 
-    // 初始加载立即触发动画
+    // 初始加载动画
     setIsMounted(true);
 
-    return () => {
-      document.head.removeChild(style); // 清理样式
-    };
-  }, []);
-
-  // 路由事件处理
-  useEffect(() => {
-    const handleRouteChangeStart = () => {
-      setIsMounted(false); // 路由切换时重置动画状态
-    };
-
-    const handleRouteChangeComplete = () => {
-      setIsMounted(true); // 路由切换完成后触发动画
-    };
-
-    router.events.on('routeChangeStart', handleRouteChangeStart);
-    router.events.on('routeChangeComplete', handleRouteChangeComplete);
+    // 路由事件监听
+    router.events.on('routeChangeStart', handleStart);
+    router.events.on('routeChangeComplete', handleComplete);
 
     return () => {
-      router.events.off('routeChangeStart', handleRouteChangeStart);
-      router.events.off('routeChangeComplete', handleRouteChangeComplete);
+      router.events.off('routeChangeStart', handleStart);
+      router.events.off('routeChangeComplete', handleComplete);
     };
   }, [router]);
 
   // 初始化处理
   useEffect(() => {
-    const initializePage = async () => {
-      const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-      setIsDarkMode(savedDarkMode);
-      document.documentElement.classList.toggle('dark', savedDarkMode);
+    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+    setIsDarkMode(savedDarkMode);
+    document.documentElement.classList.toggle('dark', savedDarkMode);
 
-      if (contentHtml) {
-        generateToc();
-        await loadDependencies();
-      }
-    };
-
-    initializePage();
+    if (contentHtml) {
+      generateToc();
+      loadDependencies();
+    }
   }, [contentHtml]);
 
-  // 加载依赖
+  // 优化的依赖加载
   const loadDependencies = async () => {
     await loadHighlightJS();
     await initializeWaline();
   };
 
-  // 加载代码高亮（保持不变）
+  // 改进的高亮加载
   const loadHighlightJS = () => {
     return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
-      script.onload = () => {
-        const theme = document.createElement('link');
-        theme.rel = 'stylesheet';
-        theme.href = isDarkMode
-          ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
-          : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
-        document.head.appendChild(theme);
+      // 移除旧主题
+      const oldTheme = document.querySelector('#hljs-theme');
+      if (oldTheme) oldTheme.remove();
+
+      const theme = document.createElement('link');
+      theme.id = 'hljs-theme';
+      theme.rel = 'stylesheet';
+      theme.href = isDarkMode
+        ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
+        : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
+      
+      theme.onload = () => {
         window.hljs.highlightAll();
         resolve();
       };
-      document.head.appendChild(script);
+      document.head.appendChild(theme);
     });
   };
 
-  // 初始化评论系统（保持不变）
+  // 初始化评论系统
   const initializeWaline = () => {
     return new Promise((resolve) => {
       if (typeof window !== 'undefined') {
@@ -156,16 +144,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     });
   };
 
-  // 暗黑模式切换（保持不变）
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    localStorage.setItem('darkMode', newDarkMode);
-    document.documentElement.classList.toggle('dark', newDarkMode);
-    loadHighlightJS();
-  };
-
-  // 生成目录（保持不变）
+  // 生成目录
   const generateToc = () => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(contentHtml, 'text/html');
@@ -186,7 +165,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     setToc(tocItems);
   };
 
-  // 处理目录点击（保持不变）
+  // 处理目录点击
   const handleTocClick = (e, id) => {
     e.preventDefault();
     const targetElement = document.getElementById(id);
@@ -200,15 +179,15 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   };
 
   return (
-    <div className={`min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 page-container ${
-      isMounted ? 'mounted' : ''
+    <div className={`min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 transition-all duration-500 ${
+      isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
     }`}>
       <Head>
         <title>{frontmatter.title} - Typace</title>
       </Head>
 
-  
-      <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-20">
+      {/* 优化后的导航栏 */}
+      <nav className="fixed top-0 left-0 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-md z-20 transition-colors duration-500">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
             <Link href="/" passHref>
@@ -251,8 +230,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </div>
       </nav>
 
-      {/* 文章内容（保持不变） */}
-      <main className="mt-24 flex">
+      {/* 优化后的主内容区 */}
+      <main className="mt-24 flex transition-opacity duration-500">
         <div className="flex-1">
           {frontmatter.cover && (
             <div className="w-full h-48 md:h-64 mb-8">
@@ -278,7 +257,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
           </article>
         </div>
 
-        {/* 侧边目录（保持不变） */}
+        {/* 侧边目录 */}
         <aside className="w-64 hidden lg:block pl-8 sticky top-24 self-start">
           <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
@@ -303,7 +282,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </aside>
       </main>
 
-      {/* 推荐文章（保持不变） */}
+      {/* 推荐文章 */}
       {recommendedPosts.length > 0 && (
         <section className="mt-12">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">推荐文章</h2>
@@ -333,15 +312,17 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </section>
       )}
 
-      {/* 评论系统（保持不变） */}
+      {/* 评论系统 */}
       <section className="mt-12 max-w-4xl mx-auto">
         <div id="waline-comment-container" className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
           <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">评论</h3>
         </div>
       </section>
 
-      {/* 页脚（保持不变） */}
-      <footer className="text-center mt-12">
+      {/* 优化后的页脚 */}
+      <footer className={`text-center mt-12 transition-opacity duration-500 ${
+        isMounted ? 'opacity-100' : 'opacity-0'
+      }`}>
         <a href="/api/sitemap" className="inline-block">
           <img
             src="https://cdn.us.mrche.top/sitemap.svg"
