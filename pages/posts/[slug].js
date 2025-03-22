@@ -63,6 +63,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     const handleRouteChangeComplete = () => {
       window.scrollTo(0, 0); // 路由切换完成后滚动到顶部
       setIsMounted(true); // 路由切换完成后显示页面
+      initializeWaline(); // 重新初始化 Waline
     };
 
     router.events.on('routeChangeStart', handleRouteChangeStart);
@@ -133,6 +134,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
             dark: isDarkMode ? 'html.dark' : false,
             path: router.asPath,
             locale: { placeholder: '欢迎留言讨论...' },
+            // 自定义暗黑模式样式
+            style: {
+              color: isDarkMode ? '#e5e7eb' : '#374151', // 文字颜色
+              backgroundColor: isDarkMode ? '#1f2937' : '#ffffff', // 背景颜色
+              cardBackgroundColor: isDarkMode ? '#374151' : '#f9fafb', // 卡片背景颜色
+              primaryColor: '#3b82f6', // 主色调
+              secondaryColor: isDarkMode ? '#9ca3af' : '#6b7280', // 次色调
+            },
           });
           resolve();
         };
@@ -148,6 +157,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     localStorage.setItem('darkMode', newDarkMode);
     document.documentElement.classList.toggle('dark', newDarkMode);
     loadHighlightJS();
+    initializeWaline(); // 重新初始化 Waline
   };
 
   // 生成目录
