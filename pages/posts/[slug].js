@@ -146,7 +146,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
             el: '#waline-comment-container',
             serverURL: 'https://comment.mrzxr.top/',
             dark: isDarkMode ? 'html.dark' : true,
-            light: isLightMode ? 'html.light' : false,
             path: router.asPath,
             locale: { placeholder: '欢迎留言讨论...' },
           });
@@ -180,7 +179,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         level: heading.tagName.toLowerCase(),
         text: heading.textContent,
         id,
-        active: false,
+        active: true,
       });
     });
 
