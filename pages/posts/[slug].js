@@ -62,13 +62,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     `;
     document.head.appendChild(style);
 
-    // 每次页面加载时触发动画
-    setTransitionState('enter');
+    // 初始加载立即触发动画
     setTimeout(() => setTransitionState('active'), 50);
-
-    return () => {
-      document.head.removeChild(style);
-    };
   }, []);
 
   // 路由事件处理
