@@ -162,3 +162,28 @@
     }
   }
 }
+
+/* 动画相关样式 */
+.page-container {
+  opacity: 0;
+  transform: translateY(100px);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.page-container.mounted {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 性能优化 */
+.page-container {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* 禁用SSR初始闪烁 */
+@media (prefers-reduced-motion: no-preference) {
+  .page-container {
+    animation-duration: 0.6s;
+  }
+}
