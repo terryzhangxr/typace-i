@@ -73,7 +73,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     };
 
     const handleRouteChangeComplete = () => {
-      setTransitionState('enter');
+      setTransitionState('axtive');
       setTimeout(() => setTransitionState('active'), 50);
     };
 
