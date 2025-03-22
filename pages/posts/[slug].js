@@ -46,24 +46,18 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const [toc, setToc] = useState([]);
   const [isMounted, setIsMounted] = useState(false); // 控制动画状态
 
-  // 页面刷新逻辑
+  // 动画控制逻辑
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.scrollTo(0, 0); // 进入页面时滚动到顶部
-      setIsMounted(true); // 触发动画
-    }
-  }, []);
+    // 页面加载时触发动画
+    setIsMounted(true);
 
-  // 路由切换处理
-  useEffect(() => {
+    // 路由切换时重置动画状态
     const handleRouteChangeStart = () => {
       setIsMounted(false); // 路由切换时隐藏页面
     };
 
     const handleRouteChangeComplete = () => {
-      window.scrollTo(0, 0); // 路由切换完成后滚动到顶部
       setIsMounted(true); // 路由切换完成后显示页面
-      initializeWaline(); // 重新初始化 Waline
     };
 
     router.events.on('routeChangeStart', handleRouteChangeStart);
@@ -134,14 +128,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
             dark: isDarkMode ? 'html.dark' : false,
             path: router.asPath,
             locale: { placeholder: '欢迎留言讨论...' },
-            // 自定义暗黑模式样式
-            style: {
-              color: isDarkMode ? '#e5e7eb' : '#374151', // 文字颜色
-              backgroundColor: isDarkMode ? '#1f2937' : '#ffffff', // 背景颜色
-              cardBackgroundColor: isDarkMode ? '#374151' : '#f9fafb', // 卡片背景颜色
-              primaryColor: '#3b82f6', // 主色调
-              secondaryColor: isDarkMode ? '#9ca3af' : '#6b7280', // 次色调
-            },
           });
           resolve();
         };
@@ -157,7 +143,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     localStorage.setItem('darkMode', newDarkMode);
     document.documentElement.classList.toggle('dark', newDarkMode);
     loadHighlightJS();
-    initializeWaline(); // 重新初始化 Waline
   };
 
   // 生成目录
@@ -202,8 +187,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         <title>{frontmatter.title} - Typace</title>
       </Head>
 
-      {/* 导航栏（不固定） */}
-      <nav className="w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
+      {/* 导航栏 */}
+      <nav className="fixed top-0 left-0 w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
             <Link href="/" legacyBehavior>
@@ -247,7 +232,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
       </nav>
 
       {/* 文章内容 */}
-      <main className="mt-8 flex">
+      <main className="mt-24 flex">
         <div className="flex-1">
           {frontmatter.cover && (
             <div className="w-full h-48 md:h-64 mb-8">
