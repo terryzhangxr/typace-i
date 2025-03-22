@@ -63,7 +63,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     document.head.appendChild(style);
 
     // 初始加载立即触发动画
-    setTimeout(() => setTransitionState('active'), 50);
+    setTimeout(() => {
+      setTransitionState('active'), 50);
   }, []);
 
   // 路由事件处理
@@ -73,7 +74,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     };
 
     const handleRouteChangeComplete = () => {
-      setTransitionState('axtive');
+      setTransitionState('active');
       setTimeout(() => setTransitionState('active'), 50);
     };
 
