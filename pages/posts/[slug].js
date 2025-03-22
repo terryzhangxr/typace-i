@@ -4,7 +4,7 @@ import { getSortedPostsData } from '../../lib/posts';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
-import { remark } from 'remark';
+import { remark } from 'remark'; 
 import html from 'remark-html';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -145,7 +145,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
           window.Waline.init({
             el: '#waline-comment-container',
             serverURL: 'https://comment.mrzxr.top/',
-            dark: isDarkMode ? 'html.dark' : true,
+            
             path: router.asPath,
             locale: { placeholder: '欢迎留言讨论...' },
           });
@@ -207,45 +207,37 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         <title>{frontmatter.title} - Typace</title>
       </Head>
 
-
-  return (
-    <div className="min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 transition-colors duration-300">
-      {/* 导航栏 */}
-      <nav className="fixed top-0 left-0 w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
+  
+      <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-20">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
-            <a 
-              href="/" 
-              className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700"
-            >
-              Typace
-            </a>
+            <Link href="/" passHref>
+              <a className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
+                Typace
+              </a>
+            </Link>
             <ul className="flex space-x-6">
               <li>
-                <a 
-                  href="/" 
-                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
-                >
-                  首页
-                </a>
+                <Link href="/" passHref prefetch>
+                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                    首页
+                  </a>
+                </Link>
               </li>
               <li>
-                <a 
-                  href="/about" 
-                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
-                >
-                  关于
-                </a>
+                <Link href="/about" passHref prefetch>
+                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                    关于
+                  </a>
+                </Link>
               </li>
               <li>
-                <a 
-                  href="/archive" 
-                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
-                >
-                  归档
-                </a>
+                <Link href="/archive" passHref prefetch>
+                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                    归档
+                  </a>
+                </Link>
               </li>
-              {/* 暗黑模式切换按钮 */}
               <li>
                 <button
                   onClick={toggleDarkMode}
@@ -259,8 +251,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </div>
       </nav>
 
-  
-      
       {/* 文章内容（保持不变） */}
       <main className="mt-24 flex">
         <div className="flex-1">
