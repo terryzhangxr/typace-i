@@ -42,169 +42,78 @@ export async function getStaticProps({ params }) {
 
 export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const router = useRouter();
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [toc, setToc] = useState([]);
-  const [transitionState, setTransitionState] = useState('enter');
+  const [isMounted, setIsMounted] = useState(false);
+  const [renderKey, setRenderKey] = useState(Date.now());
 
-  // 添加动态样式
+  // 动画控制逻辑
   useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      .page-container {
-        opacity: 0;
-        transform: translateY(100px);
-        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      .page-active {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    `;
-    document.head.appendChild(style);
-
-    // 初始加载立即触发动画
-    setTimeout(() => setTransitionState('active'), 50);
-  }, []);
-
-  // 路由事件处理
-  useEffect(() => {
-    const handleRouteChangeStart = () => {
-      setTransitionState('exit');
+    const triggerAnimation = () => {
+      setIsMounted(false);
+      requestAnimationFrame(() => {
+        setIsMounted(true);
+      });
     };
 
-    const handleRouteChangeComplete = () => {
-      setTransitionState('active');
-      setTimeout(() => setTransitionState('active'), 50);
+    // 首次加载延迟触发
+    const initialTimer = setTimeout(triggerAnimation, 100);
+
+    // 路由变化处理
+    const handleRouteChange = () => {
+      setRenderKey(Date.now()); // 强制重建DOM
+      triggerAnimation();
     };
 
-    router.events.on('routeChangeStart', handleRouteChangeStart);
-    router.events.on('routeChangeComplete', handleRouteChangeComplete);
+    router.events.on('routeChangeComplete', handleRouteChange);
 
     return () => {
-      router.events.off('routeChangeStart', handleRouteChangeStart);
-      router.events.off('routeChangeComplete', handleRouteChangeComplete);
+      clearTimeout(initialTimer);
+      router.events.off('routeChangeComplete', handleRouteChange);
     };
-  }, [router]);
+  }, []);
 
-  // 初始化处理
+  // 加载非关键资源
   useEffect(() => {
-    const initializePage = async () => {
-      const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-      setIsDarkMode(savedDarkMode);
-      document.documentElement.classList.toggle('dark', savedDarkMode);
+    if (!isMounted) return;
 
-      if (contentHtml) {
-        generateToc();
-        await loadDependencies();
+    const loadResources = async () => {
+      try {
+        const [{ default: hljs }, { default: Waline }] = await Promise.all([
+          import('highlight.js'),
+          import('@waline/client'),
+        ]);
+
+        // 初始化代码高亮
+        hljs.highlightAll();
+
+        // 初始化Waline评论
+        Waline.init({
+          el: '#waline-comment-container',
+          serverURL: 'https://comment.mrzxr.top/',
+          dark: document.documentElement.classList.contains('dark') ? 'html.dark' : false,
+          path: router.asPath,
+          locale: { placeholder: '欢迎留言讨论...' },
+        });
+      } catch (error) {
+        console.error('资源加载失败:', error);
       }
     };
 
-    initializePage();
-  }, [contentHtml]);
-
-  // 加载依赖
-  const loadDependencies = async () => {
-    await loadHighlightJS();
-    await initializeWaline();
-  };
-
-  // 加载代码高亮（保持不变）
-  const loadHighlightJS = () => {
-    return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
-      script.onload = () => {
-        const theme = document.createElement('link');
-        theme.rel = 'stylesheet';
-        theme.href = isDarkMode
-          ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
-          : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
-        document.head.appendChild(theme);
-        window.hljs.highlightAll();
-        resolve();
-      };
-      document.head.appendChild(script);
-    });
-  };
-
-  // 初始化评论系统（保持不变）
-  const initializeWaline = () => {
-    return new Promise((resolve) => {
-      if (typeof window !== 'undefined') {
-        const walineCSS = document.createElement('link');
-        walineCSS.rel = 'stylesheet';
-        walineCSS.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
-        document.head.appendChild(walineCSS);
-
-        const walineJS = document.createElement('script');
-        walineJS.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
-        walineJS.onload = () => {
-          window.Waline.init({
-            el: '#waline-comment-container',
-            serverURL: 'https://comment.mrzxr.top/',
-            dark: isDarkMode ? 'html.dark' : false,
-            path: router.asPath,
-            locale: { placeholder: '欢迎留言讨论...' },
-          });
-          resolve();
-        };
-        document.body.appendChild(walineJS);
-      }
-    });
-  };
-
-  // 暗黑模式切换（保持不变）
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    localStorage.setItem('darkMode', newDarkMode);
-    document.documentElement.classList.toggle('dark', newDarkMode);
-    loadHighlightJS();
-  };
-
-  // 生成目录（保持不变）
-  const generateToc = () => {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(contentHtml, 'text/html');
-    const headings = doc.querySelectorAll('h1, h2');
-    const tocItems = [];
-
-    headings.forEach((heading) => {
-      const id = heading.textContent.toLowerCase().replace(/\s+/g, '-');
-      heading.id = id;
-      tocItems.push({
-        level: heading.tagName.toLowerCase(),
-        text: heading.textContent,
-        id,
-        active: false,
-      });
-    });
-
-    setToc(tocItems);
-  };
-
-  // 处理目录点击（保持不变）
-  const handleTocClick = (e, id) => {
-    e.preventDefault();
-    const targetElement = document.getElementById(id);
-    if (targetElement) {
-      targetElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-      window.history.pushState(null, '', `#${id}`);
-    }
-  };
+    const timer = setTimeout(loadResources, 500);
+    return () => clearTimeout(timer);
+  }, [isMounted]);
 
   return (
-    <div className={`min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 page-container ${
-      transitionState === 'active' ? 'page-active' : ''
-    }`}>
+    <div
+      key={renderKey}
+      className={`min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 page-container ${
+        isMounted ? 'mounted' : ''
+      }`}
+    >
       <Head>
         <title>{frontmatter.title} - Typace</title>
       </Head>
 
-      {/* 导航栏（保持不变） */}
+      {/* 导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
@@ -237,10 +146,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
               </li>
               <li>
                 <button
-                  onClick={toggleDarkMode}
+                  onClick={() => {
+                    const newDarkMode = !document.documentElement.classList.contains('dark');
+                    document.documentElement.classList.toggle('dark', newDarkMode);
+                    localStorage.setItem('darkMode', newDarkMode);
+                  }}
                   className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
                 >
-                  {isDarkMode ? '🌙' : '☀️'}
+                  {document.documentElement.classList.contains('dark') ? '🌙' : '☀️'}
                 </button>
               </li>
             </ul>
@@ -248,7 +161,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </div>
       </nav>
 
-      {/* 文章内容（保持不变） */}
+      {/* 文章内容 */}
       <main className="mt-24 flex">
         <div className="flex-1">
           {frontmatter.cover && (
@@ -274,33 +187,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
             />
           </article>
         </div>
-
-        {/* 侧边目录（保持不变） */}
-        <aside className="w-64 hidden lg:block pl-8 sticky top-24 self-start">
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
-            <ul className="space-y-2">
-              {toc.map((item) => (
-                <li key={item.id}>
-                  <a
-                    href={`#${item.id}`}
-                    onClick={(e) => handleTocClick(e, item.id)}
-                    className={`block transition-colors duration-200 ${
-                      item.active
-                        ? 'text-blue-600 dark:text-blue-400 font-semibold scale-105'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-blue-500'
-                    } ${item.level === 'h2' ? 'pl-4 text-sm' : 'pl-2 text-base'}`}
-                  >
-                    {item.text}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </aside>
       </main>
 
-      {/* 推荐文章（保持不变） */}
+      {/* 推荐文章 */}
       {recommendedPosts.length > 0 && (
         <section className="mt-12">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">推荐文章</h2>
@@ -330,14 +219,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </section>
       )}
 
-      {/* 评论系统（保持不变） */}
+      {/* 评论系统 */}
       <section className="mt-12 max-w-4xl mx-auto">
         <div id="waline-comment-container" className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
           <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">评论</h3>
         </div>
       </section>
 
-      {/* 页脚（保持不变） */}
+      {/* 页脚 */}
       <footer className="text-center mt-12">
         <a href="/api/sitemap" className="inline-block">
           <img
