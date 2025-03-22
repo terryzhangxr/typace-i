@@ -9,7 +9,10 @@ module.exports = {
       colors: {
         primary: '#3AB1CE',
         secondary: '#F472B6',
-        dark: '#1a1a1a',
+        dark: {
+          100: '#1a1a1a',
+          200: '#2d2d2d',
+        },
         glass: 'rgba(255, 255, 255, 0.1)',
       },
       fontFamily: {
@@ -17,7 +20,7 @@ module.exports = {
         mono: ['"Fira Code"', 'monospace'],
       },
       backdropBlur: {
-        xs: '2px',
+        xs: '0.125rem', // 2px -> 0.125rem
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
