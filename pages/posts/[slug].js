@@ -46,7 +46,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const [toc, setToc] = useState([]);
   const [transitionState, setTransitionState] = useState('enter');
 
-  // 添加动态样式
+  // 添加动态样式并触发动画
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -62,26 +62,28 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     `;
     document.head.appendChild(style);
 
-    // 初始加载立即触发动画
-    setTimeout(() => setTransitionState('active'), 50);
+    // 每次挂载时重置状态并触发动画
+    setTransitionState('enter');
+    const raf = requestAnimationFrame(() => {
+      setTransitionState('active');
+    });
+
+    return () => {
+      document.head.removeChild(style);
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
   // 路由事件处理
   useEffect(() => {
-    const handleRouteChangeStart = () => {
-      setTransitionState('exit');
-    };
-
     const handleRouteChangeComplete = () => {
       setTransitionState('enter');
       setTimeout(() => setTransitionState('active'), 50);
     };
 
-    router.events.on('routeChangeStart', handleRouteChangeStart);
     router.events.on('routeChangeComplete', handleRouteChangeComplete);
 
     return () => {
-      router.events.off('routeChangeStart', handleRouteChangeStart);
       router.events.off('routeChangeComplete', handleRouteChangeComplete);
     };
   }, [router]);
@@ -108,7 +110,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     await initializeWaline();
   };
 
-  // 加载代码高亮（保持不变）
+  // 加载代码高亮
   const loadHighlightJS = () => {
     return new Promise((resolve) => {
       const script = document.createElement('script');
@@ -127,7 +129,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     });
   };
 
-  // 初始化评论系统（保持不变）
+  // 初始化评论系统
   const initializeWaline = () => {
     return new Promise((resolve) => {
       if (typeof window !== 'undefined') {
@@ -153,7 +155,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     });
   };
 
-  // 暗黑模式切换（保持不变）
+  // 暗黑模式切换
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
     setIsDarkMode(newDarkMode);
@@ -162,7 +164,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     loadHighlightJS();
   };
 
-  // 生成目录（保持不变）
+  // 生成目录
   const generateToc = () => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(contentHtml, 'text/html');
@@ -183,7 +185,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     setToc(tocItems);
   };
 
-  // 处理目录点击（保持不变）
+  // 处理目录点击
   const handleTocClick = (e, id) => {
     e.preventDefault();
     const targetElement = document.getElementById(id);
@@ -204,7 +206,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         <title>{frontmatter.title} - Typace</title>
       </Head>
 
-      {/* 导航栏（保持不变） */}
+      {/* 导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white dark:bg-gray-800 shadow-md z-20 transition-colors duration-300">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
@@ -248,7 +250,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </div>
       </nav>
 
-      {/* 文章内容（保持不变） */}
+      {/* 文章内容 */}
       <main className="mt-24 flex">
         <div className="flex-1">
           {frontmatter.cover && (
@@ -275,7 +277,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
           </article>
         </div>
 
-        {/* 侧边目录（保持不变） */}
+        {/* 侧边目录 */}
         <aside className="w-64 hidden lg:block pl-8 sticky top-24 self-start">
           <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
@@ -300,7 +302,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </aside>
       </main>
 
-      {/* 推荐文章（保持不变） */}
+      {/* 推荐文章 */}
       {recommendedPosts.length > 0 && (
         <section className="mt-12">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">推荐文章</h2>
@@ -330,14 +332,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </section>
       )}
 
-      {/* 评论系统（保持不变） */}
+      {/* 评论系统 */}
       <section className="mt-12 max-w-4xl mx-auto">
         <div id="waline-comment-container" className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
           <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">评论</h3>
         </div>
       </section>
 
-      {/* 页脚（保持不变） */}
+      {/* 页脚 */}
       <footer className="text-center mt-12">
         <a href="/api/sitemap" className="inline-block">
           <img
