@@ -175,7 +175,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         window.Waline.init({
           el: '#waline-comment-container',
           serverURL: 'https://comment.mrzxr.top/',
-          dark: isDarkMode ? 'auto' : false, // 自动跟随系统主题
+          dark: isDarkMode ? 'auto' : true, // 自动跟随系统主题
           path: router.asPath,
           locale: { placeholder: '欢迎留言讨论...' },
         });
