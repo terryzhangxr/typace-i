@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    --color-bg-primary: #ffffff; /* 浅色模式下的背景色 */
     --color-text-primary: #2d2d2d; /* 浅色模式下的文字主色 */
     --color-text-secondary: #737373; /* 浅色模式下的文字副色 */
     --color-link: #3b82f6; /* 浅色模式下的链接颜色 */
@@ -19,8 +20,9 @@
   }
 
   .dark {
-    --color-text-primary: #ffffff; /* 深色模式下的文字主色改为白色 */
-    --color-text-secondary: #d1d5db; /* 深色模式下的文字副色改为浅灰色 */
+    --color-bg-primary: #1a1a1a; /* 深色模式下的背景色 */
+    --color-text-primary: #ffffff; /* 深色模式下的文字主色 */
+    --color-text-secondary: #d1d5db; /* 深色模式下的文字副色 */
     --color-link: #93c5fd; /* 深色模式下的链接颜色 */
     --color-link-hover: #bfdbfe; /* 深色模式下的链接悬停颜色 */
     --color-border: #4b5563; /* 深色模式下的边框颜色 */
@@ -34,8 +36,12 @@
   }
 
   body {
-    @apply bg-white dark:bg-gray-900 transition-colors duration-300; /* 背景色切换 */
-    color: var(--color-text-primary); /* 使用自定义文字主色 */
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease,
+      border-color 0.3s ease;
   }
 
   /* 文章内容样式 */
@@ -53,23 +59,24 @@
   }
 
   .prose a {
-    color: var(--color-link); /* 使用自定义链接颜色 */
+    color: var(--color-link);
+    transition: color 0.3s ease;
   }
 
   .prose a:hover {
-    color: var(--color-link-hover); /* 使用自定义链接悬停颜色 */
+    color: var(--color-link-hover);
   }
 
   .prose p {
-    color: var(--color-text-primary); /* 正文文字颜色 */
+    color: var(--color-text-primary);
   }
 
   .prose strong {
-    color: var(--color-text-primary); /* 加粗文字颜色 */
+    color: var(--color-text-primary);
   }
 
   .prose em {
-    color: var(--color-text-primary); /* 斜体文字颜色 */
+    color: var(--color-text-primary);
   }
 
   .prose blockquote {
@@ -77,20 +84,24 @@
     background-color: var(--color-quote-bg);
     border-color: var(--color-quote-border);
     color: var(--color-text-primary);
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease;
   }
 
   .prose ul,
   .prose ol {
-    color: var(--color-text-primary); /* 列表文字颜色 */
+    color: var(--color-text-primary);
   }
 
   .prose li {
-    color: var(--color-text-primary); /* 列表项文字颜色 */
+    color: var(--color-text-primary);
   }
 
   .prose hr {
     @apply border-t;
     border-color: var(--color-border);
+    transition: border-color 0.3s ease;
   }
 
   /* 代码块样式 */
@@ -99,12 +110,18 @@
     background-color: var(--color-code-bg);
     border-color: var(--color-border);
     color: var(--color-code-text);
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease;
   }
 
   .prose code {
     @apply px-2 py-1 rounded;
     background-color: var(--color-code-bg);
     color: var(--color-code-text);
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
   }
 
   .prose code::before,
@@ -118,15 +135,15 @@
     font-family: monospace;
     display: inline-block;
     position: absolute;
-    top: 0;
+    top: -1.5rem; /* 调整定位 */
     right: 0;
-    transform: translateY(-100%);
   }
 
   /* 表格样式 */
   .prose table {
-    @apply w-full border-collapse my-6; /* 表格宽度、边框合并和外边距 */
+    @apply w-full border-collapse my-6;
     border-color: var(--color-border);
+    transition: border-color 0.3s ease;
   }
 
   .prose th,
@@ -134,6 +151,9 @@
     @apply p-3 text-left align-top border;
     border-color: var(--color-border);
     color: var(--color-text-primary);
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease;
   }
 
   .prose th {
@@ -143,7 +163,7 @@
 
   .prose tr {
     background-color: var(--color-table-row-bg);
-    transition: background-color 0.2s ease;
+    transition: background-color 0.3s ease;
   }
 
   .prose tr:nth-child(even) {
@@ -163,7 +183,7 @@
   }
 }
 
-/* 动画相关样式 */
+/* 页面容器动画 */
 .page-container {
   opacity: 0;
   transform: translateY(100px);
@@ -176,12 +196,6 @@
 }
 
 /* 性能优化 */
-.page-container {
-  will-change: transform, opacity;
-  backface-visibility: hidden;
-}
-
-/* 禁用SSR初始闪烁 */
 @media (prefers-reduced-motion: no-preference) {
   .page-container {
     animation-duration: 0.6s;
