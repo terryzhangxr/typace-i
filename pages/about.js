@@ -29,11 +29,11 @@ export default function About({ frontmatter, contentHtml }) {
   useEffect(() => {
     // 检查本地存储或系统偏好设置
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setIsDarkMode(savedDarkMode || prefersDarkMode);
+    
+    setIsDarkMode(savedDarkMode);
 
     // 动态切换暗黑模式
-    if (savedDarkMode || prefersDarkMode) {
+    if (savedDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
