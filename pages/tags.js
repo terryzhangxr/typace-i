@@ -68,7 +68,6 @@ export default function TagsPage({ tagsWithPosts }) {
 
   return (
     <>
-    
       {/* 导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-50 transition-colors duration-300">
         <div className="container mx-auto px-8 py-4">
@@ -78,82 +77,40 @@ export default function TagsPage({ tagsWithPosts }) {
                 Typace
               </a>
             </Link>
-
-            {/* 桌面导航 */}
-            <div className="hidden md:flex space-x-6">
-              <NavLink href="/">首页</NavLink>
-              <NavLink href="/about">关于</NavLink>
-              <NavLink href="/archive">归档</NavLink>
-              <NavLink href="/tags">标签</NavLink>
-              <button
-                onClick={toggleDarkMode}
-                className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
-              >
-                {isDarkMode ? '🌙' : '☀️'}
-              </button>
-            </div>
-
-            {/* 移动端菜单按钮 */}
-            <button
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+            <ul className="flex space-x-6">
+              <li>
+                <Link href="/" passHref prefetch>
+                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                    首页
+                  </a>
+                </Link>
+              </li>
+              <li>
+                <Link href="/about" passHref prefetch>
+                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                    关于
+                  </a>
+                </Link>
+              </li>
+              <li>
+                <Link href="/tags" passHref prefetch>
+                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                    标签
+                  </a>
+                </Link>
+              </li>
+              <li>
+                <button
+                  onClick={toggleDarkMode}
+                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
+                >
+                  {isDarkMode ? '🌙' : '☀️'}
+                </button>
+              </li>
+            </ul>
           </div>
         </div>
       </nav>
-
-      {/* 移动端侧滑菜单 */}
-      <div className={`fixed inset-0 z-50 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
-        {/* 遮罩层 */}
-        <div 
-          className={`absolute inset-0 bg-black/20 dark:bg-black/40 transition-opacity ${
-            isMenuOpen ? 'opacity-100' : 'opacity-0'
-          }`}
-          onClick={() => setIsMenuOpen(false)}
-        />
-        
-        {/* 菜单内容 */}
-        <div 
-          className={`absolute right-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-xl transition-transform duration-300 ${
-            isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
-        >
-          <div className="p-6 space-y-4 pt-2">
-            {/* 关闭按钮 */}
-            <button
-              className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            
-            {/* 菜单项 */}
-            <div className="mt-6 space-y-3">
-              <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)}>首页</MobileNavLink>
-              <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>关于</MobileNavLink>
-              <MobileNavLink href="/archive" onClick={() => setIsMenuOpen(false)}>归档</MobileNavLink>
-              <MobileNavLink href="/tags" onClick={() => setIsMenuOpen(false)}>标签</MobileNavLink>
-            </div>
-            
-            {/* 暗黑模式按钮 */}
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
-              <button
-                onClick={toggleDarkMode}
-                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <span>暗黑模式</span>
-                <span>{isDarkMode ? '🌙' : '☀️'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* 内容容器 */}
       <div className={`min-h-screen p-8 pt-24 relative z-10 bg-white dark:bg-gray-900 page-container ${
