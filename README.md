@@ -22,9 +22,24 @@ Typace is created by MRCHE and terryzhang, two middle school students. This plat
 
 ## Recent Updates
 
-- **Update sitemap.js** - [Commit c383fa2](https://github.com/terryzhangxr/typace-i/commit/c383fa242907f390a7df23abaf03c3a044d79e93)
-- **Update index.js** - [Commit b237401](https://github.com/terryzhangxr/typace-i/commit/b237401b9be4bb2e52467b434561ed74aa9925cf)
-- **Update about.md** - [Commit 3017832](https://github.com/terryzhangxr/typace-i/commit/3017832e4e58a05d2d8b0830c633a794c7e1a442)
+V1.0.0  Initial edition, project launch  2025.2
+
+V1.0.1  Homepage bug fixes  2025.2
+
+V1.1.0  Added dynamic backgrounds  2025.2
+
+V1.1.1  Article page bug fixes  2025.3
+
+V1.1.2  Added the feature of recommended articles  2025.3
+
+V1.1.3  Added comment system  2025.3
+
+V1.2.0  Added light and dark color switching and animation   2025.3
+
+V1.2.1  Navigation bar optimization  2025.3
+
+V1.2.2  Add more new pages and fix bugs  (current)
+
 
 For more details, check the [commit history](https://github.com/terryzhangxr/typace-i/commits).
 
