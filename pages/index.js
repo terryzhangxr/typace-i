@@ -19,11 +19,11 @@ const addDynamicStyles = () => {
     }
     .page-transition-exit-active {
       opacity: 0;
-      transform: translateY(20px);
+      transform: translateY(200px);
     }
     .page-transition-enter {
       opacity: 0;
-      transform: translateY(-20px);
+      transform: translateY(-200px);
     }
     .page-transition-enter-active {
       opacity: 1;
