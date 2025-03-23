@@ -92,6 +92,17 @@ const addDynamicStyles = () => {
       word-wrap: break-word;
       white-space: normal;
     }
+
+    /* 新增动画样式 */
+    .page-container {
+      opacity: 0;
+      transform: translateY(100px);
+      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .page-container.mounted {
+      opacity: 1;
+      transform: translateY(0);
+    }
   `;
   document.head.appendChild(style);
 };
@@ -102,6 +113,7 @@ export default function Home({ allPostsData }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [hitokoto, setHitokoto] = useState('');
   const [displayText, setDisplayText] = useState('');
+  const [isMounted, setIsMounted] = useState(false); // 新增动画状态
 
   useEffect(() => {
     addDynamicStyles();
@@ -128,15 +140,22 @@ export default function Home({ allPostsData }) {
     // 路由事件监听
     const handleRouteChangeStart = () => {
       setTransitionState('exiting');
+      setIsMounted(false); // 路由切换时隐藏页面
     };
 
     const handleRouteChangeComplete = () => {
       setTransitionState('entering');
-      setTimeout(() => setTransitionState('idle'), 300);
+      setTimeout(() => {
+        setTransitionState('idle');
+        setIsMounted(true); // 路由切换完成后显示页面
+      }, 300);
     };
 
     router.events.on('routeChangeStart', handleRouteChangeStart);
     router.events.on('routeChangeComplete', handleRouteChangeComplete);
+
+    // 初始化页面动画
+    setIsMounted(true);
 
     return () => {
       router.events.off('routeChangeStart', handleRouteChangeStart);
@@ -241,13 +260,9 @@ export default function Home({ allPostsData }) {
   };
 
   return (
-    <div className={`min-h-screen p-8 relative z-10 page-transition ${getTransitionClass()}`}>
-      <Head>
-        <title>首页 - Typace</title>
-      </Head>
-
+    <>
       {/* 导航栏 */}
-      <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-20">
+      <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-50">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
             <Link href="/" passHref>
@@ -291,97 +306,105 @@ export default function Home({ allPostsData }) {
       </nav>
 
       {/* 页面内容 */}
-      <header className="text-center mb-8 mt-24">
-        <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
-          Typace
-        </h1>
-        <div className="hitokoto-container">
-          <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 italic">
-            <span className="typewriter">{displayText}</span>
-          </p>
-        </div>
-      </header>
+      <div className={`min-h-screen p-8 pt-24 relative z-10 page-container ${
+        isMounted ? 'mounted' : ''
+      }`}>
+        <Head>
+          <title>首页 - Typace</title>
+        </Head>
 
-      {/* 文章列表 */}
-      <div className="flex">
-        <aside className="w-1/4 pr-8 hidden lg:block">
-          <div className="sticky top-24 p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
-              最新文章
-            </h2>
-            <ul className="space-y-4">
-              {allPostsData.slice(0, 5).map((post) => (
-                <li key={post.slug}>
-                  <Link href={`/posts/${post.slug}`} passHref>
-                    <a className="block text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                      <h3 className="text-lg font-semibold">{post.title}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                        {post.date}
-                      </p>
-                    </a>
-                  </Link>
+        <header className="text-center mb-8">
+          <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
+            Typace
+          </h1>
+          <div className="hitokoto-container">
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 italic">
+              <span className="typewriter">{displayText}</span>
+            </p>
+          </div>
+        </header>
+
+        {/* 文章列表 */}
+        <div className="flex">
+          <aside className="w-1/4 pr-8 hidden lg:block">
+            <div className="sticky top-24 p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
+              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
+                最新文章
+              </h2>
+              <ul className="space-y-4">
+                {allPostsData.slice(0, 5).map((post) => (
+                  <li key={post.slug}>
+                    <Link href={`/posts/${post.slug}`} passHref>
+                      <a className="block text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        <h3 className="text-lg font-semibold">{post.title}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                          {post.date}
+                        </p>
+                      </a>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </aside>
+
+          <main className="flex-1">
+            <ul className="space-y-6">
+              {allPostsData.map(({ slug, title, date, cover, excerpt }) => (
+                <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-105">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    {cover && (
+                      <div className="md:w-1/3 cover-image-container">
+                        <img
+                          src={cover}
+                          alt={title}
+                          className="w-full h-full object-cover rounded-lg transition-transform duration-300 hover:scale-105"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <Link href={`/posts/${slug}`} passHref>
+                        <a className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                          {title}
+                        </a>
+                      </Link>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{date}</p>
+                      {excerpt && (
+                        <p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">
+                          {excerpt}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </li>
               ))}
             </ul>
-          </div>
-        </aside>
+          </main>
+        </div>
 
-        <main className="flex-1">
-          <ul className="space-y-6">
-            {allPostsData.map(({ slug, title, date, cover, excerpt }) => (
-              <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-105">
-                <div className="flex flex-col md:flex-row gap-6">
-                  {cover && (
-                    <div className="md:w-1/3 cover-image-container">
-                      <img
-                        src={cover}
-                        alt={title}
-                        className="w-full h-full object-cover rounded-lg transition-transform duration-300 hover:scale-105"
-                        loading="lazy"
-                      />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <Link href={`/posts/${slug}`} passHref>
-                      <a className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
-                        {title}
-                      </a>
-                    </Link>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{date}</p>
-                    {excerpt && (
-                      <p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">
-                        {excerpt}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </main>
-      </div>
-
-      {/* 页脚 */}
-      <footer className="text-center mt-12">
-        <a href="/api/sitemap" className="inline-block">
-          <img
-            src="https://cdn.us.mrche.top/sitemap.svg"
-            alt="Sitemap"
-            className="block mx-auto w-8 h-8 dark:invert"
-          />
-        </a>
-        <p className="mt-4 text-gray-600 dark:text-gray-400">
-          由MRCHE&terryzhang创建的
-          <a
-            href="https://www.mrche.top/typace"
-            className="text-blue-600 hover:underline dark:text-blue-400"
-          >
-            Typace
+        {/* 页脚 */}
+        <footer className="text-center mt-12">
+          <a href="/api/sitemap" className="inline-block">
+            <img
+              src="https://cdn.us.mrche.top/sitemap.svg"
+              alt="Sitemap"
+              className="block mx-auto w-8 h-8 dark:invert"
+            />
           </a>
-          强势驱动
-        </p>
-      </footer>
-    </div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            由MRCHE&terryzhang创建的
+            <a
+              href="https://www.mrche.top/typace"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              Typace
+            </a>
+            强势驱动
+          </p>
+        </footer>
+      </div>
+    </>
   );
 }
 
