@@ -52,7 +52,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     style.textContent = `
       .page-container {
         opacity: 0;
-        transform: translateY(500px);
+        transform: translateY(100px);
         transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .page-container.mounted {
