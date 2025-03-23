@@ -8,7 +8,7 @@ Welcome to **Typace**, an under-construction blog platform which based on Next.j
 
 ## About
 
-Typace is created by MRCHE and terryzhang, two middle school students. This platform aims to help more people discover the fun of technology and get inspired.
+Typace is created by terryzhangxr and mrche, two middle school students. This platform aims to help more people discover the fun of technology and get inspired.
 
 ## Project Structure
 
