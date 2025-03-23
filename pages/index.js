@@ -333,7 +333,7 @@ export default function Home({ allPostsData }) {
         </div>
       </nav>
 
-  // 修改移动端侧滑菜单部分
+  
 <div className={`fixed inset-0 z-50 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
   {/* 遮罩层 */}
   <div 
@@ -343,14 +343,14 @@ export default function Home({ allPostsData }) {
     onClick={() => setIsMenuOpen(false)}
   />
   
-  {/* 菜单内容 - 主要修改这里 */}
+  {/* 菜单内容 */}
   <div 
     className={`absolute right-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-xl transition-transform duration-300 ${
       isMenuOpen ? 'translate-x-0' : 'translate-x-full'
     }`}
   >
-    <div className="p-6 space-y-4 pt-2"> {/* 增加顶部内边距 */}
-      {/* 关闭按钮位置调整 */}
+    <div className="p-6 space-y-4 pt-2"> {/* 顶部内边距 */}
+      {/* 关闭按钮位置 */}
       <button
         className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
         onClick={() => setIsMenuOpen(false)}
@@ -360,8 +360,8 @@ export default function Home({ allPostsData }) {
         </svg>
       </button>
       
-      {/* 菜单项间距调整 */}
-      <div className="mt-6 space-y-3"> {/* 增加顶部间距 */}
+      {/* 菜单项间距 */}
+      <div className="mt-6 space-y-3"> {/* 顶部间距 */}
         <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)}>首页</MobileNavLink>
         <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>关于</MobileNavLink>
         <MobileNavLink href="/archive" onClick={() => setIsMenuOpen(false)}>归档</MobileNavLink>
