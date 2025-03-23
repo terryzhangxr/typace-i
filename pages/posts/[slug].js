@@ -291,6 +291,27 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
       </nav>
 
       <main className="mt-24 flex">
+        {/* 新增悬浮返回按钮 */}
+        <Link href="/" passHref>
+          <a className="fixed right-8 bottom-8 z-30 p-3 bg-white dark:bg-gray-800 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-110 group border border-gray-200 dark:border-gray-700">
+            <svg 
+              className="w-7 h-7 text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" 
+              />
+            </svg>
+            <span className="sr-only">回到首页</span>
+          </a>
+        </Link>
+
         <div className="flex-1">
           {frontmatter.cover && (
             <div className="w-full h-48 md:h-64 mb-8">
