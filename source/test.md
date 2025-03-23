@@ -2,6 +2,7 @@
 title: theme typace主题文章测试
 date: 2025-2-20
 cover: https://tse1-mm.cn.bing.net/th/id/OIP-C.rcDTfMo1mvd4MvaBW11G1AHaDt?dpr=2&pid=ImgDetMain
+tags: ["测试"]
 ---
 
 # 一级标题
