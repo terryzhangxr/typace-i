@@ -1,7 +1,8 @@
 # Theme Typace
 
 注：中文版介绍及教程正在typace官网编写中，敬请期待
-   本仓库为typace项目的开发版，由Terryzhang开发，有最新的功能，但可能有bug，请谨慎使用。正式版在mrche的仓库。
+
+   本仓库为typace项目的开发版，目前由Terryzhang负责开发，有最新的功能，但可能有bug，请谨慎使用。正式版在mrche的仓库。
 
 Welcome to **Typace**, an under-construction blog platform which based on Next.js focused on sharing technology, life, and thoughts.
 
