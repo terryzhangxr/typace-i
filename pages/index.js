@@ -333,26 +333,26 @@ export default function Home({ allPostsData }) {
         </div>
       </nav>
 
-{/* 移动端侧滑菜单 */}
+  // 修改移动端侧滑菜单部分
 <div className={`fixed inset-0 z-50 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
   {/* 遮罩层 */}
   <div 
-    className={`absolute inset-0 bg-black/30 dark:bg-black/50 transition-opacity ${
+    className={`absolute inset-0 bg-black/20 dark:bg-black/40 transition-opacity ${
       isMenuOpen ? 'opacity-100' : 'opacity-0'
     }`}
     onClick={() => setIsMenuOpen(false)}
   />
   
-  {/* 菜单内容 */}
+  {/* 菜单内容 - 主要修改这里 */}
   <div 
-    className={`absolute right-0 top-16 h-[calc(100vh-4rem)] w-72 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-2xl transition-transform duration-300 ease-in-out ${
+    className={`absolute right-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-xl transition-transform duration-300 ${
       isMenuOpen ? 'translate-x-0' : 'translate-x-full'
     }`}
   >
-    <div className="p-6 space-y-4 pt-4">
-      {/* 关闭按钮 */}
+    <div className="p-6 space-y-4 pt-2"> {/* 增加顶部内边距 */}
+      {/* 关闭按钮位置调整 */}
       <button
-        className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
         onClick={() => setIsMenuOpen(false)}
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -360,35 +360,117 @@ export default function Home({ allPostsData }) {
         </svg>
       </button>
       
-      {/* 菜单项 */}
-      <div className="mt-8 space-y-4">
-        <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)}>
-          <span className="text-lg font-medium">首页</span>
-        </MobileNavLink>
-        <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>
-          <span className="text-lg font-medium">关于</span>
-        </MobileNavLink>
-        <MobileNavLink href="/archive" onClick={() => setIsMenuOpen(false)}>
-          <span className="text-lg font-medium">归档</span>
-        </MobileNavLink>
-        <MobileNavLink href="/tags" onClick={() => setIsMenuOpen(false)}>
-          <span className="text-lg font-medium">标签</span>
-        </MobileNavLink>
+      {/* 菜单项间距调整 */}
+      <div className="mt-6 space-y-3"> {/* 增加顶部间距 */}
+        <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)}>首页</MobileNavLink>
+        <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>关于</MobileNavLink>
+        <MobileNavLink href="/archive" onClick={() => setIsMenuOpen(false)}>归档</MobileNavLink>
+        <MobileNavLink href="/tags" onClick={() => setIsMenuOpen(false)}>标签</MobileNavLink>
       </div>
       
-      {/* 暗黑模式切换 */}
-      <div className="pt-6 border-t border-gray-200 dark:border-gray-700 mt-6">
+      {/* 暗黑模式按钮调整 */}
+      <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4"> {/* 增加顶部间距 */}
         <button
           onClick={toggleDarkMode}
-          className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
         >
-          <span className="text-lg font-medium">暗黑模式</span>
-          <span className="text-xl">{isDarkMode ? '🌙' : '☀️'}</span>
+          <span>暗黑模式</span>
+          <span>{isDarkMode ? '🌙' : '☀️'}</span>
         </button>
       </div>
     </div>
   </div>
 </div>
+
+      {/* 页面内容 */}
+      <div className={`min-h-screen p-8 pt-24 relative z-10 page-container ${
+        isMounted ? 'mounted' : ''
+      }`}>
+        <Head>
+          <title>首页 - Typace</title>
+        </Head>
+
+        <header className="text-center mb-8">
+          <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
+            Typace
+          </h1>
+          <div className="hitokoto-container">
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 italic">
+              <span className="typewriter">{displayText}</span>
+            </p>
+          </div>
+        </header>
+
+        {/* 文章列表 */}
+        <div className="flex">
+          <aside className="w-1/4 pr-8 hidden lg:block">
+            <div className="sticky top-24 p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
+              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
+                最新文章
+              </h2>
+              <ul className="space-y-4">
+                {allPostsData.slice(0, 5).map((post) => (
+                  <li key={post.slug}>
+                    <Link href={`/posts/${post.slug}`} passHref>
+                      <a className="block text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        <h3 className="text-lg font-semibold">{post.title}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                          {post.date}
+                        </p>
+                      </a>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </aside>
+
+          <main className="flex-1">
+            <ul className="space-y-6">
+              {allPostsData.map(({ slug, title, date, cover, excerpt, tags }) => (
+                <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-105">
+                  <div className="flex flex-col md:flex-row gap-6">
+                    {cover && (
+                      <div className="md:w-1/3 cover-image-container">
+                        <img
+                          src={cover}
+                          alt={title}
+                          className="w-full h-full object-cover rounded-lg transition-transform duration-300 hover:scale-105"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <Link href={`/posts/${slug}`} passHref>
+                        <a className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                          {title}
+                        </a>
+                      </Link>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{date}</p>
+                      {excerpt && (
+                        <p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">
+                          {excerpt}
+                        </p>
+                      )}
+                      {/* 显示标签 */}
+                      {tags && tags.length > 0 && (
+                        <div className="mt-4">
+                          {tags.map((tag) => (
+                            <Link key={tag} href={`/tags#${tag}`} passHref>
+                              <a className="tag">
+                                {tag}
+                              </a>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </main>
+        </div>
 
         {/* 页脚 */}
         <footer className="text-center mt-12">
