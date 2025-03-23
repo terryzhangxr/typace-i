@@ -181,7 +181,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     const instance = window.Waline.init({
       el: '#waline-comment-container',
       serverURL: 'https://comment.mrzxr.top/',
-      dark: 'auto', // 关键修复：自动检测主题
+      dark: 'false',
       path: router.asPath,
       locale: { placeholder: '欢迎留言讨论...' },
     });
