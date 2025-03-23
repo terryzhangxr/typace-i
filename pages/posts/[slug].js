@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../../lib/posts';
 import fs from 'fs';
@@ -45,6 +45,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [toc, setToc] = useState([]);
   const [isMounted, setIsMounted] = useState(false);
+  const walineInstance = useRef(null); // 使用 ref 存储 Waline 实例
 
   // 添加动态样式
   useEffect(() => {
@@ -88,114 +89,120 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     };
   }, [router]);
 
-  // 初始化处理
-  useEffect(() => {
-    const initializePage = async () => {
-      const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-      setIsDarkMode(savedDarkMode);
-      document.documentElement.classList.toggle('dark', savedDarkMode);
-
-      // 加载 highlight.js
-      await new Promise((resolve) => {
-        if (!window.hljs) {
-          const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
-          script.onload = () => resolve();
-          document.head.appendChild(script);
-        } else {
-          resolve();
-        }
-      });
-
-      // 初始化代码高亮样式
-      loadHighlightJS(savedDarkMode);
-
-      if (contentHtml) {
-        generateToc();
-        await initializeWaline();
-      }
-    };
-
-    initializePage();
-  }, [contentHtml]);
-
-  // 加载代码高亮样式
+  // 加载代码高亮样式（优化版）
   const loadHighlightJS = (isDark) => {
-    // 移除旧主题
-    const existingTheme = document.querySelector('#hljs-theme');
-    if (existingTheme) existingTheme.remove();
-
-    // 添加新主题
-    const theme = document.createElement('link');
-    theme.id = 'hljs-theme';
-    theme.rel = 'stylesheet';
-    theme.href = isDark
-      ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
-      : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
-    document.head.appendChild(theme);
-
-    // 重新高亮代码
-    if (window.hljs) window.hljs.highlightAll();
-  };
-
-  // 初始化评论系统
-  const initializeWaline = () => {
     return new Promise((resolve) => {
-      if (typeof window === 'undefined') return resolve();
+      const existingTheme = document.querySelector('#hljs-theme');
+      if (existingTheme) existingTheme.remove();
 
-      // 清理旧实例
-      const container = document.getElementById('waline-comment-container');
-      if (container) container.innerHTML = '';
-
-      // 动态加载 CSS
-      if (!document.querySelector('#waline-css')) {
-        const link = document.createElement('link');
-        link.id = 'waline-css';
-        link.rel = 'stylesheet';
-        link.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
-        document.head.appendChild(link);
-      }
-
-      // 动态加载 JS
-      if (!document.querySelector('#waline-js')) {
-        const script = document.createElement('script');
-        script.id = 'waline-js';
-        script.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
-        script.onload = () => {
-          initWalineInstance();
-          resolve();
-        };
-        document.body.appendChild(script);
-      } else {
-        initWalineInstance();
+      const theme = document.createElement('link');
+      theme.id = 'hljs-theme';
+      theme.rel = 'stylesheet';
+      theme.href = isDark
+        ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
+        : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
+      
+      theme.onload = () => {
+        if (window.hljs) {
+          window.hljs.highlightAll();
+        }
         resolve();
-      }
-
-      const initWalineInstance = () => {
-        window.Waline.init({
-          el: '#waline-comment-container',
-          serverURL: 'https://comment.mrzxr.top/',
-          dark: 'html.dark',
-          path: router.asPath,
-          locale: { placeholder: '欢迎留言讨论...' },
-        });
       };
+      document.head.appendChild(theme);
     });
   };
 
-  // 暗黑模式切换
+  // 初始化评论系统（优化版）
+  const initializeWaline = async () => {
+    // 清理旧实例
+    if (walineInstance.current) {
+      walineInstance.current.destroy();
+      walineInstance.current = null;
+    }
+
+    // 确保 Waline CSS 只加载一次
+    if (!document.querySelector('#waline-css')) {
+      const link = document.createElement('link');
+      link.id = 'waline-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
+      document.head.appendChild(link);
+    }
+
+    // 动态加载 JS
+    if (typeof window.Waline === 'undefined') {
+      await new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
+        script.onload = resolve;
+        document.body.appendChild(script);
+      });
+    }
+
+    // 初始化新实例
+    walineInstance.current = window.Waline.init({
+      el: '#waline-comment-container',
+      serverURL: 'https://comment.mrzxr.top/',
+      dark: 'html.dark', // 自动跟随系统
+      path: router.asPath,
+      locale: { placeholder: '欢迎留言讨论...' },
+    });
+  };
+
+  // 暗黑模式切换（优化版）
   const toggleDarkMode = async () => {
     const newDarkMode = !isDarkMode;
     setIsDarkMode(newDarkMode);
     localStorage.setItem('darkMode', newDarkMode);
     document.documentElement.classList.toggle('dark', newDarkMode);
 
-    // 更新代码高亮主题
-    loadHighlightJS(newDarkMode);
-
-    // 重新初始化评论系统
-    await initializeWaline();
+    // 等待样式加载完成
+    await loadHighlightJS(newDarkMode);
+    
+    // 重新初始化评论（Waline 会自动检测 dark 类变化）
+    initializeWaline();
   };
+
+  // 组件卸载时清理
+  useEffect(() => {
+    return () => {
+      if (walineInstance.current) {
+        walineInstance.current.destroy();
+      }
+    };
+  }, []);
+
+  // 初始化处理（优化版）
+  useEffect(() => {
+    const initializePage = async () => {
+      const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+      setIsDarkMode(savedDarkMode);
+      document.documentElement.classList.toggle('dark', savedDarkMode);
+
+      // 并行加载资源
+      await Promise.all([
+        loadHighlightJS(savedDarkMode),
+        initializeWaline(),
+        loadHLJSBase() // 加载 highlight.js 基础库
+      ]);
+
+      if (contentHtml) generateToc();
+    };
+
+    const loadHLJSBase = () => {
+      if (!window.hljs) {
+        return new Promise((resolve) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
+          script.onload = () => resolve();
+          document.head.appendChild(script);
+        });
+      }
+      return Promise.resolve();
+    };
+
+    initializePage();
+  }, [contentHtml]);
 
   // 生成目录
   const generateToc = () => {
