@@ -103,6 +103,29 @@ const addDynamicStyles = () => {
       opacity: 1;
       transform: translateY(0);
     }
+
+    /* 标签样式 */
+    .tag {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+      color: #3b82f6;
+      background-color: #dbeafe;
+      border-radius: 0.375rem;
+      transition: all 0.2s ease;
+    }
+    .tag:hover {
+      background-color: #bfdbfe;
+    }
+    .dark .tag {
+      color: #93c5fd;
+      background-color: #1e3a8a;
+    }
+    .dark .tag:hover {
+      background-color: #1e40af;
+    }
   `;
   document.head.appendChild(style);
 };
@@ -350,7 +373,7 @@ export default function Home({ allPostsData }) {
 
           <main className="flex-1">
             <ul className="space-y-6">
-              {allPostsData.map(({ slug, title, date, cover, excerpt }) => (
+              {allPostsData.map(({ slug, title, date, cover, excerpt, tags }) => (
                 <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-105">
                   <div className="flex flex-col md:flex-row gap-6">
                     {cover && (
@@ -374,6 +397,18 @@ export default function Home({ allPostsData }) {
                         <p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">
                           {excerpt}
                         </p>
+                      )}
+                      {/* 显示标签 */}
+                      {tags && tags.length > 0 && (
+                        <div className="mt-4">
+                          {tags.map((tag) => (
+                            <Link key={tag} href={`/tags#${tag}`} passHref>
+                              <a className="tag">
+                                {tag}
+                              </a>
+                            </Link>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -414,8 +449,8 @@ export async function getStaticProps() {
     props: {
       allPostsData: allPostsData.map(post => ({
         ...post,
-        content: post.content || ""
-      }))
+        content: post.content || "",
+      })),
     },
   };
 }
