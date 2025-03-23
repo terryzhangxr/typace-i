@@ -8,7 +8,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 
-// 获取 about.md 文件内容
+// 获取 about.md 文件内容 
 export async function getStaticProps() {
   const filePath = path.join(process.cwd(), 'pages', 'about.md');
   const fileContents = fs.readFileSync(filePath, 'utf8');
