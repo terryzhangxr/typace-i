@@ -51,12 +51,12 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
-      .content-container {
+      .page-container {
         opacity: 0;
-        transform: translateY(20px);
-        transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        transform: translateY(100px);
+        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
       }
-      .content-container.mounted {
+      .page-container.mounted {
         opacity: 1;
         transform: translateY(0);
       }
@@ -239,12 +239,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   };
 
   return (
-    <div className="min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900">
+    <div className={`min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 page-container ${
+      isMounted ? 'mounted' : ''
+    }`}>
       <Head>
         <title>{frontmatter.title} - Typace</title>
       </Head>
 
-      {/* 固定不动的导航栏 */}
+      {/* 导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-20">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
@@ -288,10 +290,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </div>
       </nav>
 
-      {/* 添加动画容器到主要内容区 */}
-      <main className={`mt-24 content-container ${isMounted ? 'mounted' : ''}`}>
+      <main className="mt-24 flex">
         <div className="flex-1">
-          {/* 封面图片 */}
           {frontmatter.cover && (
             <div className="w-full h-48 md:h-64 mb-8">
               <img
@@ -302,7 +302,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
             </div>
           )}
 
-          {/* 文章内容 */}
           <article className="prose max-w-4xl mx-auto dark:prose-invert">
             <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
               {frontmatter.title}
@@ -317,7 +316,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
           </article>
         </div>
 
-        {/* 侧边栏目录 */}
         <aside className="w-64 hidden lg:block pl-8 sticky top-24 self-start">
           <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
@@ -342,7 +340,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </aside>
       </main>
 
-      {/* 推荐文章 */}
       {recommendedPosts.length > 0 && (
         <section className="mt-12">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">推荐文章</h2>
@@ -372,14 +369,12 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </section>
       )}
 
-      {/* 评论区域 */}
       <section className="mt-12 max-w-4xl mx-auto">
         <div id="waline-comment-container" className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
           <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">评论</h3>
         </div>
       </section>
 
-      {/* 页脚 */}
       <footer className="text-center mt-12">
         <a href="/api/sitemap" className="inline-block">
           <img
