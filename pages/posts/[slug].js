@@ -246,7 +246,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         <title>{frontmatter.title} - Typace</title>
       </Head>
 
-      <nav className="relative z-20 bg-white/80 dark:bg-gray-800/80">
+      {/* 导航栏 */}
+      <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-20">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
             <Link href="/" passHref>
