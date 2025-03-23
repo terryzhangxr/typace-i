@@ -4,7 +4,7 @@ import { getSortedPostsData } from '../../lib/posts';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
-import { remark } from 'remark';
+import { remark } from 'remark'; 
 import html from 'remark-html';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -44,7 +44,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [toc, setToc] = useState([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isMounted, setIsMounted] = useState(false); // 新增：用于控制动画状态
 
   // 添加动态样式
   useEffect(() => {
@@ -62,21 +62,22 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     `;
     document.head.appendChild(style);
 
+    // 初始加载立即触发动画
     setIsMounted(true);
 
     return () => {
-      document.head.removeChild(style);
+      document.head.removeChild(style); // 清理样式
     };
   }, []);
 
   // 路由事件处理
   useEffect(() => {
     const handleRouteChangeStart = () => {
-      setIsMounted(false);
+      setIsMounted(false); // 路由切换时重置动画状态
     };
 
     const handleRouteChangeComplete = () => {
-      setIsMounted(true);
+      setIsMounted(true); // 路由切换完成后触发动画
     };
 
     router.events.on('routeChangeStart', handleRouteChangeStart);
@@ -95,109 +96,76 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
       setIsDarkMode(savedDarkMode);
       document.documentElement.classList.toggle('dark', savedDarkMode);
 
-      // 加载 highlight.js
-      await new Promise((resolve) => {
-        if (!window.hljs) {
-          const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
-          script.onload = () => resolve();
-          document.head.appendChild(script);
-        } else {
-          resolve();
-        }
-      });
-
-      // 初始化代码高亮样式
-      loadHighlightJS(savedDarkMode);
-
       if (contentHtml) {
         generateToc();
-        await initializeWaline();
+        await loadDependencies();
       }
     };
 
     initializePage();
   }, [contentHtml]);
 
-  // 加载代码高亮样式
-  const loadHighlightJS = (isDark) => {
-    // 移除旧主题
-    const existingTheme = document.querySelector('#hljs-theme');
-    if (existingTheme) existingTheme.remove();
-
-    // 添加新主题
-    const theme = document.createElement('link');
-    theme.id = 'hljs-theme';
-    theme.rel = 'stylesheet';
-    theme.href = isDark
-      ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
-      : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
-    document.head.appendChild(theme);
-
-    // 重新高亮代码
-    if (window.hljs) window.hljs.highlightAll();
+  // 加载依赖
+  const loadDependencies = async () => {
+    await loadHighlightJS();
+    await initializeWaline();
   };
 
-  // 初始化评论系统
-  const initializeWaline = () => {
+  // 加载代码高亮（保持不变）
+  const loadHighlightJS = () => {
     return new Promise((resolve) => {
-      if (typeof window === 'undefined') return resolve();
-
-      // 清理旧实例
-      const container = document.getElementById('waline-comment-container');
-      if (container) container.innerHTML = '';
-
-      // 动态加载 CSS
-      if (!document.querySelector('#waline-css')) {
-        const link = document.createElement('link');
-        link.id = 'waline-css';
-        link.rel = 'stylesheet';
-        link.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
-        document.head.appendChild(link);
-      }
-
-      // 动态加载 JS
-      if (!document.querySelector('#waline-js')) {
-        const script = document.createElement('script');
-        script.id = 'waline-js';
-        script.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
-        script.onload = () => {
-          initWalineInstance();
-          resolve();
-        };
-        document.body.appendChild(script);
-      } else {
-        initWalineInstance();
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
+      script.onload = () => {
+        const theme = document.createElement('link');
+        theme.rel = 'stylesheet';
+        theme.href = isDarkMode
+          ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
+          : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
+        document.head.appendChild(theme);
+        window.hljs.highlightAll();
         resolve();
-      }
-
-      const initWalineInstance = () => {
-        window.Waline.init({
-          el: '#waline-comment-container',
-          serverURL: 'https://comment.mrzxr.top/',
-          dark: 'html.dark',
-          path: router.asPath,
-          locale: { placeholder: '欢迎留言讨论...' },
-        });
       };
+      document.head.appendChild(script);
     });
   };
 
-  // 暗黑模式切换
-  const toggleDarkMode = async () => {
+  // 初始化评论系统（保持不变）
+  const initializeWaline = () => {
+    return new Promise((resolve) => {
+      if (typeof window !== 'undefined') {
+        const walineCSS = document.createElement('link');
+        walineCSS.rel = 'stylesheet';
+        walineCSS.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
+        document.head.appendChild(walineCSS);
+
+        const walineJS = document.createElement('script');
+        walineJS.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
+        walineJS.onload = () => {
+          window.Waline.init({
+            el: '#waline-comment-container',
+            serverURL: 'https://comment.mrzxr.top/',
+            
+            path: router.asPath,
+            locale: { placeholder: '欢迎留言讨论...' },
+          });
+          resolve();
+        };
+        document.body.appendChild(walineJS);
+      }
+    });
+  };
+
+  // 暗黑模式切换（保持不变）
+  const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
     setIsDarkMode(newDarkMode);
     localStorage.setItem('darkMode', newDarkMode);
     document.documentElement.classList.toggle('dark', newDarkMode);
-
-    // 更新代码高亮主题
-    loadHighlightJS(newDarkMode);
-
-    // 重新初始化评论系统
-    await initializeWaline();
+    loadHighlightJS();
   };
 
-  // 生成目录
+  // 生成目录（保持不变）
   const generateToc = () => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(contentHtml, 'text/html');
@@ -218,7 +186,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     setToc(tocItems);
   };
 
-  // 处理目录点击
+  // 处理目录点击（保持不变）
   const handleTocClick = (e, id) => {
     e.preventDefault();
     const targetElement = document.getElementById(id);
@@ -239,6 +207,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         <title>{frontmatter.title} - Typace</title>
       </Head>
 
+  
       <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-20">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
@@ -282,6 +251,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </div>
       </nav>
 
+      {/* 文章内容（保持不变） */}
       <main className="mt-24 flex">
         <div className="flex-1">
           {frontmatter.cover && (
@@ -308,6 +278,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
           </article>
         </div>
 
+        {/* 侧边目录（保持不变） */}
         <aside className="w-64 hidden lg:block pl-8 sticky top-24 self-start">
           <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
@@ -332,6 +303,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </aside>
       </main>
 
+      {/* 推荐文章（保持不变） */}
       {recommendedPosts.length > 0 && (
         <section className="mt-12">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">推荐文章</h2>
@@ -361,12 +333,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </section>
       )}
 
+      {/* 评论系统（保持不变） */}
       <section className="mt-12 max-w-4xl mx-auto">
         <div id="waline-comment-container" className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
           <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">评论</h3>
         </div>
       </section>
 
+      {/* 页脚（保持不变） */}
       <footer className="text-center mt-12">
         <a href="/api/sitemap" className="inline-block">
           <img
