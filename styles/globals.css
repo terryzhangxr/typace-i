@@ -4,37 +4,56 @@
 
 @layer base {
   :root {
-    --color-bg-primary: #ffffff; /* 浅色模式下的背景色 */
-    --color-text-primary: #2d2d2d; /* 浅色模式下的文字主色 */
-    --color-text-secondary: #737373; /* 浅色模式下的文字副色 */
-    --color-link: #3b82f6; /* 浅色模式下的链接颜色 */
-    --color-link-hover: #2563eb; /* 浅色模式下的链接悬停颜色 */
-    --color-border: #e5e7eb; /* 浅色模式下的边框颜色 */
-    --color-code-bg: #f3f4f6; /* 浅色模式下的代码块背景色 */
-    --color-code-text: #1f2937; /* 浅色模式下的代码块文字颜色 */
-    --color-quote-bg: #f9fafb; /* 浅色模式下的引用背景色 */
-    --color-quote-border: #e5e7eb; /* 浅色模式下的引用边框颜色 */
-    --color-table-header-bg: #f3f4f6; /* 浅色模式下的表头背景色 */
-    --color-table-row-bg: #ffffff; /* 浅色模式下的表格行背景色 */
-    --color-table-row-hover-bg: #f9fafb; /* 浅色模式下的表格行悬停背景色 */
+    /* 浅色模式变量 */
+    --color-bg-primary: #ffffff;
+    --color-text-primary: #2d2d2d;
+    --color-text-secondary: #737373;
+    --color-link: #3b82f6;
+    --color-link-hover: #2563eb;
+    --color-border: #e5e7eb;
+    --color-code-bg: #f3f4f6;
+    --color-code-text: #1f2937;
+    --color-quote-bg: #f9fafb;
+    --color-quote-border: #e5e7eb;
+    --color-table-header-bg: #f3f4f6;
+    --color-table-row-bg: #ffffff;
+    --color-table-row-hover-bg: #f9fafb;
+
+    /* Waline 浅色模式变量 */
+    --wl-color-bg: var(--color-bg-primary);
+    --wl-color-card-bg: var(--color-table-row-bg);
+    --wl-color-text: var(--color-text-primary);
+    --wl-color-border: var(--color-border);
+    --wl-color-btn-bg: var(--color-code-bg);
+    --wl-color-btn-hover-bg: var(--color-code-text);
   }
 
   .dark {
-    --color-bg-primary: #1a1a1a; /* 深色模式下的背景色 */
-    --color-text-primary: #ffffff; /* 深色模式下的文字主色 */
-    --color-text-secondary: #d1d5db; /* 深色模式下的文字副色 */
-    --color-link: #93c5fd; /* 深色模式下的链接颜色 */
-    --color-link-hover: #bfdbfe; /* 深色模式下的链接悬停颜色 */
-    --color-border: #4b5563; /* 深色模式下的边框颜色 */
-    --color-code-bg: #1f2937; /* 深色模式下的代码块背景色 */
-    --color-code-text: #f3f4f6; /* 深色模式下的代码块文字颜色 */
-    --color-quote-bg: #374151; /* 深色模式下的引用背景色 */
-    --color-quote-border: #4b5563; /* 深色模式下的引用边框颜色 */
-    --color-table-header-bg: #1f2937; /* 深色模式下的表头背景色 */
-    --color-table-row-bg: #111827; /* 深色模式下的表格行背景色 */
-    --color-table-row-hover-bg: #1a202c; /* 深色模式下的表格行悬停背景色 */
+    /* 深色模式变量 */
+    --color-bg-primary: #1a1a1a;
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #d1d5db;
+    --color-link: #93c5fd;
+    --color-link-hover: #bfdbfe;
+    --color-border: #4b5563;
+    --color-code-bg: #1f2937;
+    --color-code-text: #f3f4f6;
+    --color-quote-bg: #374151;
+    --color-quote-border: #4b5563;
+    --color-table-header-bg: #1f2937;
+    --color-table-row-bg: #111827;
+    --color-table-row-hover-bg: #1a202c;
+
+    /* Waline 深色模式变量 */
+    --wl-color-bg: var(--color-bg-primary);
+    --wl-color-card-bg: var(--color-table-row-bg);
+    --wl-color-text: var(--color-text-primary);
+    --wl-color-border: var(--color-border);
+    --wl-color-btn-bg: var(--color-code-bg);
+    --wl-color-btn-hover-bg: var(--color-code-text);
   }
 
+  /* 基础样式 */
   body {
     background-color: var(--color-bg-primary);
     color: var(--color-text-primary);
@@ -129,13 +148,13 @@
     content: '';
   }
 
-  /* 代码块语言标签样式 */
+  /* 代码块语言标签 */
   .code-language-label {
     @apply bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm px-3 py-1 rounded-t-lg;
     font-family: monospace;
     display: inline-block;
     position: absolute;
-    top: -1.5rem; /* 调整定位 */
+    top: -1.5rem;
     right: 0;
   }
 
@@ -172,6 +191,26 @@
 
   .prose tr:hover {
     background-color: var(--color-table-row-hover-bg);
+  }
+
+  /* Waline 评论组件覆盖 */
+  .wl-card {
+    background: var(--wl-color-card-bg) !important;
+    color: var(--wl-color-text) !important;
+    border-color: var(--wl-color-border) !important;
+  }
+
+  .wl-editor {
+    background: var(--wl-color-card-bg) !important;
+  }
+
+  .wl-btn {
+    background: var(--wl-color-btn-bg) !important;
+    color: var(--wl-color-text) !important;
+  }
+
+  .wl-btn:hover {
+    background: var(--wl-color-btn-hover-bg) !important;
   }
 
   /* 移动端适配 */
