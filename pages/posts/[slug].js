@@ -45,9 +45,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [toc, setToc] = useState([]);
   const [isMounted, setIsMounted] = useState(false);
-  const [walineInstance, setWalineInstance] = useState(null); // 新增：保存 Waline 实例
+  const [walineInstance, setWalineInstance] = useState(null);
 
-  // 添加动态样式
+  // 页面动画样式
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -62,142 +62,107 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
       }
     `;
     document.head.appendChild(style);
-
     setIsMounted(true);
-
-    return () => {
-      document.head.removeChild(style);
-    };
+    return () => document.head.removeChild(style);
   }, []);
 
   // 路由事件处理
   useEffect(() => {
-    const handleRouteChangeStart = () => {
-      setIsMounted(false);
-    };
-
-    const handleRouteChangeComplete = () => {
-      setIsMounted(true);
-    };
-
+    const handleRouteChangeStart = () => setIsMounted(false);
+    const handleRouteChangeComplete = () => setIsMounted(true);
     router.events.on('routeChangeStart', handleRouteChangeStart);
     router.events.on('routeChangeComplete', handleRouteChangeComplete);
-
     return () => {
       router.events.off('routeChangeStart', handleRouteChangeStart);
       router.events.off('routeChangeComplete', handleRouteChangeComplete);
     };
   }, [router]);
 
-  // 初始化处理
-  useEffect(() => {
-    const initializePage = async () => {
-      const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-      setIsDarkMode(savedDarkMode);
-      document.documentElement.classList.toggle('dark', savedDarkMode);
-
-      if (contentHtml) {
-        generateToc();
-        await loadDependencies();
-      }
-    };
-
-    initializePage();
-  }, [contentHtml]);
-
-  // 加载依赖
-  const loadDependencies = async () => {
-    await loadHighlightJS();
-    await initializeWaline();
-  };
-
   // 加载代码高亮
-  const loadHighlightJS = () => {
-    return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
-      script.onload = () => {
-        const theme = document.createElement('link');
-        theme.rel = 'stylesheet';
-        theme.href = isDarkMode
-          ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
-          : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
-        document.head.appendChild(theme);
-        window.hljs.highlightAll();
-        resolve();
-      };
-      document.head.appendChild(script);
-    });
+  const loadHighlightJS = (isDark) => {
+    const existingTheme = document.querySelector('#hljs-theme');
+    if (existingTheme) existingTheme.remove();
+
+    const theme = document.createElement('link');
+    theme.id = 'hljs-theme';
+    theme.rel = 'stylesheet';
+    theme.href = isDark
+      ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
+      : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
+    document.head.appendChild(theme);
+
+    if (window.hljs) window.hljs.highlightAll();
   };
 
-  // 初始化评论系统（优化后）
+  // 初始化评论系统
   const initializeWaline = async () => {
     if (typeof window === 'undefined') return;
 
-    // 1. 销毁旧实例
-    if (walineInstance && walineInstance.destroy) {
+    // 销毁旧实例
+    if (walineInstance?.destroy) {
       walineInstance.destroy();
       setWalineInstance(null);
     }
 
-    // 2. 清理容器内容
-    const container = document.getElementById('waline-comment-container');
-    if (container) container.innerHTML = '';
-
-    // 3. 动态加载资源
-    const loadWalineResources = () => {
+    // 动态加载核心 JS
+    const loadWalineCore = () => {
       return new Promise((resolve) => {
-        // 加载 CSS
-        if (!document.querySelector('#waline-css')) {
-          const link = document.createElement('link');
-          link.id = 'waline-css';
-          link.rel = 'stylesheet';
-          link.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
-          link.onload = resolve;
-          document.head.appendChild(link);
+        if (!document.querySelector('#waline-js')) {
+          const script = document.createElement('script');
+          script.id = 'waline-js';
+          script.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
+          script.onload = resolve;
+          document.body.appendChild(script);
         } else {
           resolve();
         }
-      }).then(() => {
-        // 加载 JS
-        return new Promise((resolve) => {
-          if (!document.querySelector('#waline-js')) {
-            const script = document.createElement('script');
-            script.id = 'waline-js';
-            script.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
-            script.onload = resolve;
-            document.body.appendChild(script);
-          } else {
-            resolve();
-          }
-        });
       });
     };
 
-    // 4. 加载资源后初始化
-    await loadWalineResources();
-    
-    // 5. 创建新实例并保存
+    await loadWalineCore();
+
+    // 初始化实例（禁用自动主题检测）
     const instance = window.Waline.init({
       el: '#waline-comment-container',
       serverURL: 'https://comment.mrzxr.top/',
-      dark: 'auto', // 关键修复：自动检测主题
+      dark: false, // 完全依赖 CSS 变量
       path: router.asPath,
       locale: { placeholder: '欢迎留言讨论...' },
     });
     setWalineInstance(instance);
   };
 
-  // 暗黑模式切换（优化后）
+  // 主题切换逻辑
   const toggleDarkMode = async () => {
     const newDarkMode = !isDarkMode;
     setIsDarkMode(newDarkMode);
     localStorage.setItem('darkMode', newDarkMode);
     document.documentElement.classList.toggle('dark', newDarkMode);
 
-    loadHighlightJS();
-    await initializeWaline(); // 确保顺序执行
+    // 更新代码高亮
+    loadHighlightJS(newDarkMode);
+    
+    // 重新加载 Waline
+    await initializeWaline();
   };
+
+  // 页面初始化
+  useEffect(() => {
+    const initializePage = async () => {
+      const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+      setIsDarkMode(savedDarkMode);
+      document.documentElement.classList.toggle('dark', savedDarkMode);
+
+      await Promise.all([
+        loadHighlightJS(savedDarkMode),
+        initializeWaline()
+      ]);
+
+      if (contentHtml) generateToc();
+    };
+
+    initializePage();
+  }, [contentHtml]);
 
   // 生成目录
   const generateToc = () => {
@@ -205,7 +170,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     const doc = parser.parseFromString(contentHtml, 'text/html');
     const headings = doc.querySelectorAll('h1, h2');
     const tocItems = [];
-
     headings.forEach((heading) => {
       const id = heading.textContent.toLowerCase().replace(/\s+/g, '-');
       heading.id = id;
@@ -216,7 +180,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         active: true,
       });
     });
-
     setToc(tocItems);
   };
 
@@ -225,18 +188,13 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
     e.preventDefault();
     const targetElement = document.getElementById(id);
     if (targetElement) {
-      targetElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
       window.history.pushState(null, '', `#${id}`);
     }
   };
 
   return (
-    <div className={`min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 page-container ${
-      isMounted ? 'mounted' : ''
-    }`}>
+    <div className={`min-h-screen p-8 relative z-10 bg-white dark:bg-gray-900 page-container ${isMounted ? 'mounted' : ''}`}>
       <Head>
         <title>{frontmatter.title} - Typace</title>
       </Head>
