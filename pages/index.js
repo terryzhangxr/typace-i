@@ -333,49 +333,54 @@ export default function Home({ allPostsData }) {
         </div>
       </nav>
 
-      {/* 移动端侧滑菜单 */}
-      <div className={`fixed inset-0 z-40 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
-        {/* 遮罩层 */}
-        <div 
-          className={`absolute inset-0 bg-black/20 dark:bg-black/40 transition-opacity ${
-            isMenuOpen ? 'opacity-100' : 'opacity-0'
-          }`}
-          onClick={() => setIsMenuOpen(false)}
-        />
-        
-        {/* 菜单内容 */}
-        <div 
-          className={`absolute right-0 top-0 h-full w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-xl transition-transform duration-300 ${
-            isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
-        >
-          <div className="p-6 space-y-4">
-            <button
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            
-            <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)}>首页</MobileNavLink>
-            <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>关于</MobileNavLink>
-            <MobileNavLink href="/archive" onClick={() => setIsMenuOpen(false)}>归档</MobileNavLink>
-            <MobileNavLink href="/tags" onClick={() => setIsMenuOpen(false)}>标签</MobileNavLink>
-            
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-              <button
-                onClick={toggleDarkMode}
-                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <span>暗黑模式</span>
-                <span>{isDarkMode ? '🌙' : '☀️'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
+  // 修改移动端侧滑菜单部分
+<div className={`fixed inset-0 z-50 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
+  {/* 遮罩层 */}
+  <div 
+    className={`absolute inset-0 bg-black/20 dark:bg-black/40 transition-opacity ${
+      isMenuOpen ? 'opacity-100' : 'opacity-0'
+    }`}
+    onClick={() => setIsMenuOpen(false)}
+  />
+  
+  {/* 菜单内容 - 主要修改这里 */}
+  <div 
+    className={`absolute right-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-xl transition-transform duration-300 ${
+      isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+    }`}
+  >
+    <div className="p-6 space-y-4 pt-2"> {/* 增加顶部内边距 */}
+      {/* 关闭按钮位置调整 */}
+      <button
+        className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+        onClick={() => setIsMenuOpen(false)}
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      
+      {/* 菜单项间距调整 */}
+      <div className="mt-6 space-y-3"> {/* 增加顶部间距 */}
+        <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)}>首页</MobileNavLink>
+        <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>关于</MobileNavLink>
+        <MobileNavLink href="/archive" onClick={() => setIsMenuOpen(false)}>归档</MobileNavLink>
+        <MobileNavLink href="/tags" onClick={() => setIsMenuOpen(false)}>标签</MobileNavLink>
       </div>
+      
+      {/* 暗黑模式按钮调整 */}
+      <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4"> {/* 增加顶部间距 */}
+        <button
+          onClick={toggleDarkMode}
+          className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+        >
+          <span>暗黑模式</span>
+          <span>{isDarkMode ? '🌙' : '☀️'}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
       {/* 页面内容 */}
       <div className={`min-h-screen p-8 pt-24 relative z-10 page-container ${
