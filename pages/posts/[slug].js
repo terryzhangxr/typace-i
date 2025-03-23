@@ -141,60 +141,35 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   // 初始化评论系统
   const initializeWaline = () => {
     return new Promise((resolve) => {
-      if (typeof window === 'undefined') return resolve();
+      if (typeof window !== 'undefined') {
+        // 移除旧的Waline实例
+        const container = document.getElementById('waline-comment-container');
+        if (container) container.innerHTML = '';
 
-      // 清理旧实例
-      const container = document.getElementById('waline-comment-container');
-      if (container) container.innerHTML = '';
-
-      // 动态加载 CSS
-      if (!document.querySelector('#waline-css')) {
-        const link = document.createElement('link');
-        link.id = 'waline-css';
-        link.rel = 'stylesheet';
-        link.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
-        document.head.appendChild(link);
-      }
-
-      // 动态加载 JS
-      if (!document.querySelector('#waline-js')) {
-        const script = document.createElement('script');
-        script.id = 'waline-js';
-        script.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
-        script.onload = () => {
-          initWalineInstance();
-          resolve();
-        };
-        document.body.appendChild(script);
-      } else {
-        initWalineInstance();
-        resolve();
-      }
-
-      const initWalineInstance = () => {
+        // 添加新的Waline实例
         window.Waline.init({
           el: '#waline-comment-container',
           serverURL: 'https://comment.mrzxr.top/',
-          dark: isDarkMode ? 'auto' : false, // 自动跟随系统主题
+          dark: 'html.dark', // 自动跟随系统主题
           path: router.asPath,
           locale: { placeholder: '欢迎留言讨论...' },
         });
-      };
+        resolve();
+      }
     });
   };
 
   // 暗黑模式切换
-  const toggleDarkMode = async () => {
+  const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
     setIsDarkMode(newDarkMode);
     localStorage.setItem('darkMode', newDarkMode);
     document.documentElement.classList.toggle('dark', newDarkMode);
-
+    
     // 更新代码高亮主题
     loadHighlightJS(newDarkMode);
-
-    // 重新初始化评论系统
-    await initializeWaline();
+    // 重新初始化评论系统以应用新主题
+    initializeWaline();
   };
 
   // 生成目录
