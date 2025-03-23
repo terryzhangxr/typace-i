@@ -136,7 +136,14 @@ export default function Home({ allPostsData }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [hitokoto, setHitokoto] = useState('');
   const [displayText, setDisplayText] = useState('');
-  const [isMounted, setIsMounted] = useState(false); // 新增动画状态
+  const [isMounted, setIsMounted] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 检测设备宽度
+  const checkMobile = () => {
+    setIsMobile(window.innerWidth < 768);
+  };
 
   useEffect(() => {
     addDynamicStyles();
@@ -163,14 +170,14 @@ export default function Home({ allPostsData }) {
     // 路由事件监听
     const handleRouteChangeStart = () => {
       setTransitionState('exiting');
-      setIsMounted(false); // 路由切换时隐藏页面
+      setIsMounted(false);
     };
 
     const handleRouteChangeComplete = () => {
       setTransitionState('entering');
       setTimeout(() => {
         setTransitionState('idle');
-        setIsMounted(true); // 路由切换完成后显示页面
+        setIsMounted(true);
       }, 300);
     };
 
@@ -180,9 +187,14 @@ export default function Home({ allPostsData }) {
     // 初始化页面动画
     setIsMounted(true);
 
+    // 初始化设备宽度检测
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
     return () => {
       router.events.off('routeChangeStart', handleRouteChangeStart);
       router.events.off('routeChangeComplete', handleRouteChangeComplete);
+      window.removeEventListener('resize', checkMobile);
     };
   }, [router]);
 
@@ -293,40 +305,77 @@ export default function Home({ allPostsData }) {
                 Typace
               </a>
             </Link>
-            <ul className="flex space-x-6">
-              <li>
-                <Link href="/" passHref prefetch>
-                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
-                    首页
-                  </a>
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" passHref prefetch>
-                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
-                    关于
-                  </a>
-                </Link>
-              </li>
-              <li>
-                <Link href="/archive" passHref prefetch>
-                  <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
-                    归档
-                  </a>
-                </Link>
-              </li>
-              <li>
-                <button
-                  onClick={toggleDarkMode}
-                  className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
-                >
-                  {isDarkMode ? '🌙' : '☀️'}
-                </button>
-              </li>
-            </ul>
+
+            {/* 桌面导航 */}
+            <div className="hidden md:flex space-x-6">
+              <NavLink href="/">首页</NavLink>
+              <NavLink href="/about">关于</NavLink>
+              <NavLink href="/archive">归档</NavLink>
+              <NavLink href="/tags">标签</NavLink>
+              <button
+                onClick={toggleDarkMode}
+                className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
+              >
+                {isDarkMode ? '🌙' : '☀️'}
+              </button>
+            </div>
+
+            {/* 移动端菜单按钮 */}
+            <button
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
           </div>
         </div>
       </nav>
+
+      {/* 移动端侧滑菜单 */}
+      <div className={`fixed inset-0 z-40 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
+        {/* 遮罩层 */}
+        <div 
+          className={`absolute inset-0 bg-black/20 dark:bg-black/40 transition-opacity ${
+            isMenuOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={() => setIsMenuOpen(false)}
+        />
+        
+        {/* 菜单内容 */}
+        <div 
+          className={`absolute right-0 top-0 h-full w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-xl transition-transform duration-300 ${
+            isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          <div className="p-6 space-y-4">
+            <button
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)}>首页</MobileNavLink>
+            <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>关于</MobileNavLink>
+            <MobileNavLink href="/archive" onClick={() => setIsMenuOpen(false)}>归档</MobileNavLink>
+            <MobileNavLink href="/tags" onClick={() => setIsMenuOpen(false)}>标签</MobileNavLink>
+            
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={toggleDarkMode}
+                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <span>暗黑模式</span>
+                <span>{isDarkMode ? '🌙' : '☀️'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* 页面内容 */}
       <div className={`min-h-screen p-8 pt-24 relative z-10 page-container ${
@@ -442,6 +491,27 @@ export default function Home({ allPostsData }) {
     </>
   );
 }
+
+// 桌面导航链接组件
+const NavLink = ({ href, children }) => (
+  <Link href={href} passHref>
+    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+      {children}
+    </a>
+  </Link>
+);
+
+// 移动端导航链接组件
+const MobileNavLink = ({ href, children, onClick }) => (
+  <Link href={href} passHref>
+    <a 
+      onClick={onClick}
+      className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+    >
+      {children}
+    </a>
+  </Link>
+);
 
 export async function getStaticProps() {
   const allPostsData = getSortedPostsData();
