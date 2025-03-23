@@ -4,7 +4,7 @@ import { getSortedPostsData } from '../lib/posts';
 import Head from 'next/head';
 import Link from 'next/link';
 
-// 动态样式定义
+// 动态样式定义 
 const addDynamicStyles = () => {
   const style = document.createElement('style');
   style.textContent = `
