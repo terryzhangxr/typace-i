@@ -436,7 +436,8 @@ export default function Home({ allPostsData }) {
         <div className="flex">
           {/* 左侧简介栏 */}
           <aside className="w-1/4 pr-8 hidden lg:block">
-            <div className="sticky top-24 p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
+            {/* 简介板块 */}
+            <div className="sticky top-24 p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md mb-6">
               <div className="flex flex-col items-center">
                 {/* 博主头像 */}
                 <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
@@ -473,7 +474,7 @@ export default function Home({ allPostsData }) {
               </div>
             </div>
 
-            {/* 最新文章 */}
+            {/* 最新文章板块 */}
             <div className="sticky top-64 p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
               <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
                 最新文章
