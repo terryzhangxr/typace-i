@@ -473,7 +473,16 @@ export default function Home({ allPostsData }) {
             </div>
           </aside>
 
-          
+          <main className="flex-1">
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-8">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">欢迎来到我的博客</h2>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                Designed by Terryzhang & mrche 
+                Typace官方站
+              </p>
+            </div>
+          </main>
+        </div>
 
         {/* 最新文章部分 */}
         <div className="flex">
