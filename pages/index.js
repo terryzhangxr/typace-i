@@ -51,6 +51,10 @@ const addDynamicStyles = () => {
         width: 100%;
         height: 200px;
       }
+      .profile-card {
+        width: 100% !important;
+        margin-bottom: 2rem;
+      }
     }
 
     /* 打字机效果 */
@@ -126,6 +130,26 @@ const addDynamicStyles = () => {
     .dark .tag:hover {
       background-color: #1e40af;
     }
+
+    /* 简介框样式 */
+    .profile-avatar {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid rgba(59, 130, 246, 0.5);
+      transition: all 0.3s ease;
+    }
+    .profile-avatar:hover {
+      transform: scale(1.05);
+      border-color: rgba(59, 130, 246, 0.8);
+    }
+    .stats-card {
+      transition: all 0.3s ease;
+    }
+    .stats-card:hover {
+      transform: translateY(-3px);
+    }
   `;
   document.head.appendChild(style);
 };
@@ -144,6 +168,16 @@ export default function Home({ allPostsData }) {
   const checkMobile = () => {
     setIsMobile(window.innerWidth < 768);
   };
+
+  // 计算文章总数和标签总数
+  const totalPosts = allPostsData.length;
+  const allTags = new Set();
+  allPostsData.forEach(post => {
+    if (post.tags) {
+      post.tags.forEach(tag => allTags.add(tag));
+    }
+  });
+  const totalTags = allTags.size;
 
   useEffect(() => {
     addDynamicStyles();
@@ -333,54 +367,51 @@ export default function Home({ allPostsData }) {
         </div>
       </nav>
 
-  
-<div className={`fixed inset-0 z-50 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
-  {/* 遮罩层 */}
-  <div 
-    className={`absolute inset-0 bg-black/20 dark:bg-black/40 transition-opacity ${
-      isMenuOpen ? 'opacity-100' : 'opacity-0'
-    }`}
-    onClick={() => setIsMenuOpen(false)}
-  />
-  
-  {/* 菜单内容 */}
-  <div 
-    className={`absolute right-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-xl transition-transform duration-300 ${
-      isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-    }`}
-  >
-    <div className="p-6 space-y-4 pt-2"> {/* 顶部内边距 */}
-      {/* 关闭按钮位置 */}
-      <button
-        className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-        onClick={() => setIsMenuOpen(false)}
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-      
-      {/* 菜单项间距 */}
-      <div className="mt-6 space-y-3"> {/* 顶部间距 */}
-        <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)}>首页</MobileNavLink>
-        <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>关于</MobileNavLink>
-        <MobileNavLink href="/archive" onClick={() => setIsMenuOpen(false)}>归档</MobileNavLink>
-        <MobileNavLink href="/tags" onClick={() => setIsMenuOpen(false)}>标签</MobileNavLink>
-      </div>
-      
-      {/* 暗黑模式按钮调整 */}
-      <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4"> {/* 增加顶部间距 */}
-        <button
-          onClick={toggleDarkMode}
-          className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+      {/* 移动端菜单 */}
+      <div className={`fixed inset-0 z-50 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
+        {/* 遮罩层 */}
+        <div 
+          className={`absolute inset-0 bg-black/20 dark:bg-black/40 transition-opacity ${
+            isMenuOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={() => setIsMenuOpen(false)}
+        />
+        
+        {/* 菜单内容 */}
+        <div 
+          className={`absolute right-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-xl transition-transform duration-300 ${
+            isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
         >
-          <span>暗黑模式</span>
-          <span>{isDarkMode ? '🌙' : '☀️'}</span>
-        </button>
+          <div className="p-6 space-y-4 pt-2">
+            <button
+              className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            <div className="mt-6 space-y-3">
+              <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)}>首页</MobileNavLink>
+              <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>关于</MobileNavLink>
+              <MobileNavLink href="/archive" onClick={() => setIsMenuOpen(false)}>归档</MobileNavLink>
+              <MobileNavLink href="/tags" onClick={() => setIsMenuOpen(false)}>标签</MobileNavLink>
+            </div>
+            
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
+              <button
+                onClick={toggleDarkMode}
+                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <span>暗黑模式</span>
+                <span>{isDarkMode ? '🌙' : '☀️'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</div>
 
       {/* 页面内容 */}
       <div className={`min-h-screen p-8 pt-24 relative z-10 page-container ${
@@ -401,7 +432,59 @@ export default function Home({ allPostsData }) {
           </div>
         </header>
 
-        {/* 文章列表 */}
+        {/* 简介框 */}
+        <div className="flex mb-8">
+          <aside className="w-1/4 pr-8 hidden lg:block">
+            <div className="sticky top-24 p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
+              <div className="flex flex-col items-center">
+                {/* 博主头像 */}
+                <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
+                  <img 
+                    src="/avatar.jpg" 
+                    alt="博主头像" 
+                    className="w-full h-full object-cover profile-avatar"
+                  />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">
+                  Typace
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400 mb-4 text-center">
+                  theme typace team
+                </p>
+                <div className="flex space-x-4">
+                  <div className="text-center stats-card">
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {totalPosts}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      文章
+                    </div>
+                  </div>
+                  <div className="text-center stats-card">
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {totalTags}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      标签
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <main className="flex-1">
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-8">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">欢迎来到我的博客</h2>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                Designed by Terryzhang & mrche 
+                Typace官方站
+              </p>
+            </div>
+          </main>
+        </div>
+
+        {/* 最新文章部分 */}
         <div className="flex">
           <aside className="w-1/4 pr-8 hidden lg:block">
             <div className="sticky top-24 p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
@@ -428,7 +511,7 @@ export default function Home({ allPostsData }) {
           <main className="flex-1">
             <ul className="space-y-6">
               {allPostsData.map(({ slug, title, date, cover, excerpt, tags }) => (
-                <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-105">
+                <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-[1.02]">
                   <div className="flex flex-col md:flex-row gap-6">
                     {cover && (
                       <div className="md:w-1/3 cover-image-container">
@@ -452,7 +535,6 @@ export default function Home({ allPostsData }) {
                           {excerpt}
                         </p>
                       )}
-                      {/* 显示标签 */}
                       {tags && tags.length > 0 && (
                         <div className="mt-4">
                           {tags.map((tag) => (
