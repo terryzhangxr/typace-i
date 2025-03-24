@@ -150,17 +150,6 @@ const addDynamicStyles = () => {
     .stats-card:hover {
       transform: translateY(-3px);
     }
-
-    /* 新增样式 */
-    .sidebar-container {
-      position: sticky;
-      top: 6rem;
-      height: calc(100vh - 7rem);
-      overflow-y: auto;
-    }
-    .sidebar-section {
-      margin-bottom: 2rem;
-    }
   `;
   document.head.appendChild(style);
 };
@@ -443,68 +432,66 @@ export default function Home({ allPostsData }) {
           </div>
         </header>
 
+        {/* 主要内容区域 */}
         <div className="flex">
-          {/* 左侧边栏 */}
+          {/* 左侧简介栏 */}
           <aside className="w-1/4 pr-8 hidden lg:block">
-            <div className="sidebar-container">
-              {/* 简介框 */}
-              <div className="sidebar-section p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
-                <div className="flex flex-col items-center">
-                  {/* 博主头像 */}
-                  <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
-                    <img 
-                      src="/avatar.jpg" 
-                      alt="博主头像" 
-                      className="w-full h-full object-cover profile-avatar"
-                    />
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">
-                    Typace
-                  </h2>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4 text-center">
-                    theme typace team
-                  </p>
-                  <div className="flex space-x-4">
-                    <div className="text-center stats-card">
-                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                        {totalPosts}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        文章
-                      </div>
+            <div className="sticky top-24 p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
+              <div className="flex flex-col items-center">
+                {/* 博主头像 */}
+                <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
+                  <img 
+                    src="/avatar.jpg" 
+                    alt="博主头像" 
+                    className="w-full h-full object-cover profile-avatar"
+                  />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">
+                  Typace
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400 mb-4 text-center">
+                  theme typace team
+                </p>
+                <div className="flex space-x-4">
+                  <div className="text-center stats-card">
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {totalPosts}
                     </div>
-                    <div className="text-center stats-card">
-                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                        {totalTags}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        标签
-                      </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      文章
+                    </div>
+                  </div>
+                  <div className="text-center stats-card">
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {totalTags}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      标签
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* 最新文章 */}
-              <div className="sidebar-section mt-6 p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
-                  最新文章
-                </h2>
-                <ul className="space-y-4">
-                  {allPostsData.slice(0, 5).map((post) => (
-                    <li key={post.slug}>
-                      <Link href={`/posts/${post.slug}`} passHref>
-                        <a className="block text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                          <h3 className="text-lg font-semibold">{post.title}</h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                            {post.date}
-                          </p>
-                        </a>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            {/* 最新文章 */}
+            <div className="sticky top-64 p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
+              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
+                最新文章
+              </h2>
+              <ul className="space-y-4">
+                {allPostsData.slice(0, 5).map((post) => (
+                  <li key={post.slug}>
+                    <Link href={`/posts/${post.slug}`} passHref>
+                      <a className="block text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        <h3 className="text-lg font-semibold">{post.title}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                          {post.date}
+                        </p>
+                      </a>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
           </aside>
 
