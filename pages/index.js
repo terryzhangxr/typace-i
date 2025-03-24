@@ -437,9 +437,9 @@ export default function Home({ allPostsData }) {
           {/* 左侧简介栏 */}
           <aside className="w-1/4 pr-8 hidden lg:block">
             {/* 简介板块和最新文章板块的容器 */}
-            <div className="sticky top-24 space-y-6">
+            <div className="fixed top-20 space-y-6" style={{ height: 'calc(100vh - 80px)' }}>
               {/* 简介板块 */}
-              <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
+              <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md h-1/2">
                 <div className="flex flex-col items-center">
                   {/* 博主头像 */}
                   <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
@@ -477,11 +477,11 @@ export default function Home({ allPostsData }) {
               </div>
 
               {/* 最新文章板块 */}
-              <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
+              <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md h-1/2">
                 <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
                   最新文章
                 </h2>
-                <ul className="space-y-4">
+                <ul className="space-y-4 overflow-y-auto" style={{ height: 'calc(100% - 48px)' }}>
                   {allPostsData.slice(0, 5).map((post) => (
                     <li key={post.slug}>
                       <Link href={`/posts/${post.slug}`} passHref>
