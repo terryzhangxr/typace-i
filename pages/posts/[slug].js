@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../../lib/posts';
-import fs from 'fs';
+import fs from 'fs'; 
 import path from 'path';
 import matter from 'gray-matter';
 import { remark } from 'remark';
@@ -436,7 +436,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
           <p className="mt-4 text-gray-600 dark:text-gray-400">
             由Terryzhang&mrche创建的
             <a
-              href="https://github.com/terryzhangxr/typace-i"
+              href="https://bgithub.xyz/terryzhangxr/typace-i"
               className="text-blue-600 hover:underline dark:text-blue-400"
             >
               Typace
