@@ -99,7 +99,6 @@ const addDynamicStyles = () => {
 
     /* 新增动画样式 */
     .page-container {
-      position: relative;
       opacity: 0;
       transform: translateY(100px);
       transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
@@ -151,58 +150,6 @@ const addDynamicStyles = () => {
     .stats-card:hover {
       transform: translateY(-3px) scale(1.05);
     }
-
-    /* 新增开屏动画样式 */
-    .splash-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: rgba(255, 255, 255, 0.96);
-      z-index: 9999;
-      pointer-events: none;
-      transition: opacity 0.5s ease;
-    }
-    .dark .splash-container {
-      background: rgba(17, 24, 39, 0.96);
-    }
-    .splash-text {
-      display: flex;
-      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, 
-                   'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 
-                   'Droid Sans', 'Helvetica Neue', sans-serif;
-      font-weight: 300;
-      font-size: 4rem;
-      letter-spacing: 0.2em;
-    }
-    .splash-char {
-      opacity: 0;
-      transform: translateY(30px);
-      animation: charFade 1.2s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-      will-change: transform, opacity;
-    }
-    @keyframes charFade {
-      0% {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      40% {
-        opacity: 1;
-        transform: translateY(0);
-      }
-      60% {
-        opacity: 1;
-        transform: translateY(0);
-      }
-      100% {
-        opacity: 0;
-        transform: translateY(-30px);
-      }
-    }
   `;
   document.head.appendChild(style);
 };
@@ -216,10 +163,6 @@ export default function Home({ allPostsData }) {
   const [isMounted, setIsMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [splashVisible, setSplashVisible] = useState(true);
-
-  // "typace"字符动画
-  const chars = 'typace'.split('');
 
   // 检测设备宽度
   const checkMobile = () => {
@@ -282,16 +225,10 @@ export default function Home({ allPostsData }) {
     checkMobile();
     window.addEventListener('resize', checkMobile);
 
-    // 开屏动画结束后隐藏
-    const splashTimer = setTimeout(() => {
-      setSplashVisible(false);
-    }, 3500);
-
     return () => {
       router.events.off('routeChangeStart', handleRouteChangeStart);
       router.events.off('routeChangeComplete', handleRouteChangeComplete);
       window.removeEventListener('resize', checkMobile);
-      clearTimeout(splashTimer);
     };
   }, [router]);
 
@@ -393,26 +330,6 @@ export default function Home({ allPostsData }) {
 
   return (
     <>
-      {/* 开屏动画 */}
-      {splashVisible && (
-        <div className="splash-container">
-          <div className="splash-text">
-            {chars.map((char, index) => (
-              <span 
-                key={index}
-                className="splash-char"
-                style={{
-                  animationDelay: `${index * 0.15}s`,
-                  color: isDarkMode ? '#e5e7eb' : '#1f2937'
-                }}
-              >
-                {char}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* 导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-50">
         <div className="container mx-auto px-8 py-4">
