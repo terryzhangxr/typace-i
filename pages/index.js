@@ -562,13 +562,24 @@ export default function Home({ allPostsData }) {
           <p className="mt-4 text-gray-600 dark:text-gray-400">
             由MRCHE&terryzhang创建的
             <a
-              href="https://www.mrche.top/typace"
+              href="https://github.com/terryzhangxr/typace-i"
               className="text-blue-600 hover:underline dark:text-blue-400"
             >
               Typace
             </a>
             强势驱动
           </p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+              联系我们
+            <a
+              href="mailto:zhang@mrzxr.com"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              zhang@mrzxr.com
+            </a>
+            强势驱动
+          </p>
+            
         </footer>
       </div>
     </>
