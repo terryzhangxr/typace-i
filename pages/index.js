@@ -148,7 +148,7 @@ const addDynamicStyles = () => {
       transition: all 0.3s ease;
     }
     .stats-card:hover {
-      transform: translateY(-3px);
+      transform: translateY(-3px) scale(1.05);
     }
   `;
   document.head.appendChild(style);
@@ -456,22 +456,26 @@ export default function Home({ allPostsData }) {
                     theme typace team
                   </p>
                   <div className="flex space-x-4">
-                    <div className="text-center stats-card">
-                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                        {totalPosts}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        文章
-                      </div>
-                    </div>
-                    <div className="text-center stats-card">
-                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                        {totalTags}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        标签
-                      </div>
-                    </div>
+                    <Link href="/archive" passHref>
+                      <a className="text-center stats-card hover:transform hover:scale-105 transition-transform cursor-pointer">
+                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                          {totalPosts}
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          文章
+                        </div>
+                      </a>
+                    </Link>
+                    <Link href="/tags" passHref>
+                      <a className="text-center stats-card hover:transform hover:scale-105 transition-transform cursor-pointer">
+                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                          {totalTags}
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          标签
+                        </div>
+                      </a>
+                    </Link>
                   </div>
                 </div>
               </div>
