@@ -8,58 +8,6 @@ import Link from 'next/link';
 const addDynamicStyles = () => {
   const style = document.createElement('style');
   style.textContent = `
-    /* 新增开屏动画样式 */
-    .splash-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      background: white;
-      z-index: 9999;
-      transition: opacity 0.5s ease-out;
-    }
-    .dark .splash-screen {
-      background: #1a202c;
-    }
-    .splash-logo {
-      font-family: 'Arial Rounded MT Bold', 'Helvetica Rounded', Arial, sans-serif;
-      font-size: 5rem;
-      font-weight: 800;
-      background-clip: text;
-      text-fill-color: transparent;
-      background-image: linear-gradient(to right, #4f46e5, #06b6d4);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      position: relative;
-      overflow: hidden;
-    }
-    .splash-logo span {
-      display: inline-block;
-      opacity: 0;
-      transform: translateY(20px);
-      animation: fadeInUp 0.8s forwards;
-    }
-    @keyframes fadeInUp {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    @keyframes fadeOutUp {
-      to {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-    }
-    .splash-logo.fade-out span {
-      animation: fadeOutUp 0.8s forwards;
-    }
-
     /* 页面切换动画 */
     .page-transition {
       opacity: 1;
@@ -81,6 +29,7 @@ const addDynamicStyles = () => {
       opacity: 1;
       transform: translateY(0);
     }
+
     /* 背景渐变过渡 */
     .bg-transition {
       position: fixed;
@@ -95,6 +44,7 @@ const addDynamicStyles = () => {
     .bg-visible {
       opacity: 1;
     }
+
     /* 响应式布局 */
     @media (max-width: 767px) {
       .cover-image-container {
@@ -106,6 +56,7 @@ const addDynamicStyles = () => {
         margin-bottom: 2rem;
       }
     }
+
     /* 打字机效果 */
     .typewriter {
       display: inline-block;
@@ -124,6 +75,7 @@ const addDynamicStyles = () => {
         border-color: #4a5568;
       }
     }
+
     /* 其他样式 */
     .line-clamp-3 {
       display: -webkit-box;
@@ -144,6 +96,7 @@ const addDynamicStyles = () => {
       word-wrap: break-word;
       white-space: normal;
     }
+
     /* 新增动画样式 */
     .page-container {
       opacity: 0;
@@ -154,6 +107,7 @@ const addDynamicStyles = () => {
       opacity: 1;
       transform: translateY(0);
     }
+
     /* 标签样式 */
     .tag {
       display: inline-block;
@@ -176,6 +130,7 @@ const addDynamicStyles = () => {
     .dark .tag:hover {
       background-color: #1e40af;
     }
+
     /* 简介框样式 */
     .profile-avatar {
       width: 96px;
@@ -208,8 +163,11 @@ export default function Home({ allPostsData }) {
   const [isMounted, setIsMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [showSplash, setShowSplash] = useState(true);
-  const [splashPhase, setSplashPhase] = useState('fade-in');
+
+  // 检测设备宽度
+  const checkMobile = () => {
+    setIsMobile(window.innerWidth < 768);
+  };
 
   // 计算文章总数和标签总数
   const totalPosts = allPostsData.length;
@@ -222,15 +180,6 @@ export default function Home({ allPostsData }) {
   const totalTags = allTags.size;
 
   useEffect(() => {
-    // 检查是否是从站内跳转过来的
-    const referrer = document.referrer;
-    const isInternalNavigation = referrer.includes(window.location.host);
-    
-    // 如果是站内跳转，不显示开屏动画
-    if (isInternalNavigation) {
-      setShowSplash(false);
-    }
-
     addDynamicStyles();
 
     // 从本地存储获取暗黑模式设置
@@ -282,11 +231,6 @@ export default function Home({ allPostsData }) {
       window.removeEventListener('resize', checkMobile);
     };
   }, [router]);
-
-  // 检测设备宽度
-  const checkMobile = () => {
-    setIsMobile(window.innerWidth < 768);
-  };
 
   // 打字机效果
   const typeWriterEffect = (text) => {
@@ -364,40 +308,6 @@ export default function Home({ allPostsData }) {
     };
   }, [isDarkMode]);
 
-  // 开屏动画逻辑
-  useEffect(() => {
-    if (!showSplash) return;
-
-    // 第一阶段：字符逐个淡入
-    const letters = document.querySelectorAll('.splash-logo span');
-    letters.forEach((letter, index) => {
-      letter.style.animationDelay = `${index * 0.1}s`;
-    });
-
-    // 第二阶段：所有字符显示完成后，等待1秒
-    const totalDuration = letters.length * 100 + 1000;
-    const phase1Timer = setTimeout(() => {
-      setSplashPhase('hold');
-    }, letters.length * 100);
-
-    // 第三阶段：字符逐个淡出
-    const phase2Timer = setTimeout(() => {
-      setSplashPhase('fade-out');
-      document.querySelector('.splash-logo').classList.add('fade-out');
-    }, totalDuration);
-
-    // 最后：移除开屏
-    const phase3Timer = setTimeout(() => {
-      setShowSplash(false);
-    }, totalDuration + 800);
-
-    return () => {
-      clearTimeout(phase1Timer);
-      clearTimeout(phase2Timer);
-      clearTimeout(phase3Timer);
-    };
-  }, [showSplash]);
-
   // 切换暗黑模式
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
@@ -420,19 +330,6 @@ export default function Home({ allPostsData }) {
 
   return (
     <>
-      {/* 开屏动画 */}
-      {showSplash && (
-        <div className="splash-screen">
-          <div className="splash-logo">
-            {'Typace'.split('').map((char, index) => (
-              <span key={index} style={{ animationDelay: `${index * 0.1}s` }}>
-                {char}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* 导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-50">
         <div className="container mx-auto px-8 py-4">
