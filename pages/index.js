@@ -444,7 +444,7 @@ export default function Home({ allPostsData }) {
                   {/* 博主头像 */}
                   <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
                     <img 
-                      src="/avatar.jpg" 
+                      src="https://ik.imagekit.io/terryzhang/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-04-17%20204625.png" 
                       alt="博主头像" 
                       className="w-full h-full object-cover profile-avatar"
                     />
