@@ -577,7 +577,6 @@ export default function Home({ allPostsData }) {
             >
               zhang@mrzxr.com
             </a>
-            强势驱动
           </p>
             
         </footer>
