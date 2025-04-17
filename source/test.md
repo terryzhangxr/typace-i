@@ -23,7 +23,7 @@ print ("hello world")
 # 标题
 ## 副标题
 
-![logo](https://ik.imagekit.io/terryzhang/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-04-17%20204625.png)
+![picture](https://ik.imagekit.io/terryzhang/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-04-17%20204625.png)
 
 > [!NOTE]
 >这是注意区块
