@@ -150,6 +150,32 @@ const addDynamicStyles = () => {
     .stats-card:hover {
       transform: translateY(-3px) scale(1.05);
     }
+
+    /* 侧边栏滚动条样式 */
+    .sidebar-scroll {
+      scrollbar-width: thin;
+      scrollbar-color: #3b82f6 #e5e7eb;
+    }
+    .dark .sidebar-scroll {
+      scrollbar-color: #1e40af #374151;
+    }
+    .sidebar-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .sidebar-scroll::-webkit-scrollbar-track {
+      background: #e5e7eb;
+      border-radius: 3px;
+    }
+    .dark .sidebar-scroll::-webkit-scrollbar-track {
+      background: #374151;
+    }
+    .sidebar-scroll::-webkit-scrollbar-thumb {
+      background-color: #3b82f6;
+      border-radius: 3px;
+    }
+    .dark .sidebar-scroll::-webkit-scrollbar-thumb {
+      background-color: #1e40af;
+    }
   `;
   document.head.appendChild(style);
 };
@@ -434,10 +460,10 @@ export default function Home({ allPostsData }) {
 
         {/* 主要内容区域 */}
         <div className="flex">
-          {/* 左侧简介栏 */}
-          <aside className="w-1/4 pr-8 hidden lg:block">
+          {/* 左侧简介栏 - 修改为固定定位 */}
+          <aside className="w-1/4 pr-8 hidden lg:block sticky top-24 self-start h-[calc(100vh-6rem)] sidebar-scroll">
             {/* 简介板块和最新文章板块的容器 */}
-            <div className="sticky top-24 space-y-6">
+            <div className="space-y-6">
               {/* 简介板块 */}
               <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
                 <div className="flex flex-col items-center">
@@ -578,7 +604,6 @@ export default function Home({ allPostsData }) {
               zhang@mrzxr.com
             </a>
           </p>
-            
         </footer>
       </div>
     </>
