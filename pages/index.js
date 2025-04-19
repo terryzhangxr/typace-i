@@ -391,6 +391,10 @@ export default function Home({ allPostsData }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
 
+  // 滚动位置状态
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [isReturning, setIsReturning] = useState(false);
+
   // 计算文章总数和标签总数
   const totalPosts = allPostsData.length;
   const allTags = new Set();
@@ -501,12 +505,16 @@ export default function Home({ allPostsData }) {
       });
 
     // 路由事件监听
-    const handleRouteChangeStart = () => {
+    const handleRouteChangeStart = (url) => {
+      // 如果是离开首页，保存滚动位置
+      if (router.pathname === '/') {
+        setScrollPosition(window.scrollY);
+      }
       setTransitionState('exiting');
       setIsMounted(false);
     };
 
-    const handleRouteChangeComplete = () => {
+    const handleRouteChangeComplete = (url) => {
       setTransitionState('entering');
       setTimeout(() => {
         setTransitionState('idle');
@@ -514,8 +522,16 @@ export default function Home({ allPostsData }) {
       }, 300);
     };
 
+    const handleHistoryChange = (url, { shallow }) => {
+      // 检测是否是返回首页
+      if (url === '/' && router.pathname !== '/') {
+        setIsReturning(true);
+      }
+    };
+
     router.events.on('routeChangeStart', handleRouteChangeStart);
     router.events.on('routeChangeComplete', handleRouteChangeComplete);
+    router.events.on('beforeHistoryChange', handleHistoryChange);
 
     // 初始化页面动画
     setIsMounted(true);
@@ -539,10 +555,27 @@ export default function Home({ allPostsData }) {
     return () => {
       router.events.off('routeChangeStart', handleRouteChangeStart);
       router.events.off('routeChangeComplete', handleRouteChangeComplete);
+      router.events.off('beforeHistoryChange', handleHistoryChange);
       window.removeEventListener('resize', checkMobile);
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [router]);
+
+  // 处理返回首页时的滚动位置
+  useEffect(() => {
+    if (isReturning) {
+      // 延迟执行以确保页面已经渲染完成
+      const timer = setTimeout(() => {
+        window.scrollTo({
+          top: scrollPosition,
+          behavior: 'auto'
+        });
+        setIsReturning(false);
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isReturning, scrollPosition]);
 
   // 检测设备宽度
   const checkMobile = () => {
