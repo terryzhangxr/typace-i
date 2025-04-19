@@ -633,7 +633,7 @@ export default function Home({ allPostsData }) {
             </ul>
 
             {/* 分页组件 */}
-            {totalPages > 1 && (
+            {totalPages > 0 && (
               <div className="pagination">
                 <li className="page-item">
                   <button
