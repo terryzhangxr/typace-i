@@ -18,88 +18,24 @@ export async function getStaticProps() {
   const processedContent = await remark().use(html).process(content);
   const contentHtml = processedContent.toString();
 
-  // 获取所有文章数据用于搜索功能
-  const allPostsData = getSortedPostsData();
-
   return {
     props: {
       frontmatter: data,
       contentHtml,
-      allPostsData, // 添加这一行
     },
   };
 }
 
-export default function About({ frontmatter, contentHtml, allPostsData }) {
+export default function About({ frontmatter, contentHtml }) {
   const [isMounted, setIsMounted] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
 
-  // 搜索相关状态
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-
   // 检测设备宽度
   const checkMobile = () => {
     setIsMobile(window.innerWidth < 768);
-  };
-
-  // 处理搜索查询变化
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setSearchResults([]);
-      return;
-    }
-
-    const query = searchQuery.toLowerCase();
-    const results = allPostsData.filter(post => {
-      const titleMatch = post.title.toLowerCase().includes(query);
-      const excerptMatch = post.excerpt && post.excerpt.toLowerCase().includes(query);
-      const contentMatch = post.content && post.content.toLowerCase().includes(query);
-      const tagMatch = post.tags && post.tags.some(tag => tag.toLowerCase().includes(query));
-      
-      return titleMatch || excerptMatch || contentMatch || tagMatch;
-    }).map(post => ({
-      ...post,
-      // 高亮匹配的文本
-      highlightedTitle: highlightText(post.title, query),
-      highlightedExcerpt: post.excerpt ? highlightText(post.excerpt, query) : '',
-    }));
-
-    setSearchResults(results);
-  }, [searchQuery, allPostsData]);
-
-  // 高亮匹配文本的函数
-  const highlightText = (text, query) => {
-    if (!query) return text;
-    
-    const regex = new RegExp(`(${query})`, 'gi');
-    return text.replace(regex, '<span class="search-highlight">$1</span>');
-  };
-
-  // 打开搜索模态框
-  const openSearch = () => {
-    setIsSearchOpen(true);
-    // 聚焦搜索输入框
-    setTimeout(() => {
-      document.getElementById('search-input')?.focus();
-    }, 100);
-  };
-
-  // 关闭搜索模态框
-  const closeSearch = () => {
-    setIsSearchOpen(false);
-    setSearchQuery('');
-    setSearchResults([]);
-  };
-
-  // 处理搜索结果的点击
-  const handleSearchResultClick = (slug) => {
-    closeSearch();
-    router.push(`/posts/${slug}`);
   };
 
   // 暗色模式切换优化
@@ -134,117 +70,6 @@ export default function About({ frontmatter, contentHtml, allPostsData }) {
       .dark .prose h1, .dark .prose h2, .dark .prose h3 {
         color: #f3f4f6;
       }
-
-      /* 搜索模态框样式 */
-      .search-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        padding-top: 20vh;
-        z-index: 1000;
-        backdrop-filter: blur(5px);
-      }
-      .search-container {
-        width: 90%;
-        max-width: 600px;
-        background-color: white;
-        border-radius: 0.5rem;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
-      }
-      .dark .search-container {
-        background-color: #1f2937;
-      }
-      .search-header {
-        padding: 1rem;
-        border-bottom: 1px solid #e5e7eb;
-        display: flex;
-        align-items: center;
-      }
-      .dark .search-header {
-        border-bottom-color: #374151;
-      }
-      .search-input {
-        flex: 1;
-        padding: 0.75rem;
-        border: none;
-        outline: none;
-        font-size: 1rem;
-        background-color: transparent;
-      }
-      .dark .search-input {
-        color: white;
-      }
-      .search-close {
-        padding: 0.5rem;
-        cursor: pointer;
-        color: #6b7280;
-      }
-      .dark .search-close {
-        color: #9ca3af;
-      }
-      .search-results {
-        max-height: 60vh;
-        overflow-y: auto;
-      }
-      .search-result-item {
-        padding: 1rem;
-        border-bottom: 1px solid #e5e7eb;
-        cursor: pointer;
-        transition: background-color 0.2s;
-      }
-      .dark .search-result-item {
-        border-bottom-color: #374151;
-      }
-      .search-result-item:hover {
-        background-color: #f9fafb;
-      }
-      .dark .search-result-item:hover {
-        background-color: #374151;
-      }
-      .search-result-title {
-        font-weight: 600;
-        margin-bottom: 0.25rem;
-        color: #111827;
-      }
-      .dark .search-result-title {
-        color: #f3f4f6;
-      }
-      .search-result-excerpt {
-        color: #6b7280;
-        font-size: 0.875rem;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-      }
-      .dark .search-result-excerpt {
-        color: #9ca3af;
-      }
-      .no-results {
-        padding: 2rem;
-        text-align: center;
-        color: #6b7280;
-      }
-      .dark .no-results {
-        color: #9ca3af;
-      }
-      .search-highlight {
-        background-color: #fde68a;
-        color: #92400e;
-        padding: 0.1rem 0.2rem;
-        border-radius: 0.25rem;
-      }
-      .dark .search-highlight {
-        background-color: #92400e;
-        color: #fde68a;
-      }
     `;
     document.head.appendChild(style);
 
@@ -258,18 +83,6 @@ export default function About({ frontmatter, contentHtml, allPostsData }) {
     checkMobile();
     window.addEventListener('resize', checkMobile);
 
-    // 添加键盘快捷键 (Cmd+K / Ctrl+K)
-    const handleKeyDown = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        openSearch();
-      } else if (e.key === 'Escape') {
-        closeSearch();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-
     // 路由事件监听
     const handleRouteChange = () => setIsMounted(false);
     router.events.on('routeChangeStart', handleRouteChange);
@@ -278,7 +91,6 @@ export default function About({ frontmatter, contentHtml, allPostsData }) {
       document.head.removeChild(style);
       router.events.off('routeChangeStart', handleRouteChange);
       window.removeEventListener('resize', checkMobile);
-      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [router]);
 
@@ -295,105 +107,31 @@ export default function About({ frontmatter, contentHtml, allPostsData }) {
             </Link>
 
             {/* 桌面导航 */}
-            <div className="hidden md:flex space-x-6 items-center">
+            <div className="hidden md:flex space-x-6">
               <NavLink href="/">首页</NavLink>
               <NavLink href="/about">关于</NavLink>
               <NavLink href="/archive">归档</NavLink>
               <NavLink href="/tags">标签</NavLink>
               <button
-                onClick={openSearch}
-                className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors p-2"
-                title="搜索 (Ctrl+K)"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
-              <button
                 onClick={toggleDarkMode}
-                className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors p-2"
+                className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
               >
                 {isDarkMode ? '🌙' : '☀️'}
               </button>
             </div>
 
             {/* 移动端菜单按钮 */}
-            <div className="md:hidden flex items-center space-x-4">
-              <button
-                onClick={openSearch}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                title="搜索"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
-              <button
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
+            <button
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
           </div>
         </div>
       </nav>
-
-      {/* 搜索模态框 */}
-      {isSearchOpen && (
-        <div className="search-modal">
-          <div className="search-container">
-            <div className="search-header">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                id="search-input"
-                type="text"
-                className="search-input"
-                placeholder="搜索文章..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                autoComplete="off"
-              />
-              <button className="search-close" onClick={closeSearch}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="search-results">
-              {searchResults.length > 0 ? (
-                searchResults.map((post) => (
-                  <div
-                    key={post.slug}
-                    className="search-result-item"
-                    onClick={() => handleSearchResultClick(post.slug)}
-                  >
-                    <h3 
-                      className="search-result-title"
-                      dangerouslySetInnerHTML={{ __html: post.highlightedTitle }}
-                    />
-                    {post.highlightedExcerpt && (
-                      <p 
-                        className="search-result-excerpt"
-                        dangerouslySetInnerHTML={{ __html: post.highlightedExcerpt }}
-                      />
-                    )}
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{post.date}</p>
-                  </div>
-                ))
-              ) : searchQuery ? (
-                <div className="no-results">没有找到匹配的文章</div>
-              ) : (
-                <div className="no-results">输入关键词搜索文章</div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 移动端侧滑菜单 */}
       <div className={`fixed inset-0 z-50 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
