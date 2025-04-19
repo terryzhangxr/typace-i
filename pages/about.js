@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
-import { getSortedPostsData } from '../../lib/posts';
 
 // 获取 about.md 文件内容
 export async function getStaticProps() {
