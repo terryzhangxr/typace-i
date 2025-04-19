@@ -255,6 +255,100 @@ const addDynamicStyles = () => {
     .dark .social-icon:hover img {
       filter: grayscale(0%) contrast(1) invert(0);
     }
+
+    /* 搜索框样式 */
+    .search-container {
+      position: relative;
+    }
+    .search-input {
+      padding: 0.5rem 2rem 0.5rem 0.75rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.375rem;
+      width: 200px;
+      transition: all 0.3s ease;
+      background: white;
+    }
+    .search-input:focus {
+      width: 250px;
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    .search-icon {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #4b5563;
+    }
+    .dark .search-input {
+      background-color: #1f2937;
+      border-color: #4b5563;
+      color: white;
+    }
+    .dark .search-input:focus {
+      border-color: #3b82f6;
+    }
+    .dark .search-icon {
+      color: #d1d5db;
+    }
+
+    /* 搜索框遮罩层 */
+    .search-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .search-overlay.active {
+      display: flex;
+    }
+    .search-modal {
+      background-color: white;
+      padding: 2rem;
+      border-radius: 0.5rem;
+      width: 60%;
+      max-width: 800px;
+    }
+    .search-modal h2 {
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .search-modal button {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    .search-results {
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .search-result-item {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #e5e7eb;
+      cursor: pointer;
+    }
+    .search-result-item:hover {
+      background-color: #f3f4f6;
+    }
+    .dark .search-modal {
+      background-color: #1f2937;
+    }
+    .dark .search-result-item {
+      border-color: #4b5563;
+    }
+    .dark .search-result-item:hover {
+      background-color: #374151;
+    }
   `;
   document.head.appendChild(style);
 };
@@ -275,36 +369,43 @@ export default function Home({ allPostsData }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // 计算文章总数和标签总数
-  const totalPosts = allPostsData.length;
-  const allTags = new Set();
-  allPostsData.forEach(post => {
-    if (post.tags) {
-      post.tags.forEach(tag => allTags.add(tag));
-    }
-  });
-  const totalTags = allTags.size;
+  // 搜索关键词状态
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredPosts, setFilteredPosts] = useState(allPostsData);
 
-  // 初始化分页
+  // 计算文章总数和标签总数
   useEffect(() => {
     const total = Math.ceil(allPostsData.length / POSTS_PER_PAGE);
     setTotalPages(total);
     updatePaginatedPosts(1);
   }, [allPostsData]);
 
+  // 初始化分页
+  useEffect(() => {
+    const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
+    const endIndex = startIndex + POSTS_PER_PAGE;
+    setPaginatedPosts(allPostsData.slice(startIndex, endIndex));
+  }, [currentPage, allPostsData]);
+
+  // 处理搜索逻辑
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredPosts(allPostsData);
+      return;
+    }
+    const filtered = allPostsData.filter(post => 
+      post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (post.tags && post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
+    );
+    setFilteredPosts(filtered);
+  }, [searchQuery, allPostsData]);
+
   // 更新分页文章
   const updatePaginatedPosts = (page) => {
     const startIndex = (page - 1) * POSTS_PER_PAGE;
     const endIndex = startIndex + POSTS_PER_PAGE;
     setPaginatedPosts(allPostsData.slice(startIndex, endIndex));
-  };
-
-  // 处理分页变化
-  const handlePageChange = (page) => {
-    if (page < 1 || page > totalPages) return;
-    setCurrentPage(page);
-    updatePaginatedPosts(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -359,11 +460,6 @@ export default function Home({ allPostsData }) {
       window.removeEventListener('resize', checkMobile);
     };
   }, [router]);
-
-  // 检测设备宽度
-  const checkMobile = () => {
-    setIsMobile(window.innerWidth < 768);
-  };
 
   // 打字机效果
   const typeWriterEffect = (text) => {
@@ -449,6 +545,11 @@ export default function Home({ allPostsData }) {
     document.documentElement.classList.toggle('dark', newDarkMode);
   };
 
+  // 检测设备宽度
+  const checkMobile = () => {
+    setIsMobile(window.innerWidth < 768);
+  };
+
   // 获取过渡类名
   const getTransitionClass = () => {
     switch (transitionState) {
@@ -459,6 +560,25 @@ export default function Home({ allPostsData }) {
       default:
         return '';
     }
+  };
+
+  // 处理分页变化
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // 处理搜索框打开/关闭
+  const toggleSearch = () => {
+    if (!isSearchOpen) {
+      setSearchQuery('');
+      setTimeout(() => {
+        const searchInput = document.querySelector('.search-input');
+        if (searchInput) searchInput.focus();
+      }, 100);
+    }
+    setIsSearchOpen(!isSearchOpen);
   };
 
   return (
@@ -592,7 +712,7 @@ export default function Home({ allPostsData }) {
                     <Link href="/archive" passHref>
                       <a className="text-center stats-card hover:transform hover:scale-105 transition-transform cursor-pointer">
                         <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                          {totalPosts}
+                          {allPostsData.length}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                           文章
@@ -602,7 +722,7 @@ export default function Home({ allPostsData }) {
                     <Link href="/tags" passHref>
                       <a className="text-center stats-card hover:transform hover:scale-105 transition-transform cursor-pointer">
                         <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                          {totalTags}
+                          {new Set(allPostsData.map(post => post.tags || []).flat()).size}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                           标签
@@ -623,7 +743,7 @@ export default function Home({ allPostsData }) {
                       </svg>
                     </a>
                     <a 
-                      href="https://github.com/terryzhangxr" 
+                      href="https://bgithub.xyz/terryzhangxr" 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="social-icon"
@@ -787,6 +907,57 @@ export default function Home({ allPostsData }) {
           </p>
         </footer>
       </div>
+
+      {/* 搜索框遮罩层 */}
+      <div 
+        className={`search-overlay ${isSearchOpen ? 'active' : ''}`}
+        onClick={toggleSearch}
+      >
+        <div className="search-modal">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">搜索文章</h2>
+            <button onClick={toggleSearch}>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="search-container">
+            <input
+              type="text"
+              className="search-input"
+              placeholder="搜索文章标题或标签..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <svg className="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          {filteredPosts.length > 0 ? (
+            <div className="search-results">
+              {filteredPosts.slice(0, 10).map(post => (
+                <div key={post.slug} className="search-result-item">
+                  <Link href={`/posts/${post.slug}`} passHref>
+                    <a className="flex flex-col">
+                      <span className="text-lg font-semibold">{post.title}</span>
+                      {post.tags && (
+                        <span className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                          {post.tags.join(', ')}
+                        </span>
+                      )}
+                    </a>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-6 text-center text-gray-600 dark:text-gray-400">
+              没有找到匹配的文章
+            </div>
+          )}
+        </div>
+      </div>
     </>
   );
 }
@@ -814,6 +985,7 @@ const MobileNavLink = ({ href, children, onClick }) => (
 
 export async function getStaticProps() {
   const allPostsData = getSortedPostsData();
+
   return {
     props: {
       allPostsData: allPostsData.map(post => ({
