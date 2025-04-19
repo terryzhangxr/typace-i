@@ -255,6 +255,58 @@ const addDynamicStyles = () => {
     .dark .social-icon:hover img {
       filter: grayscale(0%) contrast(1) invert(0);
     }
+
+    /* 搜索框样式 */
+    .search-container {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+    }
+    .search-input {
+      width: 100%;
+      padding: 0.5rem 1rem 0.5rem 2.5rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.375rem;
+      background-color: white;
+      transition: all 0.2s ease;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+    }
+    .dark .search-input {
+      background-color: #1f2937;
+      border-color: #4b5563;
+      color: #d1d5db;
+    }
+    .dark .search-input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+    }
+    .search-icon {
+      position: absolute;
+      left: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #4b5563;
+    }
+    .dark .search-icon {
+      color: #d1d5db;
+    }
+    .search-close {
+      position: absolute;
+      right: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #4b5563;
+      cursor: pointer;
+    }
+    .dark .search-close {
+      color: #d1d5db;
+    }
   `;
   document.head.appendChild(style);
 };
@@ -265,6 +317,10 @@ export default function Home({ allPostsData }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [paginatedPosts, setPaginatedPosts] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
+
+  // 搜索框状态
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // 其他原有状态
   const [transitionState, setTransitionState] = useState('idle');
@@ -461,6 +517,20 @@ export default function Home({ allPostsData }) {
     }
   };
 
+  // 处理搜索
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // 筛选搜索结果
+  const filteredPosts = searchQuery
+    ? allPostsData.filter(post => 
+        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (post.excerpt && post.excerpt.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (post.tags && post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
+      )
+    : paginatedPosts;
+
   return (
     <>
       {/* 导航栏 */}
@@ -474,7 +544,7 @@ export default function Home({ allPostsData }) {
             </Link>
 
             {/* 桌面导航 */}
-            <div className="hidden md:flex space-x-6">
+            <div className="md:flex space-x-4 items-center">
               <NavLink href="/">首页</NavLink>
               <NavLink href="/about">关于</NavLink>
               <NavLink href="/archive">归档</NavLink>
@@ -484,6 +554,16 @@ export default function Home({ allPostsData }) {
                 className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
               >
                 {isDarkMode ? '🌙' : '☀️'}
+              </button>
+
+              {/* 桌面搜索按钮 */}
+              <button
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </button>
             </div>
 
@@ -546,6 +626,27 @@ export default function Home({ allPostsData }) {
         </div>
       </div>
 
+      {/* 搜索页面的搜索框 */}
+      {isSearchOpen && (
+        <div className="fixed top-20 inset-x-0 mx-auto max-w-2xl z-40">
+          <div className="search-container">
+            <input
+              type="text"
+              className="search-input"
+              placeholder="搜索文章..."
+              value={searchQuery}
+              onChange={handleSearch}
+            />
+            <button 
+              className="search-close"
+              onClick={() => setIsSearchOpen(false)}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 页面内容 */}
       <div className={`min-h-screen p-8 pt-24 relative z-10 page-container ${
         isMounted ? 'mounted' : ''
@@ -577,7 +678,7 @@ export default function Home({ allPostsData }) {
                   {/* 博主头像 */}
                   <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
                     <img 
-                      src="https://ik.imagekit.io/terryzhang/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-04-17%20204625.png" 
+                      src="https://ik.imagekit.io/terryzhang/your-avatar.png" 
                       alt="博主头像" 
                       className="w-full h-full object-cover profile-avatar"
                     />
@@ -677,7 +778,7 @@ export default function Home({ allPostsData }) {
           {/* 文章列表 */}
           <main className="flex-1">
             <ul className="space-y-6">
-              {paginatedPosts.map(({ slug, title, date, cover, excerpt, tags }) => (
+              {filteredPosts.map(({ slug, title, date, cover, excerpt, tags }) => (
                 <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-[1.02]">
                   <div className="flex flex-col md:flex-row gap-6">
                     {cover && (
@@ -720,7 +821,7 @@ export default function Home({ allPostsData }) {
             </ul>
 
             {/* 分页组件 */}
-            {totalPages > 0 && (
+            {totalPages > 0 && !searchQuery && (
               <div className="pagination">
                 <li className="page-item">
                   <button
