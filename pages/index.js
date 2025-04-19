@@ -206,6 +206,40 @@ const addDynamicStyles = () => {
     .stats-card:hover {
       transform: translateY(-3px) scale(1.05);
     }
+
+    /* 社交媒体图标样式 */
+    .social-icons {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .social-icon {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background-color: #f3f4f6;
+      color: #4b5563;
+      transition: all 0.3s ease;
+    }
+    .social-icon:hover {
+      transform: translateY(-3px);
+      background-color: #e5e7eb;
+    }
+    .dark .social-icon {
+      background-color: #374151;
+      color: #d1d5db;
+    }
+    .dark .social-icon:hover {
+      background-color: #4b5563;
+    }
+    .social-icon svg {
+      width: 20px;
+      height: 20px;
+    }
   `;
   document.head.appendChild(style);
 };
@@ -560,6 +594,41 @@ export default function Home({ allPostsData }) {
                         </div>
                       </a>
                     </Link>
+                  </div>
+
+                  {/* 社交媒体图标 */}
+                  <div className="social-icons">
+                    <a 
+                      href="mailto:zhang@mrzxr.com" 
+                      className="social-icon"
+                      title="发送邮件"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </a>
+                    <a 
+                      href="https://github.com/terryzhangxr" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="social-icon"
+                      title="GitHub"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                      </svg>
+                    </a>
+                    <a 
+                      href="https://space.bilibili.com/your-bilibili-id" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="social-icon"
+                      title="Bilibili"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </a>
                   </div>
                 </div>
               </div>
