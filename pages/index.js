@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../lib/posts';
 import Head from 'next/head';
 import Link from 'next/link';
-
+ 
 // 动态样式定义 
 const addDynamicStyles = () => {
   const style = document.createElement('style');
@@ -562,7 +562,7 @@ export default function Home({ allPostsData }) {
           <p className="mt-4 text-gray-600 dark:text-gray-400">
             由MRCHE&terryzhang创建的
             <a
-              href="https://github.com/terryzhangxr/typace-i"
+              href="https://bgithub.xyz/terryzhangxr/typace-i"
               className="text-blue-600 hover:underline dark:text-blue-400"
             >
               Typace
