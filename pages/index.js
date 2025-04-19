@@ -7,6 +7,258 @@ import Link from 'next/link';
 // 每页显示的文章数量
 const POSTS_PER_PAGE = 5;
 
+// 动态样式定义 
+const addDynamicStyles = () => {
+  const style = document.createElement('style');
+  style.textContent = `
+    /* 新增分页样式 */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      margin-top: 3rem;
+      gap: 0.5rem;
+      list-style: none;
+      padding: 0;
+    }
+    .page-item {
+      display: inline-flex;
+    }
+    .page-link {
+      padding: 0.5rem 1rem;
+      border: 1px solid #e5e7eb;
+      color: #4b5563;
+      border-radius: 0.375rem;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      background: white;
+    }
+    .page-link:hover {
+      background-color: #f3f4f6;
+      border-color: #d1d5db;
+    }
+    .page-link.active {
+      background-color: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+    }
+    .page-link.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .dark .page-link {
+      border-color: #4b5563;
+      color: #d1d5db;
+      background-color: #1f2937;
+    }
+    .dark .page-link:hover {
+      background-color: #374151;
+      border-color: #6b7280;
+    }
+    .dark .page-link.active {
+      background-color: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+    }
+
+    /* 页面切换动画 */
+    .page-transition {
+      opacity: 1;
+      transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+    }
+    .page-transition-exit {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .page-transition-exit-active {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .page-transition-enter {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    .page-transition-enter-active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* 背景渐变过渡 */
+    .bg-transition {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 1.5s ease-in-out;
+      z-index: -1;
+    }
+    .bg-visible {
+      opacity: 1;
+    }
+
+    /* 响应式布局 */
+    @media (max-width: 767px) {
+      .cover-image-container {
+        width: 100%;
+        height: 200px;
+      }
+      .profile-card {
+        width: 100% !important;
+        margin-bottom: 2rem;
+      }
+      .pagination {
+        flex-wrap: wrap;
+      }
+    }
+
+    /* 打字机效果 */
+    .typewriter {
+      display: inline-block;
+      white-space: pre-wrap;
+      margin: 0 auto;
+      letter-spacing: 0.15em;
+      border-right: 0.15em solid #4a5568;
+      animation: blink-caret 0.75s step-end infinite;
+    }
+    @keyframes blink-caret {
+      from,
+      to {
+        border-color: transparent;
+      }
+      50% {
+        border-color: #4a5568;
+      }
+    }
+
+    /* 其他样式 */
+    .line-clamp-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    header h1 {
+      margin-bottom: 2rem;
+    }
+    header {
+      margin-bottom: 4rem;
+    }
+    .hitokoto-container {
+      max-width: 80%;
+      margin: 0 auto;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+      white-space: normal;
+    }
+
+    /* 新增动画样式 */
+    .page-container {
+      position: relative;
+      opacity: 0;
+      transform: translateY(100px);
+      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .page-container.mounted {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* 标签样式 */
+    .tag {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+      color: #3b82f6;
+      background-color: #dbeafe;
+      border-radius: 0.375rem;
+      transition: all 0.2s ease;
+    }
+    .tag:hover {
+      background-color: #bfdbfe;
+    }
+    .dark .tag {
+      color: #93c5fd;
+      background-color: #1e3a8a;
+    }
+    .dark .tag:hover {
+      background-color: #1e40af;
+    }
+
+    /* 简介框样式 */
+    .profile-avatar {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid rgba(59, 130, 246, 0.5);
+      transition: all 0.3s ease;
+    }
+    .profile-avatar:hover {
+      transform: scale(1.05);
+      border-color: rgba(59, 130, 246, 0.8);
+    }
+    .stats-card {
+      transition: all 0.3s ease;
+    }
+    .stats-card:hover {
+      transform: translateY(-3px) scale(1.05);
+    }
+
+    /* 社交媒体图标样式 */
+    .social-icons {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .social-icon {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background-color: #f3f4f6;
+      color: #4b5563;
+      transition: all 0.3s ease;
+    }
+    .social-icon:hover {
+      transform: translateY(-3px);
+      background-color: #e5e7eb;
+    }
+    .dark .social-icon {
+      background-color: #374151;
+      color: #d1d5db;
+    }
+    .dark .social-icon:hover {
+      background-color: #4b5563;
+    }
+    .social-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+    .social-icon img {
+      width: 20px;
+      height: 20px;
+      filter: grayscale(100%) contrast(0.5);
+      transition: filter 0.3s ease;
+    }
+    .social-icon:hover img {
+      filter: grayscale(0%) contrast(1);
+    }
+    .dark .social-icon img {
+      filter: grayscale(100%) contrast(1) invert(1);
+    }
+    .dark .social-icon:hover img {
+      filter: grayscale(0%) contrast(1) invert(0);
+    }
+  `;
+  document.head.appendChild(style);
+};
+
 export default function Home({ allPostsData }) {
   const router = useRouter();
   // 分页相关状态
@@ -14,367 +266,203 @@ export default function Home({ allPostsData }) {
   const [paginatedPosts, setPaginatedPosts] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
 
-  // 搜索框状态
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredPosts, setFilteredPosts] = useState(allPostsData);
-
-  // 暗黑模式状态
+  // 其他原有状态
+  const [transitionState, setTransitionState] = useState('idle');
   const [isDarkMode, setIsDarkMode] = useState(false);
-
-  // 其他状态
+  const [hitokoto, setHitokoto] = useState('');
+  const [displayText, setDisplayText] = useState('');
   const [isMounted, setIsMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   // 计算文章总数和标签总数
+  const totalPosts = allPostsData.length;
+  const allTags = new Set();
+  allPostsData.forEach(post => {
+    if (post.tags) {
+      post.tags.forEach(tag => allTags.add(tag));
+    }
+  });
+  const totalTags = allTags.size;
+
+  // 初始化分页
   useEffect(() => {
     const total = Math.ceil(allPostsData.length / POSTS_PER_PAGE);
     setTotalPages(total);
     updatePaginatedPosts(1);
   }, [allPostsData]);
 
-  // 初始化分页
-  useEffect(() => {
-    const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
+  // 更新分页文章
+  const updatePaginatedPosts = (page) => {
+    const startIndex = (page - 1) * POSTS_PER_PAGE;
     const endIndex = startIndex + POSTS_PER_PAGE;
     setPaginatedPosts(allPostsData.slice(startIndex, endIndex));
-  }, [currentPage, allPostsData]);
-
-  // 搜索框过滤逻辑
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredPosts(allPostsData);
-      return;
-    }
-    const filtered = allPostsData.filter(post => 
-      post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      (post.tags && post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
-    );
-    setFilteredPosts(filtered);
-  }, [searchQuery, allPostsData]);
-
-  // 检测设备宽度
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  };
 
   // 处理分页变化
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
+    updatePaginatedPosts(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // 处理搜索框打开/关闭
-  const toggleSearch = () => {
-    if (!isSearchOpen) {
-      setSearchQuery('');
+  useEffect(() => {
+    addDynamicStyles();
+
+    // 从本地存储获取暗黑模式设置
+    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+    setIsDarkMode(savedDarkMode);
+    document.documentElement.classList.toggle('dark', savedDarkMode);
+
+    // 获取一言
+    fetch('https://v1.hitokoto.cn')
+      .then((response) => response.json())
+      .then((data) => {
+        setHitokoto(data.hitokoto);
+        typeWriterEffect(data.hitokoto);
+      })
+      .catch((error) => {
+        console.error('获取一言失败:', error);
+        const defaultHitokoto = '生活不止眼前的苟且，还有诗和远方的田野。';
+        setHitokoto(defaultHitokoto);
+        typeWriterEffect(defaultHitokoto);
+      });
+
+    // 路由事件监听
+    const handleRouteChangeStart = () => {
+      setTransitionState('exiting');
+      setIsMounted(false);
+    };
+
+    const handleRouteChangeComplete = () => {
+      setTransitionState('entering');
       setTimeout(() => {
-        const searchInput = document.querySelector('.search-input');
-        if (searchInput) searchInput.focus();
+        setTransitionState('idle');
+        setIsMounted(true);
+      }, 300);
+    };
+
+    router.events.on('routeChangeStart', handleRouteChangeStart);
+    router.events.on('routeChangeComplete', handleRouteChangeComplete);
+
+    // 初始化页面动画
+    setIsMounted(true);
+
+    // 初始化设备宽度检测
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChangeStart);
+      router.events.off('routeChangeComplete', handleRouteChangeComplete);
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, [router]);
+
+  // 检测设备宽度
+  const checkMobile = () => {
+    setIsMobile(window.innerWidth < 768);
+  };
+
+  // 打字机效果
+  const typeWriterEffect = (text) => {
+    let i = 0;
+    const speed = 100;
+    const container = document.querySelector('.hitokoto-container');
+    const typewriterElement = document.querySelector('.typewriter');
+
+    const timer = setInterval(() => {
+      if (i < text.length) {
+        setDisplayText(text.slice(0, i + 1));
+        if (typewriterElement.scrollWidth > container.clientWidth) {
+          typewriterElement.style.whiteSpace = 'pre-wrap';
+        }
+        i++;
+      } else {
+        clearInterval(timer);
+        if (typewriterElement) {
+          typewriterElement.style.animation = 'none';
+          typewriterElement.style.borderRight = 'none';
+        }
+      }
+    }, speed);
+  };
+
+  // 动态背景渐变
+  useEffect(() => {
+    const lightColors = [
+      'linear-gradient(45deg, #ee7752, #e73c7e)',
+      'linear-gradient(45deg, #e73c7e, #23a6d5)',
+      'linear-gradient(45deg, #23a6d5, #23d5ab)',
+      'linear-gradient(45deg, #23d5ab, #ee7752)',
+    ];
+
+    const darkColors = [
+      'linear-gradient(45deg, #1e3a8a, #9f7aea)',
+      'linear-gradient(45deg, #9f7aea, #3b82f6)',
+      'linear-gradient(45deg, #3b82f6, #60a5fa)',
+      'linear-gradient(45deg, #60a5fa, #1e3a8a)',
+    ];
+
+    const colors = isDarkMode ? darkColors : lightColors;
+
+    const bg1 = document.createElement('div');
+    const bg2 = document.createElement('div');
+    bg1.className = bg2.className = 'bg-transition';
+    document.body.append(bg1, bg2);
+
+    let currentIndex = 0;
+    let activeBg = bg1;
+
+    activeBg.style.backgroundImage = colors[currentIndex];
+    activeBg.classList.add('bg-visible');
+
+    const changeBackground = () => {
+      const nextIndex = (currentIndex + 1) % colors.length;
+      const nextBg = activeBg === bg1 ? bg2 : bg1;
+
+      nextBg.style.backgroundImage = colors[nextIndex];
+
+      setTimeout(() => {
+        activeBg.classList.remove('bg-visible');
+        nextBg.classList.add('bg-visible');
+        activeBg = nextBg;
+        currentIndex = nextIndex;
       }, 100);
+    };
+
+    const intervalId = setInterval(changeBackground, 2500);
+
+    return () => {
+      clearInterval(intervalId);
+      bg1.remove();
+      bg2.remove();
+    };
+  }, [isDarkMode]);
+
+  // 切换暗黑模式
+  const toggleDarkMode = () => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    localStorage.setItem('darkMode', newDarkMode);
+    document.documentElement.classList.toggle('dark', newDarkMode);
+  };
+
+  // 获取过渡类名
+  const getTransitionClass = () => {
+    switch (transitionState) {
+      case 'exiting':
+        return 'page-transition-exit';
+      case 'entering':
+        return 'page-transition-enter';
+      default:
+        return '';
     }
-    setIsSearchOpen(!isSearchOpen);
   };
 
   return (
     <>
-      {/* 样式定义 */}
-      <style jsx global>{`
-        /* 分页样式 */
-        .pagination {
-          display: flex;
-          justify-content: center;
-          margin-top: 3rem;
-          gap: 0.5rem;
-          list-style: none;
-          padding: 0;
-        }
-        .page-item {
-          display: inline-flex;
-        }
-        .page-link {
-          padding: 0.5rem 1rem;
-          border: 1px solid #e5e7eb;
-          color: #4b5563;
-          border-radius: 0.375rem;
-          transition: all 0.2s ease;
-          cursor: pointer;
-          background: white;
-        }
-        .page-link:hover {
-          background-color: #f3f4f6;
-          border-color: #d1d5db;
-        }
-        .page-link.active {
-          background-color: #3b82f6;
-          color: white;
-          border-color: #3b82f6;
-        }
-        .page-link.disabled {
-          opacity: 0.5;
-          pointer-events: none;
-        }
-        .dark .page-link {
-          border-color: #4b5563;
-          color: #d1d5db;
-          background-color: #1f2937;
-        }
-        .dark .page-link:hover {
-          background-color: #374151;
-          border-color: #6b7280;
-        }
-        .dark .page-link.active {
-          background-color: #3b82f6;
-          color: white;
-          border-color: #3b82f6;
-        }
-
-        /* 页面切换动画 */
-        .page-transition {
-          opacity: 1;
-          transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-        }
-        .page-transition-exit {
-          opacity: 1;
-          transform: translateY(0);
-        }
-        .page-transition-exit-active {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        .page-transition-enter {
-          opacity: 0;
-          transform: translateY(-20px);
-        }
-        .page-transition-enter-active {
-          opacity: 1;
-          transform: translateY(0);
-        }
-
-        /* 响应式布局 */
-        @media (max-width: 767px) {
-          .cover-image-container {
-            width: 100%;
-            height: 200px;
-          }
-          .profile-card {
-            width: 100% !important;
-            margin-bottom: 2rem;
-          }
-          .pagination {
-            flex-wrap: wrap;
-          }
-        }
-
-        /* 打字机效果 */
-        .typewriter {
-          display: inline-block;
-          white-space: pre-wrap;
-          margin: 0 auto;
-          letter-spacing: 0.15em;
-          border-right: 0.15em solid #4a5568;
-          animation: blink-caret 0.75s step-end infinite;
-        }
-        @keyframes blink-caret {
-          from,
-          to {
-            border-color: transparent;
-          }
-          50% {
-            border-color: #4a5568;
-          }
-        }
-
-        /* 动画样式 */
-        .page-container {
-          position: relative;
-          opacity: 0;
-          transform: translateY(100px);
-          transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .page-container.mounted {
-          opacity: 1;
-          transform: translateY(0);
-        }
-
-        /* 标签样式 */
-        .tag {
-          display: inline-block;
-          padding: 0.25rem 0.5rem;
-          margin-right: 0.5rem;
-          margin-bottom: 0.5rem;
-          font-size: 0.875rem;
-          color: #3b82f6;
-          background-color: #dbeafe;
-          border-radius: 0.375rem;
-          transition: all 0.2s ease;
-        }
-        .tag:hover {
-          background-color: #bfdbfe;
-        }
-        .dark .tag {
-          color: #93c5fd;
-          background-color: #1e3a8a;
-        }
-        .dark .tag:hover {
-          background-color: #1e40af;
-        }
-
-        /* 简介框样式 */
-        .profile-avatar {
-          width: 96px;
-          height: 96px;
-          border-radius: 50%;
-          object-fit: cover;
-          border: 3px solid rgba(59, 130, 246, 0.5);
-          transition: all 0.3s ease;
-        }
-        .profile-avatar:hover {
-          transform: scale(1.05);
-          border-color: rgba(59, 130, 246, 0.8);
-        }
-        .stats-card {
-          transition: all 0.3s ease;
-        }
-        .stats-card:hover {
-          transform: translateY(-3px) scale(1.05);
-        }
-
-        /* 社交媒体图标样式 */
-        .social-icons {
-          display: flex;
-          justify-content: center;
-          gap: 1rem;
-          margin-top: 1.5rem;
-        }
-        .social-icon {
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 50%;
-          background-color: #f3f4f6;
-          color: #4b5563;
-          transition: all 0.3s ease;
-        }
-        .social-icon:hover {
-          transform: translateY(-3px);
-          background-color: #e5e7eb;
-        }
-        .dark .social-icon {
-          background-color: #374151;
-          color: #d1d5db;
-        }
-        .dark .social-icon:hover {
-          background-color: #4b5563;
-        }
-        .social-icon svg {
-          width: 20px;
-          height: 20px;
-        }
-        .social-icon img {
-          width: 20px;
-          height: 20px;
-          filter: grayscale(100%) contrast(0.5);
-          transition: filter 0.3s ease;
-        }
-        .social-icon:hover img {
-          filter: grayscale(0%) contrast(1);
-        }
-        .dark .social-icon img {
-          filter: grayscale(100%) contrast(1) invert(1);
-        }
-        .dark .social-icon:hover img {
-          filter: grayscale(0%) contrast(1) invert(0);
-        }
-
-        /* 搜索一个 */
-        .search-btn {
-          width: 24px;
-          height: 24px;
-          margin-left: 1rem;
-          background: none;
-          border: none;
-          cursor: pointer;
-          opacity: 0.8;
-          transition: opacity 0.3s ease;
-        }
-        .search-btn:hover {
-          opacity: 1;
-        }
-        .search-modal {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background-color: rgba(0, 0, 0, 0.5);
-          z-index: 100;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .search-content {
-          background-color: white;
-          padding: 2rem;
-          border-radius: 0.5rem;
-          width: 60%;
-          max-width: 800px;
-        }
-        .search-content.dark {
-          background-color: #1f2937;
-        }
-        .search-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 1.5rem;
-        }
-        .search-close {
-          background: none;
-          border: none;
-          font-size: 1.5rem;
-          cursor: pointer;
-        }
-        .search-input {
-          width: 100%;
-          padding: 0.75rem;
-          border: 1px solid #e5e7eb;
-          border-radius: 0.375rem;
-          margin-bottom: 1.5rem;
-        }
-        .search-input.dark {
-          background-color: #1f2937;
-          border-color: #4b5563;
-          color: white;
-        }
-        .search-results {
-          max-height: 500px;
-          overflow-y: auto;
-        }
-        .search-item {
-          padding: 0.75rem 0;
-          border-bottom: 1px solid #e5e7eb;
-          cursor: pointer;
-        }
-        .search-item:hover {
-          background-color: #f3f4f6;
-        }
-        .search-item.dark {
-          border-color: #4b5563;
-        }
-        .search-item.dark:hover {
-          background-color: #374151;
-        }
-      `}</style>
-
       {/* 导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-50">
         <div className="container mx-auto px-8 py-4">
@@ -392,29 +480,10 @@ export default function Home({ allPostsData }) {
               <NavLink href="/archive">归档</NavLink>
               <NavLink href="/tags">标签</NavLink>
               <button
-                onClick={() => setIsDarkMode(!isDarkMode)}
+                onClick={toggleDarkMode}
                 className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
               >
                 {isDarkMode ? '🌙' : '☀️'}
-              </button>
-              {/* 搜索框按钮 */}
-              <button 
-                onClick={() => setIsSearchOpen(true)} 
-                className="search-btn"
-              >
-                <svg 
-                  className="w-6 h-6" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
               </button>
             </div>
 
@@ -430,51 +499,6 @@ export default function Home({ allPostsData }) {
           </div>
         </div>
       </nav>
-
-      {/* 搜索表单 */}
-      {isSearchOpen && (
-        <div className="search-modal">
-          <div className="search-content">
-            <div className="search-header">
-              <h2 className="text-2xl font-bold">搜索文章</h2>
-              <button onClick={() => setIsSearchOpen(false)} className="search-close">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <input
-              type="text"
-              className="search-input"
-              placeholder="搜索文章标题或标签..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            {filteredPosts.length > 0 ? (
-              <div className="search-results">
-                {filteredPosts.slice(0, 10).map(post => (
-                  <div key={post.slug} className="search-item">
-                    <Link href={`/posts/${post.slug}`} passHref>
-                      <a className="flex flex-col">
-                        <span className="text-lg font-semibold">{post.title}</span>
-                        {post.tags && (
-                          <span className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                            {post.tags.join(', ')}
-                          </span>
-                        )}
-                      </a>
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-6 text-center text-gray-600 dark:text-gray-400">
-                没有找到匹配的文章
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* 移动端菜单 */}
       <div className={`fixed inset-0 z-50 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
@@ -511,7 +535,7 @@ export default function Home({ allPostsData }) {
             
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
               <button
-                onClick={() => setIsDarkMode(!isDarkMode)}
+                onClick={toggleDarkMode}
                 className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <span>暗黑模式</span>
@@ -523,7 +547,9 @@ export default function Home({ allPostsData }) {
       </div>
 
       {/* 页面内容 */}
-      <div className={`min-h-screen p-8 pt-24 relative z-10 ${isMounted ? 'opacity-100 transform-none' : 'opacity-0 transform-y-4'}`}>
+      <div className={`min-h-screen p-8 pt-24 relative z-10 page-container ${
+        isMounted ? 'mounted' : ''
+      }`}>
         <Head>
           <title>首页 - Typace</title>
         </Head>
@@ -534,7 +560,7 @@ export default function Home({ allPostsData }) {
           </h1>
           <div className="hitokoto-container">
             <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 italic">
-              <span className="typewriter">石可破也，而不可夺坚；丹可磨也，而不可夺赤。</span>
+              <span className="typewriter">{displayText}</span>
             </p>
           </div>
         </header>
@@ -566,7 +592,7 @@ export default function Home({ allPostsData }) {
                     <Link href="/archive" passHref>
                       <a className="text-center stats-card hover:transform hover:scale-105 transition-transform cursor-pointer">
                         <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                          {allPostsData.length}
+                          {totalPosts}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                           文章
@@ -576,7 +602,7 @@ export default function Home({ allPostsData }) {
                     <Link href="/tags" passHref>
                       <a className="text-center stats-card hover:transform hover:scale-105 transition-transform cursor-pointer">
                         <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                          {new Set(allPostsData.map(post => post.tags || []).flat()).size}
+                          {totalTags}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                           标签
@@ -788,7 +814,6 @@ const MobileNavLink = ({ href, children, onClick }) => (
 
 export async function getStaticProps() {
   const allPostsData = getSortedPostsData();
-
   return {
     props: {
       allPostsData: allPostsData.map(post => ({
