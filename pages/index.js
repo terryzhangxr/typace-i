@@ -623,7 +623,7 @@ export default function Home({ allPostsData }) {
                       </svg>
                     </a>
                     <a 
-                      href="https://bgithub.xyz/terryzhangxr" 
+                      href="https://github.com/terryzhangxr" 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="social-icon"
