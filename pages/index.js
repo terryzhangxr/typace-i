@@ -256,11 +256,21 @@ const addDynamicStyles = () => {
       filter: grayscale(0%) contrast(1) invert(0);
     }
 
-    /* 搜索框样式 */
+    /* 搜索按钮和搜索框样式 */
+    .search-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .search-btn:hover {
+      transform: scale(1.1);
+    }
     .search-container {
       position: relative;
       width: 100%;
-      max-width: 400px;
+      max-width: 500px;
+      margin: 1rem auto;
     }
     .search-input {
       width: 100%;
@@ -307,6 +317,15 @@ const addDynamicStyles = () => {
     .dark .search-close {
       color: #d1d5db;
     }
+    .search-results {
+      margin-top: 2rem;
+    }
+    .no-results {
+      text-align: center;
+      padding: 2rem;
+      color: #6b7280;
+      dark:text-gray-400;
+    }
   `;
   document.head.appendChild(style);
 };
@@ -318,9 +337,12 @@ export default function Home({ allPostsData }) {
   const [paginatedPosts, setPaginatedPosts] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
 
-  // 搜索框状态
+  // 搜索功能状态
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // 搜索框焦点状态
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   // 其他原有状态
   const [transitionState, setTransitionState] = useState('idle');
@@ -362,6 +384,18 @@ export default function Home({ allPostsData }) {
     updatePaginatedPosts(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // 获取搜索结果
+  const getSearchResults = () => {
+    if (!searchQuery.trim()) return [];
+    return allPostsData.filter(post => 
+      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (post.excerpt && post.excerpt.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (post.tags && post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
+    );
+  };
+
+  const searchResults = getSearchResults();
 
   useEffect(() => {
     addDynamicStyles();
@@ -517,19 +551,14 @@ export default function Home({ allPostsData }) {
     }
   };
 
-  // 处理搜索
-  const handleSearch = (e) => {
-    setSearchQuery(e.target.value);
+  // 搜索框聚焦和失焦处理
+  const handleSearchFocus = () => {
+    setIsSearchFocused(true);
   };
 
-  // 筛选搜索结果
-  const filteredPosts = searchQuery
-    ? allPostsData.filter(post => 
-        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (post.excerpt && post.excerpt.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (post.tags && post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
-      )
-    : paginatedPosts;
+  const handleSearchBlur = () => {
+    setIsSearchFocused(false);
+  };
 
   return (
     <>
@@ -559,7 +588,7 @@ export default function Home({ allPostsData }) {
               {/* 桌面搜索按钮 */}
               <button
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors search-btn"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -626,19 +655,21 @@ export default function Home({ allPostsData }) {
         </div>
       </div>
 
-      {/* 搜索页面的搜索框 */}
+      {/* 搜索框组件 */}
       {isSearchOpen && (
-        <div className="fixed top-20 inset-x-0 mx-auto max-w-2xl z-40">
-          <div className="search-container">
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="search-container relative w-full max-w-lg">
             <input
               type="text"
-              className="search-input"
+              className="search-input w-full"
               placeholder="搜索文章..."
               value={searchQuery}
-              onChange={handleSearch}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={handleSearchFocus}
+              onBlur={handleSearchBlur}
             />
             <button 
-              className="search-close"
+              className="search-close absolute right-3 top-1/2 transform -translate-y-1/2"
               onClick={() => setIsSearchOpen(false)}
             >
               ✕
@@ -775,53 +806,106 @@ export default function Home({ allPostsData }) {
             </div>
           </aside>
 
-          {/* 文章列表 */}
+          {/* 文章列表或搜索结果 */}
           <main className="flex-1">
-            <ul className="space-y-6">
-              {filteredPosts.map(({ slug, title, date, cover, excerpt, tags }) => (
-                <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-[1.02]">
-                  <div className="flex flex-col md:flex-row gap-6">
-                    {cover && (
-                      <div className="md:w-1/3 cover-image-container">
-                        <img
-                          src={cover}
-                          alt={title}
-                          className="w-full h-full object-cover rounded-lg transition-transform duration-300 hover:scale-105"
-                          loading="lazy"
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <Link href={`/posts/${slug}`} passHref>
-                        <a className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
-                          {title}
-                        </a>
-                      </Link>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{date}</p>
-                      {excerpt && (
-                        <p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">
-                          {excerpt}
-                        </p>
-                      )}
-                      {tags && tags.length > 0 && (
-                        <div className="mt-4">
-                          {tags.map((tag) => (
-                            <Link key={tag} href={`/tags#${tag}`} passHref>
-                              <a className="tag">
-                                {tag}
+            {isSearchOpen && searchQuery ? (
+              <div className="search-results">
+                {searchResults.length > 0 ? (
+                  <ul className="space-y-6">
+                    {searchResults.map(({ slug, title, date, cover, excerpt, tags }) => (
+                      <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-[1.02]">
+                        <div className="flex flex-col md:flex-row gap-6">
+                          {cover && (
+                            <div className="md:w-1/3 cover-image-container">
+                              <img
+                                src={cover}
+                                alt={title}
+                                className="w-full h-full object-cover rounded-lg transition-transform duration-300 hover:scale-105"
+                                loading="lazy"
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <Link href={`/posts/${slug}`} passHref>
+                              <a className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                                {title}
                               </a>
                             </Link>
-                          ))}
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{date}</p>
+                            {excerpt && (
+                              <p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">
+                                {excerpt}
+                              </p>
+                            )}
+                            {tags && tags.length > 0 && (
+                              <div className="mt-4">
+                                {tags.map((tag) => (
+                                  <Link key={tag} href={`/tags#${tag}`} passHref>
+                                    <a className="tag">
+                                      {tag}
+                                    </a>
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="no-results">
+                    <p>没有找到与 "{searchQuery}" 相关的文章</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <ul className="space-y-6">
+                {paginatedPosts.map(({ slug, title, date, cover, excerpt, tags }) => (
+                  <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-[1.02]">
+                    <div className="flex flex-col md:flex-row gap-6">
+                      {cover && (
+                        <div className="md:w-1/3 cover-image-container">
+                          <img
+                            src={cover}
+                            alt={title}
+                            className="w-full h-full object-cover rounded-lg transition-transform duration-300 hover:scale-105"
+                            loading="lazy"
+                          />
                         </div>
                       )}
+                      <div className="flex-1">
+                        <Link href={`/posts/${slug}`} passHref>
+                          <a className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                            {title}
+                          </a>
+                        </Link>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{date}</p>
+                        {excerpt && (
+                          <p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">
+                            {excerpt}
+                          </p>
+                        )}
+                        {tags && tags.length > 0 && (
+                          <div className="mt-4">
+                            {tags.map((tag) => (
+                              <Link key={tag} href={`/tags#${tag}`} passHref>
+                                <a className="tag">
+                                  {tag}
+                                </a>
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
+                  </li>
+                ))}
+              </ul>
+            )}
 
             {/* 分页组件 */}
-            {totalPages > 0 && !searchQuery && (
+            {!isSearchOpen && totalPages > 0 && (
               <div className="pagination">
                 <li className="page-item">
                   <button
