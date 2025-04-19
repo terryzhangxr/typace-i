@@ -8,6 +8,7 @@ import { remark } from 'remark';
 import html from 'remark-html';
 import Head from 'next/head';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export async function getStaticPaths() {
   const posts = getSortedPostsData();
@@ -47,6 +48,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const [isMounted, setIsMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
   const walineInstance = useRef(null);
 
   // 检测设备宽度
@@ -65,6 +67,51 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
       .page-container.mounted {
         opacity: 1;
         transform: translateY(0);
+      }
+      
+      /* 图片样式 */
+      .article-content img {
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .article-content img:hover {
+        transform: scale(1.02);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+      
+      /* 图片预览模态框样式 */
+      .image-preview-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        cursor: pointer;
+      }
+      .image-preview-container {
+        max-width: 90%;
+        max-height: 90%;
+        position: relative;
+      }
+      .image-preview-container img {
+        max-width: 100%;
+        max-height: 90vh;
+        object-fit: contain;
+        border-radius: 0.5rem;
+      }
+      .close-preview {
+        position: absolute;
+        top: -40px;
+        right: 0;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
       }
     `;
     document.head.appendChild(style);
@@ -98,6 +145,26 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
       router.events.off('routeChangeComplete', handleRouteChangeComplete);
     };
   }, [router]);
+
+  useEffect(() => {
+    // 添加图片点击事件监听
+    const handleImageClick = (e) => {
+      if (e.target.tagName === 'IMG') {
+        setPreviewImage(e.target.src);
+      }
+    };
+
+    const articleContent = document.querySelector('.article-content');
+    if (articleContent) {
+      articleContent.addEventListener('click', handleImageClick);
+    }
+
+    return () => {
+      if (articleContent) {
+        articleContent.removeEventListener('click', handleImageClick);
+      }
+    };
+  }, [contentHtml]);
 
   const loadHighlightJS = (isDark) => {
     return new Promise((resolve) => {
@@ -328,14 +395,42 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
           <title>{frontmatter.title} - Typace</title>
         </Head>
 
+        {/* 图片预览模态框 */}
+        {previewImage && (
+          <div 
+            className="image-preview-overlay"
+            onClick={() => setPreviewImage(null)}
+          >
+            <div className="image-preview-container">
+              <span 
+                className="close-preview"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPreviewImage(null);
+                }}
+              >
+                &times;
+              </span>
+              <img 
+                src={previewImage} 
+                alt="预览" 
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          </div>
+        )}
+
         <main className="flex">
           <div className="flex-1">
             {frontmatter.cover && (
               <div className="w-full h-48 md:h-64 mb-8">
-                <img
+                <Image
                   src={frontmatter.cover}
                   alt={frontmatter.title}
-                  className="w-full h-full object-cover rounded-lg"
+                  width={1200}
+                  height={400}
+                  className="w-full h-full object-cover rounded-lg cursor-pointer"
+                  onClick={() => setPreviewImage(frontmatter.cover)}
                 />
               </div>
             )}
@@ -360,7 +455,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
                 </div>
               )}
               <div
-                className="text-gray-700 dark:text-gray-300"
+                className="article-content text-gray-700 dark:text-gray-300"
                 dangerouslySetInnerHTML={{ __html: contentHtml }}
               />
             </article>
@@ -399,9 +494,11 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
                   <a className="block bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition transform hover:scale-105">
                     {post.cover && (
                       <div className="w-full h-48">
-                        <img
+                        <Image
                           src={post.cover}
                           alt={post.title}
+                          width={400}
+                          height={200}
                           className="w-full h-full object-cover"
                         />
                       </div>
