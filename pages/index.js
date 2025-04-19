@@ -4,14 +4,89 @@ import { getSortedPostsData } from '../lib/posts';
 import Head from 'next/head';
 import Link from 'next/link';
 
-// 每页显示的文章数量
 const POSTS_PER_PAGE = 5;
 
-// 动态样式定义 
 const addDynamicStyles = () => {
   const style = document.createElement('style');
   style.textContent = `
-    /* 新增分页样式 */
+    /* Enhanced splash animation */
+    @keyframes charFadeIn {
+      0% {
+        opacity: 0;
+        transform: translateY(30px) scale(0.9);
+        filter: blur(2px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+      }
+    }
+    
+    @keyframes charFadeOut {
+      0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.9);
+      }
+    }
+    
+    .splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: white;
+      z-index: 9999;
+      font-family: 'Poppins', 'HarmonyOS Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity;
+    }
+    
+    .splash-screen.dark {
+      background: #111827;
+    }
+    
+    .splash-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .splash-title {
+      font-size: 4rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      text-align: center;
+      color: #1f2937;
+      font-variation-settings: 'wght' 700;
+      letter-spacing: -0.025em;
+      will-change: transform, opacity;
+    }
+    
+    .dark .splash-title {
+      color: #f3f4f6;
+    }
+    
+    .splash-char {
+      display: inline-block;
+      opacity: 0;
+      transform-origin: bottom center;
+      animation: charFadeIn 0.8s cubic-bezier(0.5, 1, 0.89, 1) forwards;
+    }
+    
+    .splash-char.fade-out {
+      animation: charFadeOut 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Pagination styles */
     .pagination {
       display: flex;
       justify-content: center;
@@ -60,7 +135,7 @@ const addDynamicStyles = () => {
       border-color: #3b82f6;
     }
 
-    /* 页面切换动画 */
+    /* Page transition animations */
     .page-transition {
       opacity: 1;
       transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
@@ -82,7 +157,7 @@ const addDynamicStyles = () => {
       transform: translateY(0);
     }
 
-    /* 背景渐变过渡 */
+    /* Background gradient transitions */
     .bg-transition {
       position: fixed;
       top: 0;
@@ -97,7 +172,7 @@ const addDynamicStyles = () => {
       opacity: 1;
     }
 
-    /* 响应式布局 */
+    /* Responsive layout */
     @media (max-width: 767px) {
       .cover-image-container {
         width: 100%;
@@ -110,9 +185,12 @@ const addDynamicStyles = () => {
       .pagination {
         flex-wrap: wrap;
       }
+      .splash-title {
+        font-size: 2.5rem;
+      }
     }
 
-    /* 打字机效果 */
+    /* Typewriter effect */
     .typewriter {
       display: inline-block;
       white-space: pre-wrap;
@@ -131,7 +209,7 @@ const addDynamicStyles = () => {
       }
     }
 
-    /* 其他样式 */
+    /* Other styles */
     .line-clamp-3 {
       display: -webkit-box;
       -webkit-line-clamp: 3;
@@ -152,7 +230,7 @@ const addDynamicStyles = () => {
       white-space: normal;
     }
 
-    /* 新增动画样式 */
+    /* Page container animation */
     .page-container {
       position: relative;
       opacity: 0;
@@ -164,7 +242,7 @@ const addDynamicStyles = () => {
       transform: translateY(0);
     }
 
-    /* 标签样式 */
+    /* Tag styles */
     .tag {
       display: inline-block;
       padding: 0.25rem 0.5rem;
@@ -187,7 +265,7 @@ const addDynamicStyles = () => {
       background-color: #1e40af;
     }
 
-    /* 简介框样式 */
+    /* Profile card styles */
     .profile-avatar {
       width: 96px;
       height: 96px;
@@ -212,12 +290,9 @@ const addDynamicStyles = () => {
 
 export default function Home({ allPostsData }) {
   const router = useRouter();
-  // 分页相关状态
   const [currentPage, setCurrentPage] = useState(1);
   const [paginatedPosts, setPaginatedPosts] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
-
-  // 其他原有状态
   const [transitionState, setTransitionState] = useState('idle');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [hitokoto, setHitokoto] = useState('');
@@ -226,7 +301,12 @@ export default function Home({ allPostsData }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // 计算文章总数和标签总数
+  // Splash screen states
+  const [showSplash, setShowSplash] = useState(false);
+  const [splashChars, setSplashChars] = useState([]);
+  const [isFadingOut, setIsFadingOut] = useState(false);
+
+  // Calculate total posts and tags
   const totalPosts = allPostsData.length;
   const allTags = new Set();
   allPostsData.forEach(post => {
@@ -236,21 +316,56 @@ export default function Home({ allPostsData }) {
   });
   const totalTags = allTags.size;
 
-  // 初始化分页
+  // Initialize pagination
   useEffect(() => {
     const total = Math.ceil(allPostsData.length / POSTS_PER_PAGE);
     setTotalPages(total);
     updatePaginatedPosts(1);
   }, [allPostsData]);
 
-  // 更新分页文章
+  // Check if splash screen should be shown
+  useEffect(() => {
+    // Only show splash on initial load or refresh
+    if (typeof window !== 'undefined' && window.performance) {
+      const navEntries = performance.getEntriesByType('navigation');
+      if (navEntries.length > 0 && (navEntries[0].type === 'reload' || navEntries[0].type === 'navigate')) {
+        setShowSplash(true);
+        initSplashAnimation();
+      }
+    }
+  }, []);
+
+  // Initialize splash animation
+  const initSplashAnimation = () => {
+    const title = "Typace";
+    const chars = title.split('').map((char, index) => ({
+      char,
+      id: index,
+      className: 'splash-char',
+      style: { 
+        animationDelay: `${index * 0.08}s`,
+        willChange: 'transform, opacity'
+      }
+    }));
+    setSplashChars(chars);
+
+    // Fade out after animation completes
+    const timer = setTimeout(() => {
+      setIsFadingOut(true);
+      setTimeout(() => setShowSplash(false), 800);
+    }, title.length * 80 + 1800);
+
+    return () => clearTimeout(timer);
+  };
+
+  // Update paginated posts
   const updatePaginatedPosts = (page) => {
     const startIndex = (page - 1) * POSTS_PER_PAGE;
     const endIndex = startIndex + POSTS_PER_PAGE;
     setPaginatedPosts(allPostsData.slice(startIndex, endIndex));
   };
 
-  // 处理分页变化
+  // Handle page change
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
@@ -258,15 +373,27 @@ export default function Home({ allPostsData }) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Update fade out state
+  useEffect(() => {
+    if (isFadingOut) {
+      setSplashChars(prev => prev.map(char => ({
+        ...char,
+        className: 'splash-char fade-out',
+        style: { ...char.style, animationDelay: '0s' }
+      })));
+    }
+  }, [isFadingOut]);
+
+  // Initialize page
   useEffect(() => {
     addDynamicStyles();
 
-    // 从本地存储获取暗黑模式设置
+    // Get dark mode preference
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
     setIsDarkMode(savedDarkMode);
     document.documentElement.classList.toggle('dark', savedDarkMode);
 
-    // 获取一言
+    // Fetch hitokoto
     fetch('https://v1.hitokoto.cn')
       .then((response) => response.json())
       .then((data) => {
@@ -274,13 +401,13 @@ export default function Home({ allPostsData }) {
         typeWriterEffect(data.hitokoto);
       })
       .catch((error) => {
-        console.error('获取一言失败:', error);
+        console.error('Error fetching hitokoto:', error);
         const defaultHitokoto = '生活不止眼前的苟且，还有诗和远方的田野。';
         setHitokoto(defaultHitokoto);
         typeWriterEffect(defaultHitokoto);
       });
 
-    // 路由事件监听
+    // Route change handlers
     const handleRouteChangeStart = () => {
       setTransitionState('exiting');
       setIsMounted(false);
@@ -297,10 +424,10 @@ export default function Home({ allPostsData }) {
     router.events.on('routeChangeStart', handleRouteChangeStart);
     router.events.on('routeChangeComplete', handleRouteChangeComplete);
 
-    // 初始化页面动画
+    // Initialize page animation
     setIsMounted(true);
 
-    // 初始化设备宽度检测
+    // Check mobile view
     checkMobile();
     window.addEventListener('resize', checkMobile);
 
@@ -311,12 +438,12 @@ export default function Home({ allPostsData }) {
     };
   }, [router]);
 
-  // 检测设备宽度
+  // Check mobile view
   const checkMobile = () => {
     setIsMobile(window.innerWidth < 768);
   };
 
-  // 打字机效果
+  // Typewriter effect
   const typeWriterEffect = (text) => {
     let i = 0;
     const speed = 100;
@@ -340,7 +467,7 @@ export default function Home({ allPostsData }) {
     }, speed);
   };
 
-  // 动态背景渐变
+  // Background gradient animation
   useEffect(() => {
     const lightColors = [
       'linear-gradient(45deg, #ee7752, #e73c7e)',
@@ -392,7 +519,7 @@ export default function Home({ allPostsData }) {
     };
   }, [isDarkMode]);
 
-  // 切换暗黑模式
+  // Toggle dark mode
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
     setIsDarkMode(newDarkMode);
@@ -400,7 +527,7 @@ export default function Home({ allPostsData }) {
     document.documentElement.classList.toggle('dark', newDarkMode);
   };
 
-  // 获取过渡类名
+  // Get transition class
   const getTransitionClass = () => {
     switch (transitionState) {
       case 'exiting':
@@ -414,7 +541,20 @@ export default function Home({ allPostsData }) {
 
   return (
     <>
-      {/* 导航栏 */}
+      {/* Splash screen */}
+      {showSplash && (
+        <div className={`splash-screen ${isDarkMode ? 'dark' : ''}`}>
+          <h1 className="splash-title">
+            {splashChars.map(({ char, id, className, style }) => (
+              <span key={id} className={className} style={style}>
+                {char}
+              </span>
+            ))}
+          </h1>
+        </div>
+      )}
+
+      {/* Navigation */}
       <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-50">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
@@ -424,7 +564,7 @@ export default function Home({ allPostsData }) {
               </a>
             </Link>
 
-            {/* 桌面导航 */}
+            {/* Desktop navigation */}
             <div className="hidden md:flex space-x-6">
               <NavLink href="/">首页</NavLink>
               <NavLink href="/about">关于</NavLink>
@@ -438,7 +578,7 @@ export default function Home({ allPostsData }) {
               </button>
             </div>
 
-            {/* 移动端菜单按钮 */}
+            {/* Mobile menu button */}
             <button
               className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -451,9 +591,9 @@ export default function Home({ allPostsData }) {
         </div>
       </nav>
 
-      {/* 移动端菜单 */}
+      {/* Mobile menu */}
       <div className={`fixed inset-0 z-50 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
-        {/* 遮罩层 */}
+        {/* Overlay */}
         <div 
           className={`absolute inset-0 bg-black/20 dark:bg-black/40 transition-opacity ${
             isMenuOpen ? 'opacity-100' : 'opacity-0'
@@ -461,7 +601,7 @@ export default function Home({ allPostsData }) {
           onClick={() => setIsMenuOpen(false)}
         />
         
-        {/* 菜单内容 */}
+        {/* Menu content */}
         <div 
           className={`absolute right-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-xl transition-transform duration-300 ${
             isMenuOpen ? 'translate-x-0' : 'translate-x-full'
@@ -497,12 +637,16 @@ export default function Home({ allPostsData }) {
         </div>
       </div>
 
-      {/* 页面内容 */}
+      {/* Page content */}
       <div className={`min-h-screen p-8 pt-24 relative z-10 page-container ${
         isMounted ? 'mounted' : ''
       }`}>
         <Head>
           <title>首页 - Typace</title>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+          <link href="https://fonts.googleapis.com/css2?family=HarmonyOS+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
         </Head>
 
         <header className="text-center mb-8">
@@ -516,16 +660,14 @@ export default function Home({ allPostsData }) {
           </div>
         </header>
 
-        {/* 主要内容区域 */}
+        {/* Main content area */}
         <div className="flex">
-          {/* 左侧简介栏 */}
+          {/* Left sidebar */}
           <aside className="w-1/4 pr-8 hidden lg:block">
-            {/* 简介板块和最新文章板块的容器 */}
             <div className="sticky top-24 space-y-6">
-              {/* 简介板块 */}
+              {/* Profile card */}
               <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
                 <div className="flex flex-col items-center">
-                  {/* 博主头像 */}
                   <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
                     <img 
                       src="https://ik.imagekit.io/terryzhang/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-04-17%20204625.png" 
@@ -564,7 +706,7 @@ export default function Home({ allPostsData }) {
                 </div>
               </div>
 
-              {/* 最新文章板块 */}
+              {/* Recent posts */}
               <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
                 <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
                   最新文章
@@ -587,7 +729,7 @@ export default function Home({ allPostsData }) {
             </div>
           </aside>
 
-          {/* 文章列表 */}
+          {/* Article list */}
           <main className="flex-1">
             <ul className="space-y-6">
               {paginatedPosts.map(({ slug, title, date, cover, excerpt, tags }) => (
@@ -632,7 +774,7 @@ export default function Home({ allPostsData }) {
               ))}
             </ul>
 
-            {/* 分页组件 */}
+            {/* Pagination */}
             {totalPages > 0 && (
               <div className="pagination">
                 <li className="page-item">
@@ -670,7 +812,7 @@ export default function Home({ allPostsData }) {
           </main>
         </div>
 
-        {/* 页脚 */}
+        {/* Footer */}
         <footer className="text-center mt-12">
           <a href="/api/sitemap" className="inline-block">
             <img
@@ -704,7 +846,7 @@ export default function Home({ allPostsData }) {
   );
 }
 
-// 桌面导航链接组件
+// Desktop nav link component
 const NavLink = ({ href, children }) => (
   <Link href={href} passHref>
     <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
@@ -713,7 +855,7 @@ const NavLink = ({ href, children }) => (
   </Link>
 );
 
-// 移动端导航链接组件
+// Mobile nav link component
 const MobileNavLink = ({ href, children, onClick }) => (
   <Link href={href} passHref>
     <a 
