@@ -3,11 +3,63 @@ import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../lib/posts';
 import Head from 'next/head';
 import Link from 'next/link';
- 
+
+// 每页显示的文章数量
+const POSTS_PER_PAGE = 5;
+
 // 动态样式定义 
 const addDynamicStyles = () => {
   const style = document.createElement('style');
   style.textContent = `
+    /* 新增分页样式 */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      margin-top: 3rem;
+      gap: 0.5rem;
+      list-style: none;
+      padding: 0;
+    }
+    .page-item {
+      display: inline-flex;
+    }
+    .page-link {
+      padding: 0.5rem 1rem;
+      border: 1px solid #e5e7eb;
+      color: #4b5563;
+      border-radius: 0.375rem;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      background: white;
+    }
+    .page-link:hover {
+      background-color: #f3f4f6;
+      border-color: #d1d5db;
+    }
+    .page-link.active {
+      background-color: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+    }
+    .page-link.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .dark .page-link {
+      border-color: #4b5563;
+      color: #d1d5db;
+      background-color: #1f2937;
+    }
+    .dark .page-link:hover {
+      background-color: #374151;
+      border-color: #6b7280;
+    }
+    .dark .page-link.active {
+      background-color: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+    }
+
     /* 页面切换动画 */
     .page-transition {
       opacity: 1;
@@ -55,6 +107,9 @@ const addDynamicStyles = () => {
         width: 100% !important;
         margin-bottom: 2rem;
       }
+      .pagination {
+        flex-wrap: wrap;
+      }
     }
 
     /* 打字机效果 */
@@ -99,6 +154,7 @@ const addDynamicStyles = () => {
 
     /* 新增动画样式 */
     .page-container {
+      position: relative;
       opacity: 0;
       transform: translateY(100px);
       transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
@@ -156,6 +212,12 @@ const addDynamicStyles = () => {
 
 export default function Home({ allPostsData }) {
   const router = useRouter();
+  // 分页相关状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const [paginatedPosts, setPaginatedPosts] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // 其他原有状态
   const [transitionState, setTransitionState] = useState('idle');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [hitokoto, setHitokoto] = useState('');
@@ -163,11 +225,6 @@ export default function Home({ allPostsData }) {
   const [isMounted, setIsMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-
-  // 检测设备宽度
-  const checkMobile = () => {
-    setIsMobile(window.innerWidth < 768);
-  };
 
   // 计算文章总数和标签总数
   const totalPosts = allPostsData.length;
@@ -178,6 +235,28 @@ export default function Home({ allPostsData }) {
     }
   });
   const totalTags = allTags.size;
+
+  // 初始化分页
+  useEffect(() => {
+    const total = Math.ceil(allPostsData.length / POSTS_PER_PAGE);
+    setTotalPages(total);
+    updatePaginatedPosts(1);
+  }, [allPostsData]);
+
+  // 更新分页文章
+  const updatePaginatedPosts = (page) => {
+    const startIndex = (page - 1) * POSTS_PER_PAGE;
+    const endIndex = startIndex + POSTS_PER_PAGE;
+    setPaginatedPosts(allPostsData.slice(startIndex, endIndex));
+  };
+
+  // 处理分页变化
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+    updatePaginatedPosts(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     addDynamicStyles();
@@ -231,6 +310,11 @@ export default function Home({ allPostsData }) {
       window.removeEventListener('resize', checkMobile);
     };
   }, [router]);
+
+  // 检测设备宽度
+  const checkMobile = () => {
+    setIsMobile(window.innerWidth < 768);
+  };
 
   // 打字机效果
   const typeWriterEffect = (text) => {
@@ -506,7 +590,7 @@ export default function Home({ allPostsData }) {
           {/* 文章列表 */}
           <main className="flex-1">
             <ul className="space-y-6">
-              {allPostsData.map(({ slug, title, date, cover, excerpt, tags }) => (
+              {paginatedPosts.map(({ slug, title, date, cover, excerpt, tags }) => (
                 <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-[1.02]">
                   <div className="flex flex-col md:flex-row gap-6">
                     {cover && (
@@ -547,6 +631,42 @@ export default function Home({ allPostsData }) {
                 </li>
               ))}
             </ul>
+
+            {/* 分页组件 */}
+            {totalPages > 1 && (
+              <div className="pagination">
+                <li className="page-item">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    className={`page-link ${currentPage === 1 ? 'disabled' : ''}`}
+                    disabled={currentPage === 1}
+                  >
+                    上一页
+                  </button>
+                </li>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <li key={page} className="page-item">
+                    <button
+                      onClick={() => handlePageChange(page)}
+                      className={`page-link ${currentPage === page ? 'active' : ''}`}
+                    >
+                      {page}
+                    </button>
+                  </li>
+                ))}
+                
+                <li className="page-item">
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    className={`page-link ${currentPage === totalPages ? 'disabled' : ''}`}
+                    disabled={currentPage === totalPages}
+                  >
+                    下一页
+                  </button>
+                </li>
+              </div>
+            )}
           </main>
         </div>
 
@@ -578,7 +698,6 @@ export default function Home({ allPostsData }) {
               zhang@mrzxr.com
             </a>
           </p>
-            
         </footer>
       </div>
     </>
