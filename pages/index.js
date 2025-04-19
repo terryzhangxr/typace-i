@@ -7,7 +7,7 @@ import Link from 'next/link';
 // 每页显示的文章数量
 const POSTS_PER_PAGE = 5;
 
-// 动态样式定义 
+// 动态样式定义
 const addDynamicStyles = () => {
   const style = document.createElement('style');
   style.textContent = `
@@ -257,55 +257,90 @@ const addDynamicStyles = () => {
     }
 
     /* 搜索框样式 */
-    .search-container {
-      position: relative;
-      width: 100%;
-      max-width: 400px;
+    .search-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .search-input {
-      width: 100%;
-      padding: 0.5rem 1rem 0.5rem 2.5rem;
-      border: 1px solid #e5e7eb;
-      border-radius: 0.375rem;
+    .search-modal-content {
       background-color: white;
-      transition: all 0.2s ease;
+      dark:bg-gray-800;
+      width: 90%;
+      max-width: 800px;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1);
     }
-    .search-input:focus {
-      outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+    .search-modal-header {
+      padding: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+      dark:border-gray-700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    .dark .search-input {
-      background-color: #1f2937;
-      border-color: #4b5563;
-      color: #d1d5db;
+    .search-modal-title {
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: #374151;
+      dark:text-gray-300;
     }
-    .dark .search-input:focus {
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
-    }
-    .search-icon {
-      position: absolute;
-      left: 0.5rem;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #4b5563;
-    }
-    .dark .search-icon {
-      color: #d1d5db;
-    }
-    .search-close {
-      position: absolute;
-      right: 0.5rem;
-      top: 50%;
-      transform: translateY(-50%);
+    .search-modal-close {
       background: none;
       border: none;
-      color: #4b5563;
+      color: #6b7280;
+      dark:text-gray-400;
       cursor: pointer;
+      font-size: 1.5rem;
     }
-    .dark .search-close {
-      color: #d1d5db;
+    .search-modal-body {
+      padding: 1rem;
+    }
+    .search-results-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .search-result-item {
+      padding: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+      dark:border-gray-700;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .search-result-item:hover {
+      background-color: #f9fafb;
+      dark:bg-gray-700;
+    }
+    .search-result-title {
+      font-weight: bold;
+      color: #374151;
+      dark:text-gray-300;
+      margin-bottom: 0.25rem;
+    }
+    .search-result-excerpt {
+      color: #6b7280;
+      dark:text-gray-400;
+      white-space: pre-wrap;
+    }
+    .highlight {
+      background-color: #ffeb3b;
+      dark:bg-yellow-600;
+    }
+
+    /* 搜索框按钮样式 */
+    .search-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .search-btn:hover {
+      transform: scale(1.1);
     }
   `;
   document.head.appendChild(style);
@@ -322,24 +357,24 @@ export default function Home({ allPostsData }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 其他原有状态
-  const [transitionState, setTransitionState] = useState('idle');
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [hitokoto, setHitokoto] = useState('');
-  const [displayText, setDisplayText] = useState('');
-  const [isMounted, setIsMounted] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  // 搜索功能状态
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearchResultOpen, setIsSearchResultOpen] = useState(false);
 
-  // 计算文章总数和标签总数
-  const totalPosts = allPostsData.length;
-  const allTags = new Set();
-  allPostsData.forEach(post => {
-    if (post.tags) {
-      post.tags.forEach(tag => allTags.add(tag));
+  // 搜索功能逻辑
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+    if (e.target.value.trim() !== '') {
+      const results = allPostsData.filter(post => 
+        post.title.toLowerCase().includes(e.target.value.toLowerCase()) ||
+        (post.excerpt && post.excerpt.toLowerCase().includes(e.target.value.toLowerCase())) ||
+        (post.tags && post.tags.some(tag => tag.toLowerCase().includes(e.target.value.toLowerCase())))
+      );
+      setSearchResults(results);
+    } else {
+      setSearchResults([]);
     }
-  });
-  const totalTags = allTags.size;
+  };
 
   // 初始化分页
   useEffect(() => {
@@ -363,15 +398,9 @@ export default function Home({ allPostsData }) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // 获取一言
   useEffect(() => {
     addDynamicStyles();
-
-    // 从本地存储获取暗黑模式设置
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    setIsDarkMode(savedDarkMode);
-    document.documentElement.classList.toggle('dark', savedDarkMode);
-
-    // 获取一言
     fetch('https://v1.hitokoto.cn')
       .then((response) => response.json())
       .then((data) => {
@@ -384,44 +413,11 @@ export default function Home({ allPostsData }) {
         setHitokoto(defaultHitokoto);
         typeWriterEffect(defaultHitokoto);
       });
-
-    // 路由事件监听
-    const handleRouteChangeStart = () => {
-      setTransitionState('exiting');
-      setIsMounted(false);
-    };
-
-    const handleRouteChangeComplete = () => {
-      setTransitionState('entering');
-      setTimeout(() => {
-        setTransitionState('idle');
-        setIsMounted(true);
-      }, 300);
-    };
-
-    router.events.on('routeChangeStart', handleRouteChangeStart);
-    router.events.on('routeChangeComplete', handleRouteChangeComplete);
-
-    // 初始化页面动画
-    setIsMounted(true);
-
-    // 初始化设备宽度检测
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-
-    return () => {
-      router.events.off('routeChangeStart', handleRouteChangeStart);
-      router.events.off('routeChangeComplete', handleRouteChangeComplete);
-      window.removeEventListener('resize', checkMobile);
-    };
-  }, [router]);
-
-  // 检测设备宽度
-  const checkMobile = () => {
-    setIsMobile(window.innerWidth < 768);
-  };
+  }, []);
 
   // 打字机效果
+  const [hitokoto, setHitokoto] = useState('');
+  const [displayText, setDisplayText] = useState('');
   const typeWriterEffect = (text) => {
     let i = 0;
     const speed = 100;
@@ -446,56 +442,12 @@ export default function Home({ allPostsData }) {
   };
 
   // 动态背景渐变
+  const [isDarkMode, setIsDarkMode] = useState(false);
   useEffect(() => {
-    const lightColors = [
-      'linear-gradient(45deg, #ee7752, #e73c7e)',
-      'linear-gradient(45deg, #e73c7e, #23a6d5)',
-      'linear-gradient(45deg, #23a6d5, #23d5ab)',
-      'linear-gradient(45deg, #23d5ab, #ee7752)',
-    ];
-
-    const darkColors = [
-      'linear-gradient(45deg, #1e3a8a, #9f7aea)',
-      'linear-gradient(45deg, #9f7aea, #3b82f6)',
-      'linear-gradient(45deg, #3b82f6, #60a5fa)',
-      'linear-gradient(45deg, #60a5fa, #1e3a8a)',
-    ];
-
-    const colors = isDarkMode ? darkColors : lightColors;
-
-    const bg1 = document.createElement('div');
-    const bg2 = document.createElement('div');
-    bg1.className = bg2.className = 'bg-transition';
-    document.body.append(bg1, bg2);
-
-    let currentIndex = 0;
-    let activeBg = bg1;
-
-    activeBg.style.backgroundImage = colors[currentIndex];
-    activeBg.classList.add('bg-visible');
-
-    const changeBackground = () => {
-      const nextIndex = (currentIndex + 1) % colors.length;
-      const nextBg = activeBg === bg1 ? bg2 : bg1;
-
-      nextBg.style.backgroundImage = colors[nextIndex];
-
-      setTimeout(() => {
-        activeBg.classList.remove('bg-visible');
-        nextBg.classList.add('bg-visible');
-        activeBg = nextBg;
-        currentIndex = nextIndex;
-      }, 100);
-    };
-
-    const intervalId = setInterval(changeBackground, 2500);
-
-    return () => {
-      clearInterval(intervalId);
-      bg1.remove();
-      bg2.remove();
-    };
-  }, [isDarkMode]);
+    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+    setIsDarkMode(savedDarkMode);
+    document.documentElement.classList.toggle('dark', savedDarkMode);
+  }, []);
 
   // 切换暗黑模式
   const toggleDarkMode = () => {
@@ -504,32 +456,6 @@ export default function Home({ allPostsData }) {
     localStorage.setItem('darkMode', newDarkMode);
     document.documentElement.classList.toggle('dark', newDarkMode);
   };
-
-  // 获取过渡类名
-  const getTransitionClass = () => {
-    switch (transitionState) {
-      case 'exiting':
-        return 'page-transition-exit';
-      case 'entering':
-        return 'page-transition-enter';
-      default:
-        return '';
-    }
-  };
-
-  // 处理搜索
-  const handleSearch = (e) => {
-    setSearchQuery(e.target.value);
-  };
-
-  // 筛选搜索结果
-  const filteredPosts = searchQuery
-    ? allPostsData.filter(post => 
-        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (post.excerpt && post.excerpt.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (post.tags && post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
-      )
-    : paginatedPosts;
 
   return (
     <>
@@ -559,98 +485,106 @@ export default function Home({ allPostsData }) {
               {/* 桌面搜索按钮 */}
               <button
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors search-btn"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </button>
             </div>
-
-            {/* 移动端菜单按钮 */}
-            <button
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
           </div>
         </div>
       </nav>
 
-      {/* 移动端菜单 */}
-      <div className={`fixed inset-0 z-50 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
-        {/* 遮罩层 */}
-        <div 
-          className={`absolute inset-0 bg-black/20 dark:bg-black/40 transition-opacity ${
-            isMenuOpen ? 'opacity-100' : 'opacity-0'
-          }`}
-          onClick={() => setIsMenuOpen(false)}
-        />
-        
-        {/* 菜单内容 */}
-        <div 
-          className={`absolute right-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-xl transition-transform duration-300 ${
-            isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
-        >
-          <div className="p-6 space-y-4 pt-2">
-            <button
-              className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            
-            <div className="mt-6 space-y-3">
-              <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)}>首页</MobileNavLink>
-              <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>关于</MobileNavLink>
-              <MobileNavLink href="/archive" onClick={() => setIsMenuOpen(false)}>归档</MobileNavLink>
-              <MobileNavLink href="/tags" onClick={() => setIsMenuOpen(false)}>标签</MobileNavLink>
-            </div>
-            
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
+      {/* 搜索功能弹窗 */}
+      {isSearchOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="search-modal search-modal-content">
+            <div className="search-modal-header">
+              <h2 className="search-modal-title">搜索</h2>
               <button
-                onClick={toggleDarkMode}
-                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="search-modal-close"
+                onClick={() => setIsSearchOpen(false)}
               >
-                <span>暗黑模式</span>
-                <span>{isDarkMode ? '🌙' : '☀️'}</span>
+                &times;
               </button>
+            </div>
+            <div className="search-modal-body">
+              <input
+                type="text"
+                className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md"
+                placeholder="搜索文章..."
+                value={searchQuery}
+                onChange={handleSearch}
+              />
+              {searchQuery && (
+                <ul className="search-results-list mt-4">
+                  {searchResults.map((post) => (
+                    <li
+                      key={post.slug}
+                      className="search-result-item"
+                      onClick={() => {
+                        setIsSearchResultOpen(true);
+                        setSelectedPost(post);
+                      }}
+                    >
+                      <div className="search-result-title">{post.title}</div>
+                      {post.excerpt && (
+                        <div className="search-result-excerpt">
+                          {post.excerpt}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* 搜索页面的搜索框 */}
-      {isSearchOpen && (
-        <div className="fixed top-20 inset-x-0 mx-auto max-w-2xl z-40">
-          <div className="search-container">
-            <input
-              type="text"
-              className="search-input"
-              placeholder="搜索文章..."
-              value={searchQuery}
-              onChange={handleSearch}
-            />
-            <button 
-              className="search-close"
-              onClick={() => setIsSearchOpen(false)}
-            >
-              ✕
-            </button>
+      {/* 搜索功能结果弹窗 */}
+      {isSearchResultOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="search-modal search-modal-content">
+            <div className="search-modal-header">
+              <h2 className="search-modal-title">搜索结果</h2>
+              <button
+                className="search-modal-close"
+                onClick={() => setIsSearchResultOpen(false)}
+              >
+                &times;
+              </button>
+            </div>
+            <div className="search-modal-body">
+              {selectedPost && (
+                <div>
+                  <h2 className="text-2xl font-bold mb-4">{selectedPost.title}</h2>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    {selectedPost.date}
+                  </p>
+                  <div className="highlighted-content">
+                    {selectedPost.excerpt.split(' ').map((word, index) => {
+                      return (
+                        <span key={index}>
+                          {word.toLowerCase().includes(searchQuery.toLowerCase()) ? (
+                            <span className="highlight">{word} </span>
+                          ) : (
+                            word + ' '
+                          )}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
 
       {/* 页面内容 */}
-      <div className={`min-h-screen p-8 pt-24 relative z-10 page-container ${
-        isMounted ? 'mounted' : ''
-      }`}>
+      <div className={`min-h-screen p-8 pt-24 relative z-10`}>
         <Head>
           <title>首页 - Typace</title>
         </Head>
@@ -693,7 +627,7 @@ export default function Home({ allPostsData }) {
                     <Link href="/archive" passHref>
                       <a className="text-center stats-card hover:transform hover:scale-105 transition-transform cursor-pointer">
                         <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                          {totalPosts}
+                          {allPostsData.length}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                           文章
@@ -703,7 +637,7 @@ export default function Home({ allPostsData }) {
                     <Link href="/tags" passHref>
                       <a className="text-center stats-card hover:transform hover:scale-105 transition-transform cursor-pointer">
                         <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                          {totalTags}
+                          {Array.from(new Set(allPostsData.flatMap(post => post.tags || []))).length}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                           标签
@@ -778,7 +712,7 @@ export default function Home({ allPostsData }) {
           {/* 文章列表 */}
           <main className="flex-1">
             <ul className="space-y-6">
-              {filteredPosts.map(({ slug, title, date, cover, excerpt, tags }) => (
+              {paginatedPosts.map(({ slug, title, date, cover, excerpt, tags }) => (
                 <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-[1.02]">
                   <div className="flex flex-col md:flex-row gap-6">
                     {cover && (
@@ -821,7 +755,7 @@ export default function Home({ allPostsData }) {
             </ul>
 
             {/* 分页组件 */}
-            {totalPages > 0 && !searchQuery && (
+            {totalPages > 0 && (
               <div className="pagination">
                 <li className="page-item">
                   <button
