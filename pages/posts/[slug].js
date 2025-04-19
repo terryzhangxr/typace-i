@@ -47,6 +47,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
   const [isMounted, setIsMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
   const walineInstance = useRef(null);
 
   // 检测设备宽度
@@ -65,6 +66,66 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
       .page-container.mounted {
         opacity: 1;
         transform: translateY(0);
+      }
+      
+      /* 图片圆角样式 */
+      .prose img {
+        border-radius: 0.5rem;
+        cursor: zoom-in;
+        transition: transform 0.2s ease;
+      }
+      
+      .prose img:hover {
+        transform: scale(1.02);
+      }
+      
+      /* 图片预览模态框样式 */
+      .image-preview-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(8px);
+      }
+      
+      .image-preview-container {
+        max-width: 90%;
+        max-height: 90%;
+        position: relative;
+      }
+      
+      .image-preview-container img {
+        max-width: 100%;
+        max-height: 90vh;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      }
+      
+      .image-preview-close {
+        position: absolute;
+        top: -40px;
+        right: 0;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+      
+      .image-preview-close:hover {
+        background: rgba(255, 255, 255, 0.3);
       }
     `;
     document.head.appendChild(style);
@@ -183,7 +244,10 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         loadHLJSBase()
       ]);
 
-      if (contentHtml) generateToc();
+      if (contentHtml) {
+        generateToc();
+        setupImagePreview();
+      }
     };
 
     const loadHLJSBase = () => {
@@ -196,6 +260,15 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         });
       }
       return Promise.resolve();
+    };
+
+    const setupImagePreview = () => {
+      const articleImages = document.querySelectorAll('.prose img');
+      articleImages.forEach(img => {
+        img.addEventListener('click', () => {
+          setPreviewImage(img.src);
+        });
+      });
     };
 
     initializePage();
@@ -231,6 +304,10 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
       });
       window.history.pushState(null, '', `#${id}`);
     }
+  };
+
+  const closePreview = () => {
+    setPreviewImage(null);
   };
 
   return (
@@ -321,6 +398,21 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
         </div>
       </div>
 
+      {/* 图片预览模态框 */}
+      {previewImage && (
+        <div className="image-preview-overlay" onClick={closePreview}>
+          <div className="image-preview-container" onClick={(e) => e.stopPropagation()}>
+            <img src={previewImage} alt="Preview" />
+            <button className="image-preview-close" onClick={closePreview}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className={`min-h-screen p-8 pt-24 relative z-10 bg-white dark:bg-gray-900 page-container ${
         isMounted ? 'mounted' : ''
       }`}>
@@ -335,7 +427,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts }) {
                 <img
                   src={frontmatter.cover}
                   alt={frontmatter.title}
-                  className="w-full h-full object-cover rounded-lg"
+                  className="w-full h-full object-cover rounded-lg cursor-pointer"
+                  onClick={() => setPreviewImage(frontmatter.cover)}
                 />
               </div>
             )}
