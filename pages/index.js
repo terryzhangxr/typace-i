@@ -623,7 +623,7 @@ export default function Home({ allPostsData }) {
                       </svg>
                     </a>
                     <a 
-                      href="https://github.com/terryzhangxr" 
+                      href="https://bgithub.xyz/terryzhangxr" 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="social-icon"
@@ -635,7 +635,7 @@ export default function Home({ allPostsData }) {
                       />
                     </a>
                     <a 
-                      href="https://space.bilibili.com/your-bilibili-id" 
+                      href="https://space.bilibili.com/3546622533306643?spm_id_from=333.337.0.0"
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="social-icon"
