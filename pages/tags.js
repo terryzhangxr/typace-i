@@ -449,9 +449,9 @@ export default function TagsPage({ tagsWithPosts }) {
             />
           </a>
           <p className="mt-4 text-gray-600 dark:text-gray-400">
-            由MRCHE&terryzhang创建的
+            由Terryzhang&mrche创建的
             <a
-              href="https://www.mrche.top/typace"
+              href="https://github.com/terryzhangxr/typace-i"
               className="text-blue-600 hover:underline dark:text-blue-400"
             >
               Typace
