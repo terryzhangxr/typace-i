@@ -366,6 +366,104 @@ const addDynamicStyles = () => {
       background-color: #92400e;
       color: #fde68a;
     }
+
+    /* 新增文章卡片样式 */
+    .article-card {
+      position: relative;
+      border-radius: 1rem;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      background: linear-gradient(145deg, #ffffff, #f5f7fa);
+    }
+    .dark .article-card {
+      background: linear-gradient(145deg, #1f2937, #111827);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+    }
+    .article-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    .dark .article-card:hover {
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+    }
+    .article-cover {
+      height: 220px;
+      width: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+    .article-card:hover .article-cover {
+      transform: scale(1.05);
+    }
+    .article-content {
+      padding: 1.5rem;
+    }
+    .article-date {
+      display: inline-block;
+      margin-bottom: 0.75rem;
+      font-size: 0.875rem;
+      color: #6b7280;
+      background-color: #f3f4f6;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+    }
+    .dark .article-date {
+      color: #d1d5db;
+      background-color: #374151;
+    }
+    .article-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: #111827;
+      transition: color 0.2s ease;
+    }
+    .dark .article-title {
+      color: #f3f4f6;
+    }
+    .article-excerpt {
+      color: #6b7280;
+      margin-bottom: 1.5rem;
+      line-height: 1.625;
+    }
+    .dark .article-excerpt {
+      color: #9ca3af;
+    }
+    .article-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1.5rem;
+    }
+    .read-more {
+      display: inline-flex;
+      align-items: center;
+      color: #3b82f6;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+    .dark .read-more {
+      color: #60a5fa;
+    }
+    .read-more:hover {
+      color: #2563eb;
+    }
+    .dark .read-more:hover {
+      color: #3b82f6;
+    }
+    .read-more svg {
+      margin-left: 0.5rem;
+      transition: transform 0.2s ease;
+    }
+    .read-more:hover svg {
+      transform: translateX(2px);
+    }
+    .tag-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
   `;
   document.head.appendChild(style);
 };
@@ -609,17 +707,17 @@ export default function Home({ allPostsData }) {
   // 动态背景渐变
   useEffect(() => {
     const lightColors = [
-      'linear-gradient(45deg, #ee7752, #e73c7e)',
-      'linear-gradient(45deg, #e73c7e, #23a6d5)',
-      'linear-gradient(45deg, #23a6d5, #23d5ab)',
-      'linear-gradient(45deg, #23d5ab, #ee7752)',
+      'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+      'linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 50%, #80deea 100%)',
+      'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #dee2e6 100%)',
+      'linear-gradient(135deg, #fff9c4 0%, #fff59d 50%, #fff176 100%)',
     ];
 
     const darkColors = [
-      'linear-gradient(45deg, #1e3a8a, #9f7aea)',
-      'linear-gradient(45deg, #9f7aea, #3b82f6)',
-      'linear-gradient(45deg, #3b82f6, #60a5fa)',
-      'linear-gradient(45deg, #60a5fa, #1e3a8a)',
+      'linear-gradient(135deg, #1a237e 0%, #283593 50%, #3949ab 100%)',
+      'linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #1976d2 100%)',
+      'linear-gradient(135deg, #004d40 0%, #00695c 50%, #00796b 100%)',
+      'linear-gradient(135deg, #4a148c 0%, #6a1b9a 50%, #8e24aa 100%)',
     ];
 
     const colors = isDarkMode ? darkColors : lightColors;
@@ -649,7 +747,7 @@ export default function Home({ allPostsData }) {
       }, 100);
     };
 
-    const intervalId = setInterval(changeBackground, 2500);
+    const intervalId = setInterval(changeBackground, 8000);
 
     return () => {
       clearInterval(intervalId);
@@ -967,34 +1065,32 @@ export default function Home({ allPostsData }) {
 
           {/* 文章列表 */}
           <main className="flex-1">
-            <ul className="space-y-6">
+            <div className="grid gap-8">
               {paginatedPosts.map(({ slug, title, date, cover, excerpt, tags }) => (
-                <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-[1.02]">
-                  <div className="flex flex-col md:flex-row gap-6">
-                    {cover && (
-                      <div className="md:w-1/3 cover-image-container">
-                        <img
-                          src={cover}
-                          alt={title}
-                          className="w-full h-full object-cover rounded-lg transition-transform duration-300 hover:scale-105"
-                          loading="lazy"
-                        />
-                      </div>
+                <article key={slug} className="article-card">
+                  {cover && (
+                    <div className="h-56 overflow-hidden">
+                      <img
+                        src={cover}
+                        alt={title}
+                        className="w-full h-full object-cover article-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+                  <div className="article-content">
+                    <span className="article-date">{date}</span>
+                    <Link href={`/posts/${slug}`} passHref>
+                      <a>
+                        <h2 className="article-title">{title}</h2>
+                      </a>
+                    </Link>
+                    {excerpt && (
+                      <p className="article-excerpt">{excerpt}</p>
                     )}
-                    <div className="flex-1">
-                      <Link href={`/posts/${slug}`} passHref>
-                        <a className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
-                          {title}
-                        </a>
-                      </Link>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{date}</p>
-                      {excerpt && (
-                        <p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">
-                          {excerpt}
-                        </p>
-                      )}
+                    <div className="article-footer">
                       {tags && tags.length > 0 && (
-                        <div className="mt-4">
+                        <div className="tag-container">
                           {tags.map((tag) => (
                             <Link key={tag} href={`/tags#${tag}`} passHref>
                               <a className="tag">
@@ -1004,11 +1100,19 @@ export default function Home({ allPostsData }) {
                           ))}
                         </div>
                       )}
+                      <Link href={`/posts/${slug}`} passHref>
+                        <a className="read-more">
+                          阅读更多
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </a>
+                      </Link>
                     </div>
                   </div>
-                </li>
+                </article>
               ))}
-            </ul>
+            </div>
 
             {/* 分页组件 */}
             {totalPages > 0 && (
