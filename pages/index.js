@@ -90,7 +90,7 @@ const addDynamicStyles = () => {
       width: 100%;
       height: 100%;
       opacity: 0;
-      transition: opacity 0.6s ease-in-out;
+      transition: opacity 1s ease-in-out;
       z-index: -1;
     }
     .bg-visible {
