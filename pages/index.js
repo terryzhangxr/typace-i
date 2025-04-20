@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../lib/posts';
@@ -480,7 +479,7 @@ const addDynamicStyles = () => {
   document.head.appendChild(style);
 };
 
-export default function Home({ allPostsData }) {
+export default function Home({ allPostsData, initialDarkMode }) {
   const router = useRouter();
   // 分页相关状态
   const [currentPage, setCurrentPage] = useState(1);
@@ -489,7 +488,7 @@ export default function Home({ allPostsData }) {
 
   // 其他原有状态
   const [transitionState, setTransitionState] = useState('idle');
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(initialDarkMode);
   const [hitokoto, setHitokoto] = useState('');
   const [displayText, setDisplayText] = useState('');
   const [isMounted, setIsMounted] = useState(false);
@@ -595,10 +594,8 @@ export default function Home({ allPostsData }) {
   useEffect(() => {
     addDynamicStyles();
 
-    // 从本地存储获取暗黑模式设置
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    setIsDarkMode(savedDarkMode);
-    document.documentElement.classList.toggle('dark', savedDarkMode);
+    // 在页面加载时立即设置暗黑模式类
+    document.documentElement.classList.toggle('dark', initialDarkMode);
 
     // 获取一言
     fetch('https://v1.hitokoto.cn')
@@ -960,6 +957,23 @@ export default function Home({ allPostsData }) {
       }`}>
         <Head>
           <title>首页 - Typace</title>
+          {/* 在Head中添加暗黑模式脚本 */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function() {
+                  try {
+                    var darkMode = localStorage.getItem('darkMode');
+                    if (darkMode === 'true' || (!darkMode && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                      document.documentElement.classList.add('dark');
+                    } else {
+                      document.documentElement.classList.remove('dark');
+                    }
+                  } catch (e) {}
+                })();
+              `,
+            }}
+          />
         </Head>
 
         <header className="text-center mb-8">
@@ -1228,12 +1242,26 @@ const MobileNavLink = ({ href, children, onClick }) => (
 
 export async function getStaticProps() {
   const allPostsData = getSortedPostsData();
+  
+  // 在构建时获取暗黑模式设置
+  let initialDarkMode = false;
+  try {
+    
+    if (typeof window !== 'undefined') {
+      initialDarkMode = localStorage.getItem('darkMode') === 'true' || 
+                       window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+  } catch (e) {
+    console.error('获取暗黑模式设置失败:', e);
+  }
+
   return {
     props: {
       allPostsData: allPostsData.map(post => ({
         ...post,
         content: post.content || "",
       })),
+      initialDarkMode,
     },
   };
 }
