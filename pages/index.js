@@ -11,13 +11,6 @@ const POSTS_PER_PAGE = 5;
 const addDynamicStyles = () => {
   const style = document.createElement('style');
   style.textContent = `
-    /* 基础样式重置 */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
     /* 新增分页样式 */
     .pagination {
       display: flex;
@@ -106,18 +99,16 @@ const addDynamicStyles = () => {
 
     /* 响应式布局 */
     @media (max-width: 767px) {
-      .profile-section, .latest-posts-section {
-        display: none;
+      .cover-image-container {
+        width: 100%;
+        height: 200px;
       }
-      .main-content {
+      .profile-card {
         width: 100% !important;
+        margin-bottom: 2rem;
       }
-      .post-card {
-        flex-direction: column !important;
-      }
-      .post-image-container {
-        width: 100% !important;
-        height: 200px !important;
+      .pagination {
+        flex-wrap: wrap;
       }
     }
 
@@ -173,217 +164,207 @@ const addDynamicStyles = () => {
       transform: translateY(0);
     }
 
-    /* 标签样式 - 更简约的设计 */
+    /* 标签样式 */
     .tag {
       display: inline-block;
       padding: 0.25rem 0.5rem;
       margin-right: 0.5rem;
       margin-bottom: 0.5rem;
-      font-size: 0.75rem;
+      font-size: 0.875rem;
       color: #3b82f6;
-      background-color: rgba(59, 130, 246, 0.1);
-      border-radius: 0.25rem;
+      background-color: #dbeafe;
+      border-radius: 0.375rem;
       transition: all 0.2s ease;
     }
     .tag:hover {
-      background-color: rgba(59, 130, 246, 0.2);
+      background-color: #bfdbfe;
     }
     .dark .tag {
       color: #93c5fd;
-      background-color: rgba(147, 197, 253, 0.1);
+      background-color: #1e3a8a;
     }
     .dark .tag:hover {
-      background-color: rgba(147, 197, 253, 0.2);
+      background-color: #1e40af;
     }
 
-    /* 文章卡片样式 - 更自然的瀑布流设计 */
-    .post-card {
-      display: flex;
-      flex-direction: column;
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(10px);
-      border-radius: 0.75rem;
-      overflow: hidden;
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-      margin-bottom: 2rem;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-    .post-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-    .dark .post-card {
-      background: rgba(31, 41, 55, 0.8);
-      border-color: rgba(255, 255, 255, 0.05);
-    }
-
-    .post-image-container {
-      width: 100%;
-      height: 200px;
-      overflow: hidden;
-    }
-    .post-image {
-      width: 100%;
-      height: 100%;
+    /* 简介框样式 */
+    .profile-avatar {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
       object-fit: cover;
-      transition: transform 0.5s ease;
+      border: 3px solid rgba(59, 130, 246, 0.5);
+      transition: all 0.3s ease;
     }
-    .post-card:hover .post-image {
-      transform: scale(1.03);
+    .profile-avatar:hover {
+      transform: scale(1.05);
+      border-color: rgba(59, 130, 246, 0.8);
+    }
+    .stats-card {
+      transition: all 0.3s ease;
+    }
+    .stats-card:hover {
+      transform: translateY(-3px) scale(1.05);
     }
 
-    .post-content {
-      padding: 1.25rem;
+    /* 社交媒体图标样式 */
+    .social-icons {
       display: flex;
-      flex-direction: column;
-      flex-grow: 1;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
     }
-
-    .post-date {
-      font-size: 0.75rem;
-      color: #6b7280;
-      margin-bottom: 0.5rem;
-    }
-    .dark .post-date {
-      color: #9ca3af;
-    }
-
-    .post-title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      margin-bottom: 0.75rem;
-      color: #111827;
-      transition: color 0.2s ease;
-    }
-    .dark .post-title {
-      color: #f3f4f6;
-    }
-    .post-card:hover .post-title {
-      color: #3b82f6;
-    }
-    .dark .post-card:hover .post-title {
-      color: #93c5fd;
-    }
-
-    .post-excerpt {
+    .social-icon {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background-color: #f3f4f6;
       color: #4b5563;
-      margin-bottom: 1rem;
-      line-height: 1.5;
-      font-size: 0.9375rem;
+      transition: all 0.3s ease;
     }
-    .dark .post-excerpt {
+    .social-icon:hover {
+      transform: translateY(-3px);
+      background-color: #e5e7eb;
+    }
+    .dark .social-icon {
+      background-color: #374151;
       color: #d1d5db;
     }
-
-    .post-footer {
-      margin-top: auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .dark .social-icon:hover {
+      background-color: #4b5563;
+    }
+    .social-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+    .social-icon img {
+      width: 20px;
+      height: 20px;
+      filter: grayscale(100%) contrast(0.5);
+      transition: filter 0.3s ease;
+    }
+    .social-icon:hover img {
+      filter: grayscale(0%) contrast(1);
+    }
+    .dark .social-icon img {
+      filter: grayscale(100%) contrast(1) invert(1);
+    }
+    .dark .social-icon:hover img {
+      filter: grayscale(0%) contrast(1) invert(0);
     }
 
-    .read-more {
-      display: inline-flex;
-      align-items: center;
-      color: #3b82f6;
-      font-size: 0.875rem;
-      font-weight: 500;
-      transition: all 0.2s ease;
-    }
-    .dark .read-more {
-      color: #93c5fd;
-    }
-    .read-more:hover {
-      color: #2563eb;
-    }
-    .dark .read-more:hover {
-      color: #60a5fa;
-    }
-    .read-more svg {
-      margin-left: 0.25rem;
-      transition: transform 0.2s ease;
-    }
-    .read-more:hover svg {
-      transform: translateX(2px);
-    }
-
-    /* 瀑布流布局 */
-    .posts-waterfall {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1.5rem;
-    }
-
-    @media (min-width: 768px) {
-      .posts-waterfall {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    @media (min-width: 1024px) {
-      .posts-waterfall {
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
-
-    /* 导航栏动画 */
-    .nav-link {
-      position: relative;
-    }
-    .nav-link:after {
-      content: '';
-      position: absolute;
-      width: 0;
-      height: 1px;
-      bottom: -2px;
+    /* 搜索模态框样式 */
+    .search-modal {
+      position: fixed;
+      top: 0;
       left: 0;
-      background-color: #3b82f6;
-      transition: width 0.3s ease;
-    }
-    .nav-link:hover:after {
       width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding-top: 20vh;
+      z-index: 1000;
+      backdrop-filter: blur(5px);
     }
-    .dark .nav-link:after {
-      background-color: #93c5fd;
+    .search-container {
+      width: 90%;
+      max-width: 600px;
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
     }
-
-    /* 加载动画 */
-    @keyframes pulse {
-      0%, 100% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 0.5;
-      }
+    .dark .search-container {
+      background-color: #1f2937;
     }
-    .animate-pulse {
-      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    .search-header {
+      padding: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
     }
-
-    /* 滚动条样式 */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+    .dark .search-header {
+      border-bottom-color: #374151;
     }
-    ::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.05);
+    .search-input {
+      flex: 1;
+      padding: 0.75rem;
+      border: none;
+      outline: none;
+      font-size: 1rem;
+      background-color: transparent;
     }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.1);
-      border-radius: 3px;
+    .dark .search-input {
+      color: white;
     }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 0, 0, 0.2);
+    .search-close {
+      padding: 0.5rem;
+      cursor: pointer;
+      color: #6b7280;
     }
-    .dark ::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.05);
+    .dark .search-close {
+      color: #9ca3af;
     }
-    .dark ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.1);
+    .search-results {
+      max-height: 60vh;
+      overflow-y: auto;
     }
-    .dark ::-webkit-scrollbar-thumb:hover {
-      background: rgba(255, 255, 255, 0.2);
+    .search-result-item {
+      padding: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .dark .search-result-item {
+      border-bottom-color: #374151;
+    }
+    .search-result-item:hover {
+      background-color: #f9fafb;
+    }
+    .dark .search-result-item:hover {
+      background-color: #374151;
+    }
+    .search-result-title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      color: #111827;
+    }
+    .dark .search-result-title {
+      color: #f3f4f6;
+    }
+    .search-result-excerpt {
+      color: #6b7280;
+      font-size: 0.875rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .dark .search-result-excerpt {
+      color: #9ca3af;
+    }
+    .no-results {
+      padding: 2rem;
+      text-align: center;
+      color: #6b7280;
+    }
+    .dark .no-results {
+      color: #9ca3af;
+    }
+    .search-highlight {
+      background-color: #fde68a;
+      color: #92400e;
+      padding: 0.1rem 0.2rem;
+      border-radius: 0.25rem;
+    }
+    .dark .search-highlight {
+      background-color: #92400e;
+      color: #fde68a;
     }
   `;
   document.head.appendChild(style);
@@ -628,17 +609,17 @@ export default function Home({ allPostsData }) {
   // 动态背景渐变
   useEffect(() => {
     const lightColors = [
-      'linear-gradient(45deg, #f3f4f6, #e5e7eb)',
-      'linear-gradient(45deg, #e5e7eb, #d1d5db)',
-      'linear-gradient(45deg, #d1d5db, #9ca3af)',
-      'linear-gradient(45deg, #9ca3af, #f3f4f6)',
+      'linear-gradient(45deg, #ee7752, #e73c7e)',
+      'linear-gradient(45deg, #e73c7e, #23a6d5)',
+      'linear-gradient(45deg, #23a6d5, #23d5ab)',
+      'linear-gradient(45deg, #23d5ab, #ee7752)',
     ];
 
     const darkColors = [
-      'linear-gradient(45deg, #1f2937, #374151)',
-      'linear-gradient(45deg, #374151, #4b5563)',
-      'linear-gradient(45deg, #4b5563, #6b7280)',
-      'linear-gradient(45deg, #6b7280, #1f2937)',
+      'linear-gradient(45deg, #1e3a8a, #9f7aea)',
+      'linear-gradient(45deg, #9f7aea, #3b82f6)',
+      'linear-gradient(45deg, #3b82f6, #60a5fa)',
+      'linear-gradient(45deg, #60a5fa, #1e3a8a)',
     ];
 
     const colors = isDarkMode ? darkColors : lightColors;
@@ -700,24 +681,24 @@ export default function Home({ allPostsData }) {
   return (
     <>
       {/* 导航栏 */}
-      <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-sm z-50">
-        <div className="container mx-auto px-6 py-3">
+      <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-50">
+        <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
             <Link href="/" passHref>
-              <a className="text-lg font-bold text-gray-800 dark:text-gray-200">
+              <a className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
                 Typace
               </a>
             </Link>
 
             {/* 桌面导航 */}
-            <div className="hidden md:flex space-x-5 items-center">
+            <div className="hidden md:flex space-x-6 items-center">
               <NavLink href="/">首页</NavLink>
               <NavLink href="/about">关于</NavLink>
               <NavLink href="/archive">归档</NavLink>
               <NavLink href="/tags">标签</NavLink>
               <button
                 onClick={openSearch}
-                className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors p-1"
+                className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors p-2"
                 title="搜索 (Ctrl+K)"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -726,17 +707,17 @@ export default function Home({ allPostsData }) {
               </button>
               <button
                 onClick={toggleDarkMode}
-                className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors p-1"
+                className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors p-2"
               >
                 {isDarkMode ? '🌙' : '☀️'}
               </button>
             </div>
 
             {/* 移动端菜单按钮 */}
-            <div className="md:hidden flex items-center space-x-3">
+            <div className="md:hidden flex items-center space-x-4">
               <button
                 onClick={openSearch}
-                className="p-1 text-gray-600 dark:text-gray-300"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 title="搜索"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -744,10 +725,10 @@ export default function Home({ allPostsData }) {
                 </svg>
               </button>
               <button
-                className="p-1 text-gray-600 dark:text-gray-300"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
@@ -857,7 +838,7 @@ export default function Home({ allPostsData }) {
       </div>
 
       {/* 页面内容 */}
-      <div className={`min-h-screen px-4 pt-20 pb-8 relative z-10 page-container ${
+      <div className={`min-h-screen p-8 pt-24 relative z-10 page-container ${
         isMounted ? 'mounted' : ''
       }`}>
         <Head>
@@ -865,75 +846,116 @@ export default function Home({ allPostsData }) {
         </Head>
 
         <header className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-200 mb-4">
+          <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
             Typace
           </h1>
           <div className="hitokoto-container">
-            <p className="text-gray-600 dark:text-gray-400 italic">
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 italic">
               <span className="typewriter">{displayText}</span>
             </p>
           </div>
         </header>
 
         {/* 主要内容区域 */}
-        <div className="container mx-auto flex flex-col lg:flex-row gap-8">
-          {/* 桌面端左侧简介栏 */}
-          <aside className="hidden lg:block w-1/4">
+        <div className="flex">
+          {/* 左侧简介栏 */}
+          <aside className="w-1/4 pr-8 hidden lg:block">
             {/* 简介板块和最新文章板块的容器 */}
             <div className="sticky top-24 space-y-6">
               {/* 简介板块 */}
-              <div className="profile-section p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
+              <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
                 <div className="flex flex-col items-center">
                   {/* 博主头像 */}
-                  <div className="w-20 h-20 rounded-full overflow-hidden mb-4">
+                  <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
                     <img 
                       src="https://ik.imagekit.io/terryzhang/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-04-17%20204625.png" 
                       alt="博主头像" 
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover profile-avatar"
                     />
                   </div>
-                  <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-2">
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">
                     Typace
                   </h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 text-center">
+                  <p className="text-gray-600 dark:text-gray-400 mb-4 text-center">
                     theme typace team
                   </p>
                   <div className="flex space-x-4">
                     <Link href="/archive" passHref>
-                      <a className="text-center">
-                        <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                      <a className="text-center stats-card hover:transform hover:scale-105 transition-transform cursor-pointer">
+                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                           {totalPosts}
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
                           文章
                         </div>
                       </a>
                     </Link>
                     <Link href="/tags" passHref>
-                      <a className="text-center">
-                        <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                      <a className="text-center stats-card hover:transform hover:scale-105 transition-transform cursor-pointer">
+                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                           {totalTags}
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
                           标签
                         </div>
                       </a>
                     </Link>
                   </div>
+
+                  {/* 社交媒体图标 */}
+                  <div className="social-icons">
+                    <a 
+                      href="mailto:zhang@mrzxr.com" 
+                      className="social-icon"
+                      title="发送邮件"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </a>
+                    <a 
+                      href="https://bgithub.xyz/terryzhangxr" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="social-icon"
+                      title="GitHub"
+                    >
+                      <img 
+                        src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" 
+                        alt="GitHub" 
+                      />
+                    </a>
+                    <a 
+                      href="https://space.bilibili.com/3546622533306643?spm_id_from=333.337.0.0"
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="social-icon"
+                      title="Bilibili"
+                    >
+                      <img 
+                        src="https://www.bilibili.com/favicon.ico" 
+                        alt="Bilibili" 
+                        style={{ width: '20px', height: '20px' }}
+                      />
+                    </a>
+                  </div>
                 </div>
               </div>
 
               {/* 最新文章板块 */}
-              <div className="latest-posts-section p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
-                <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">
+              <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
+                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
                   最新文章
                 </h2>
-                <ul className="space-y-3">
+                <ul className="space-y-4">
                   {allPostsData.slice(0, 5).map((post) => (
                     <li key={post.slug}>
                       <Link href={`/posts/${post.slug}`} passHref>
-                        <a className="block text-sm text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                          {post.title}
+                        <a className="block text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                          <h3 className="text-lg font-semibold">{post.title}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                            {post.date}
+                          </p>
                         </a>
                       </Link>
                     </li>
@@ -943,54 +965,54 @@ export default function Home({ allPostsData }) {
             </div>
           </aside>
 
-          {/* 文章列表 - 瀑布流布局 */}
-          <main className="main-content w-full lg:w-3/4">
-            <div className="posts-waterfall">
+          {/* 文章列表 */}
+          <main className="flex-1">
+            <ul className="space-y-6">
               {paginatedPosts.map(({ slug, title, date, cover, excerpt, tags }) => (
-                <Link key={slug} href={`/posts/${slug}`} passHref>
-                  <a className="post-card">
+                <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-[1.02]">
+                  <div className="flex flex-col md:flex-row gap-6">
                     {cover && (
-                      <div className="post-image-container">
+                      <div className="md:w-1/3 cover-image-container">
                         <img
                           src={cover}
                           alt={title}
-                          className="post-image"
+                          className="w-full h-full object-cover rounded-lg transition-transform duration-300 hover:scale-105"
                           loading="lazy"
                         />
                       </div>
                     )}
-                    <div className="post-content">
-                      <p className="post-date">{date}</p>
-                      <h3 className="post-title">{title}</h3>
+                    <div className="flex-1">
+                      <Link href={`/posts/${slug}`} passHref>
+                        <a className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                          {title}
+                        </a>
+                      </Link>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{date}</p>
                       {excerpt && (
-                        <p className="post-excerpt">{excerpt}</p>
+                        <p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">
+                          {excerpt}
+                        </p>
                       )}
-                      <div className="post-footer">
-                        {tags && tags.length > 0 && (
-                          <div>
-                            {tags.slice(0, 2).map((tag) => (
-                              <span key={tag} className="tag">
+                      {tags && tags.length > 0 && (
+                        <div className="mt-4">
+                          {tags.map((tag) => (
+                            <Link key={tag} href={`/tags#${tag}`} passHref>
+                              <a className="tag">
                                 {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        <span className="read-more">
-                          阅读更多
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </span>
-                      </div>
+                              </a>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  </a>
-                </Link>
+                  </div>
+                </li>
               ))}
-            </div>
+            </ul>
 
             {/* 分页组件 */}
             {totalPages > 0 && (
-              <div className="pagination mt-8">
+              <div className="pagination">
                 <li className="page-item">
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
@@ -1027,21 +1049,29 @@ export default function Home({ allPostsData }) {
         </div>
 
         {/* 页脚 */}
-        <footer className="text-center mt-12 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+        <footer className="text-center mt-12">
+          <a href="/api/sitemap" className="inline-block">
+            <img
+              src="https://cdn.us.mrche.top/sitemap.svg"
+              alt="Sitemap"
+              className="block mx-auto w-8 h-8 dark:invert"
+            />
+          </a>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
             由MRCHE&terryzhang创建的
             <a
               href="https://bgithub.xyz/terryzhangxr/typace-i"
-              className="text-blue-600 hover:underline dark:text-blue-400 ml-1"
+              className="text-blue-600 hover:underline dark:text-blue-400"
             >
               Typace
             </a>
+            强势驱动
           </p>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            联系我们
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+              联系我们
             <a
               href="mailto:zhang@mrzxr.com"
-              className="text-blue-600 hover:underline dark:text-blue-400 ml-1"
+              className="text-blue-600 hover:underline dark:text-blue-400"
             >
               zhang@mrzxr.com
             </a>
@@ -1055,7 +1085,7 @@ export default function Home({ allPostsData }) {
 // 桌面导航链接组件
 const NavLink = ({ href, children }) => (
   <Link href={href} passHref>
-    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors nav-link">
+    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
       {children}
     </a>
   </Link>
