@@ -758,7 +758,7 @@ export default function Home({ allPostsData }) {
       }, 100);
     };
 
-    const intervalId = setInterval(changeBackground, 3000);
+    const intervalId = setInterval(changeBackground, 3900);
 
     return () => {
       clearInterval(intervalId);
