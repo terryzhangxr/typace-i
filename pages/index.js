@@ -11,13 +11,6 @@ const POSTS_PER_PAGE = 5;
 const addDynamicStyles = () => {
   const style = document.createElement('style');
   style.textContent = `
-    /* 基础样式重置 */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
     /* 新增分页样式 */
     .pagination {
       display: flex;
@@ -117,12 +110,6 @@ const addDynamicStyles = () => {
       .pagination {
         flex-wrap: wrap;
       }
-      .post-card {
-        flex-direction: column !important;
-      }
-      .post-content {
-        width: 100% !important;
-      }
     }
 
     /* 打字机效果 */
@@ -177,34 +164,30 @@ const addDynamicStyles = () => {
       transform: translateY(0);
     }
 
-    /* 标签样式 - 更有个性的设计 */
+    /* 标签样式 */
     .tag {
       display: inline-block;
-      padding: 0.25rem 0.75rem;
+      padding: 0.25rem 0.5rem;
       margin-right: 0.5rem;
       margin-bottom: 0.5rem;
-      font-size: 0.75rem;
-      font-weight: 600;
+      font-size: 0.875rem;
       color: #3b82f6;
-      background-color: rgba(59, 130, 246, 0.1);
-      border-radius: 1rem;
+      background-color: #dbeafe;
+      border-radius: 0.375rem;
       transition: all 0.2s ease;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
     }
     .tag:hover {
-      background-color: rgba(59, 130, 246, 0.2);
-      transform: translateY(-1px);
+      background-color: #bfdbfe;
     }
     .dark .tag {
       color: #93c5fd;
-      background-color: rgba(147, 197, 253, 0.1);
+      background-color: #1e3a8a;
     }
     .dark .tag:hover {
-      background-color: rgba(147, 197, 253, 0.2);
+      background-color: #1e40af;
     }
 
-    /* 简介框样式 - 更现代的设计 */
+    /* 简介框样式 */
     .profile-avatar {
       width: 96px;
       height: 96px;
@@ -212,30 +195,19 @@ const addDynamicStyles = () => {
       object-fit: cover;
       border: 3px solid rgba(59, 130, 246, 0.5);
       transition: all 0.3s ease;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
     .profile-avatar:hover {
-      transform: scale(1.05) rotate(5deg);
+      transform: scale(1.05);
       border-color: rgba(59, 130, 246, 0.8);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     }
     .stats-card {
       transition: all 0.3s ease;
-      padding: 0.75rem;
-      border-radius: 0.5rem;
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(10px);
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
     .stats-card:hover {
       transform: translateY(-3px) scale(1.05);
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    }
-    .dark .stats-card {
-      background: rgba(31, 41, 55, 0.7);
     }
 
-    /* 社交媒体图标样式 - 更活泼的设计 */
+    /* 社交媒体图标样式 */
     .social-icons {
       display: flex;
       justify-content: center;
@@ -243,28 +215,26 @@ const addDynamicStyles = () => {
       margin-top: 1.5rem;
     }
     .social-icon {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 50%;
-      background-color: rgba(255, 255, 255, 0.8);
+      background-color: #f3f4f6;
       color: #4b5563;
       transition: all 0.3s ease;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
     .social-icon:hover {
-      transform: translateY(-3px) rotate(5deg);
-      background-color: white;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      transform: translateY(-3px);
+      background-color: #e5e7eb;
     }
     .dark .social-icon {
-      background-color: rgba(31, 41, 55, 0.8);
+      background-color: #374151;
       color: #d1d5db;
     }
     .dark .social-icon:hover {
-      background-color: rgba(31, 41, 55, 1);
+      background-color: #4b5563;
     }
     .social-icon svg {
       width: 20px;
@@ -273,17 +243,17 @@ const addDynamicStyles = () => {
     .social-icon img {
       width: 20px;
       height: 20px;
-      filter: grayscale(30%) contrast(0.8);
+      filter: grayscale(100%) contrast(0.5);
       transition: filter 0.3s ease;
     }
     .social-icon:hover img {
       filter: grayscale(0%) contrast(1);
     }
     .dark .social-icon img {
-      filter: grayscale(30%) contrast(1) brightness(1.2);
+      filter: grayscale(100%) contrast(1) invert(1);
     }
     .dark .social-icon:hover img {
-      filter: grayscale(0%) contrast(1) brightness(1.5);
+      filter: grayscale(0%) contrast(1) invert(0);
     }
 
     /* 搜索模态框样式 */
@@ -395,286 +365,6 @@ const addDynamicStyles = () => {
     .dark .search-highlight {
       background-color: #92400e;
       color: #fde68a;
-    }
-
-    /* 新增文章卡片样式 - 更有个性的设计 */
-    .post-card {
-      display: flex;
-      gap: 1.5rem;
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(10px);
-      border-radius: 1rem;
-      overflow: hidden;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      margin-bottom: 2rem;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-    .post-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    }
-    .dark .post-card {
-      background: rgba(31, 41, 55, 0.8);
-      border-color: rgba(255, 255, 255, 0.05);
-    }
-
-    .post-image-container {
-      flex: 0 0 35%;
-      overflow: hidden;
-      position: relative;
-    }
-    .post-image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.5s ease;
-    }
-    .post-card:hover .post-image {
-      transform: scale(1.05);
-    }
-
-    .post-content {
-      flex: 1;
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .post-date {
-      font-size: 0.875rem;
-      color: #6b7280;
-      margin-bottom: 0.5rem;
-      display: flex;
-      align-items: center;
-    }
-    .dark .post-date {
-      color: #9ca3af;
-    }
-
-    .post-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      color: #111827;
-      transition: color 0.2s ease;
-    }
-    .dark .post-title {
-      color: #f3f4f6;
-    }
-    .post-card:hover .post-title {
-      color: #3b82f6;
-    }
-    .dark .post-card:hover .post-title {
-      color: #93c5fd;
-    }
-
-    .post-excerpt {
-      color: #4b5563;
-      margin-bottom: 1.5rem;
-      line-height: 1.6;
-    }
-    .dark .post-excerpt {
-      color: #d1d5db;
-    }
-
-    .post-footer {
-      margin-top: auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .read-more {
-      display: inline-flex;
-      align-items: center;
-      color: #3b82f6;
-      font-weight: 600;
-      transition: all 0.2s ease;
-    }
-    .dark .read-more {
-      color: #93c5fd;
-    }
-    .read-more:hover {
-      color: #2563eb;
-      transform: translateX(5px);
-    }
-    .dark .read-more:hover {
-      color: #60a5fa;
-    }
-    .read-more svg {
-      margin-left: 0.25rem;
-      transition: transform 0.2s ease;
-    }
-    .read-more:hover svg {
-      transform: translateX(3px);
-    }
-
-    /* 网格布局 - 更现代的布局 */
-    .posts-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 2rem;
-    }
-
-    /* 特色文章样式 */
-    .featured-post {
-      grid-column: 1 / -1;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(10px);
-      border-radius: 1rem;
-      overflow: hidden;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-      transition: all 0.3s ease;
-    }
-    .featured-post:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    }
-    .dark .featured-post {
-      background: rgba(31, 41, 55, 0.9);
-    }
-
-    .featured-image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.5s ease;
-    }
-    .featured-post:hover .featured-image {
-      transform: scale(1.05);
-    }
-
-    .featured-content {
-      padding: 2rem;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .featured-badge {
-      display: inline-block;
-      background: #3b82f6;
-      color: white;
-      padding: 0.25rem 0.75rem;
-      border-radius: 1rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .dark .featured-badge {
-      background: #93c5fd;
-      color: #1e3a8a;
-    }
-
-    .featured-title {
-      font-size: 1.75rem;
-      font-weight: 800;
-      margin-bottom: 1rem;
-      color: #111827;
-    }
-    .dark .featured-title {
-      color: #f3f4f6;
-    }
-
-    .featured-excerpt {
-      font-size: 1.125rem;
-      color: #4b5563;
-      margin-bottom: 1.5rem;
-      line-height: 1.6;
-    }
-    .dark .featured-excerpt {
-      color: #d1d5db;
-    }
-
-    /* 水波纹效果 */
-    .ripple {
-      position: relative;
-      overflow: hidden;
-    }
-    .ripple:after {
-      content: "";
-      display: block;
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      pointer-events: none;
-      background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
-      background-repeat: no-repeat;
-      background-position: 50%;
-      transform: scale(10, 10);
-      opacity: 0;
-      transition: transform .5s, opacity 1s;
-    }
-    .ripple:active:after {
-      transform: scale(0, 0);
-      opacity: .3;
-      transition: 0s;
-    }
-
-    /* 导航栏动画 */
-    .nav-link {
-      position: relative;
-    }
-    .nav-link:after {
-      content: '';
-      position: absolute;
-      width: 0;
-      height: 2px;
-      bottom: -2px;
-      left: 0;
-      background-color: #3b82f6;
-      transition: width 0.3s ease;
-    }
-    .nav-link:hover:after {
-      width: 100%;
-    }
-    .dark .nav-link:after {
-      background-color: #93c5fd;
-    }
-
-    /* 加载动画 */
-    @keyframes pulse {
-      0%, 100% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 0.5;
-      }
-    }
-    .animate-pulse {
-      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-
-    /* 滚动条样式 */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-    ::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.05);
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.2);
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 0, 0, 0.3);
-    }
-    .dark ::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.05);
-    }
-    .dark ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.2);
-    }
-    .dark ::-webkit-scrollbar-thumb:hover {
-      background: rgba(255, 255, 255, 0.3);
     }
   `;
   document.head.appendChild(style);
@@ -1008,7 +698,7 @@ export default function Home({ allPostsData }) {
               <NavLink href="/tags">标签</NavLink>
               <button
                 onClick={openSearch}
-                className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors p-2 ripple"
+                className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors p-2"
                 title="搜索 (Ctrl+K)"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1017,7 +707,7 @@ export default function Home({ allPostsData }) {
               </button>
               <button
                 onClick={toggleDarkMode}
-                className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors p-2 ripple"
+                className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors p-2"
               >
                 {isDarkMode ? '🌙' : '☀️'}
               </button>
@@ -1027,7 +717,7 @@ export default function Home({ allPostsData }) {
             <div className="md:hidden flex items-center space-x-4">
               <button
                 onClick={openSearch}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ripple"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 title="搜索"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1035,7 +725,7 @@ export default function Home({ allPostsData }) {
                 </svg>
               </button>
               <button
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ripple"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1064,7 +754,7 @@ export default function Home({ allPostsData }) {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 autoComplete="off"
               />
-              <button className="search-close ripple" onClick={closeSearch}>
+              <button className="search-close" onClick={closeSearch}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -1075,7 +765,7 @@ export default function Home({ allPostsData }) {
                 searchResults.map((post) => (
                   <div
                     key={post.slug}
-                    className="search-result-item ripple"
+                    className="search-result-item"
                     onClick={() => handleSearchResultClick(post.slug)}
                   >
                     <h3 
@@ -1119,7 +809,7 @@ export default function Home({ allPostsData }) {
         >
           <div className="p-6 space-y-4 pt-2">
             <button
-              className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 ripple"
+              className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
               onClick={() => setIsMenuOpen(false)}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1137,7 +827,7 @@ export default function Home({ allPostsData }) {
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
               <button
                 onClick={toggleDarkMode}
-                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 ripple"
+                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <span>暗黑模式</span>
                 <span>{isDarkMode ? '🌙' : '☀️'}</span>
@@ -1155,25 +845,25 @@ export default function Home({ allPostsData }) {
           <title>首页 - Typace</title>
         </Head>
 
-        <header className="text-center mb-12">
+        <header className="text-center mb-8">
           <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
             Typace
           </h1>
-          <div className="hitokoto-container mt-6">
-            <p className="text-lg text-gray-600 dark:text-gray-400 italic">
+          <div className="hitokoto-container">
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 italic">
               <span className="typewriter">{displayText}</span>
             </p>
           </div>
         </header>
 
         {/* 主要内容区域 */}
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex">
           {/* 左侧简介栏 */}
-          <aside className="w-full lg:w-1/4">
+          <aside className="w-1/4 pr-8 hidden lg:block">
             {/* 简介板块和最新文章板块的容器 */}
             <div className="sticky top-24 space-y-6">
               {/* 简介板块 */}
-              <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-lg">
+              <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
                 <div className="flex flex-col items-center">
                   {/* 博主头像 */}
                   <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
@@ -1216,7 +906,7 @@ export default function Home({ allPostsData }) {
                   <div className="social-icons">
                     <a 
                       href="mailto:zhang@mrzxr.com" 
-                      className="social-icon ripple"
+                      className="social-icon"
                       title="发送邮件"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1227,7 +917,7 @@ export default function Home({ allPostsData }) {
                       href="https://bgithub.xyz/terryzhangxr" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="social-icon ripple"
+                      className="social-icon"
                       title="GitHub"
                     >
                       <img 
@@ -1239,7 +929,7 @@ export default function Home({ allPostsData }) {
                       href="https://space.bilibili.com/3546622533306643?spm_id_from=333.337.0.0"
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="social-icon ripple"
+                      className="social-icon"
                       title="Bilibili"
                     >
                       <img 
@@ -1253,7 +943,7 @@ export default function Home({ allPostsData }) {
               </div>
 
               {/* 最新文章板块 */}
-              <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-lg">
+              <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
                 <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
                   最新文章
                 </h2>
@@ -1277,96 +967,52 @@ export default function Home({ allPostsData }) {
 
           {/* 文章列表 */}
           <main className="flex-1">
-            {/* 特色文章 - 显示第一篇文章 */}
-            {paginatedPosts.length > 0 && (
-              <div className="mb-12">
-                <Link href={`/posts/${paginatedPosts[0].slug}`} passHref>
-                  <a className="featured-post ripple">
-                    {paginatedPosts[0].cover && (
-                      <div className="h-full overflow-hidden">
-                        <img
-                          src={paginatedPosts[0].cover}
-                          alt={paginatedPosts[0].title}
-                          className="featured-image"
-                          loading="lazy"
-                        />
-                      </div>
-                    )}
-                    <div className="featured-content">
-                      <span className="featured-badge">精选文章</span>
-                      <h2 className="featured-title">{paginatedPosts[0].title}</h2>
-                      {paginatedPosts[0].excerpt && (
-                        <p className="featured-excerpt">{paginatedPosts[0].excerpt}</p>
-                      )}
-                      <div className="mt-4 flex items-center">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {paginatedPosts[0].date}
-                        </span>
-                        <span className="ml-4 text-blue-600 dark:text-blue-400 font-medium">
-                          阅读更多 →
-                        </span>
-                      </div>
-                    </div>
-                  </a>
-                </Link>
-              </div>
-            )}
-
-            {/* 网格布局的文章列表 */}
-            <div className="posts-grid">
-              {paginatedPosts.slice(1).map(({ slug, title, date, cover, excerpt, tags }) => (
-                <Link key={slug} href={`/posts/${slug}`} passHref>
-                  <a className="post-card ripple">
+            <ul className="space-y-6">
+              {paginatedPosts.map(({ slug, title, date, cover, excerpt, tags }) => (
+                <li key={slug} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg shadow-lg p-6 transition transform hover:scale-[1.02]">
+                  <div className="flex flex-col md:flex-row gap-6">
                     {cover && (
-                      <div className="post-image-container">
+                      <div className="md:w-1/3 cover-image-container">
                         <img
                           src={cover}
                           alt={title}
-                          className="post-image"
+                          className="w-full h-full object-cover rounded-lg transition-transform duration-300 hover:scale-105"
                           loading="lazy"
                         />
                       </div>
                     )}
-                    <div className="post-content">
-                      <p className="post-date">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        {date}
-                      </p>
-                      <h3 className="post-title">{title}</h3>
+                    <div className="flex-1">
+                      <Link href={`/posts/${slug}`} passHref>
+                        <a className="text-2xl font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                          {title}
+                        </a>
+                      </Link>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{date}</p>
                       {excerpt && (
-                        <p className="post-excerpt">{excerpt}</p>
+                        <p className="mt-3 text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">
+                          {excerpt}
+                        </p>
                       )}
-                      <div className="post-footer">
-                        {tags && tags.length > 0 && (
-                          <div>
-                            {tags.slice(0, 2).map((tag) => (
-                              <span key={tag} className="tag">
+                      {tags && tags.length > 0 && (
+                        <div className="mt-4">
+                          {tags.map((tag) => (
+                            <Link key={tag} href={`/tags#${tag}`} passHref>
+                              <a className="tag">
                                 {tag}
-                              </span>
-                            ))}
-                            {tags.length > 2 && (
-                              <span className="tag">+{tags.length - 2}</span>
-                            )}
-                          </div>
-                        )}
-                        <span className="read-more">
-                          阅读更多
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </span>
-                      </div>
+                              </a>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  </a>
-                </Link>
+                  </div>
+                </li>
               ))}
-            </div>
+            </ul>
 
             {/* 分页组件 */}
             {totalPages > 0 && (
-              <div className="pagination mt-12">
+              <div className="pagination">
                 <li className="page-item">
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
@@ -1403,8 +1049,8 @@ export default function Home({ allPostsData }) {
         </div>
 
         {/* 页脚 */}
-        <footer className="text-center mt-16 py-8 border-t border-gray-200 dark:border-gray-700">
-          <a href="/api/sitemap" className="inline-block ripple">
+        <footer className="text-center mt-12">
+          <a href="/api/sitemap" className="inline-block">
             <img
               src="https://cdn.us.mrche.top/sitemap.svg"
               alt="Sitemap"
@@ -1439,7 +1085,7 @@ export default function Home({ allPostsData }) {
 // 桌面导航链接组件
 const NavLink = ({ href, children }) => (
   <Link href={href} passHref>
-    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors nav-link">
+    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
       {children}
     </a>
   </Link>
@@ -1450,7 +1096,7 @@ const MobileNavLink = ({ href, children, onClick }) => (
   <Link href={href} passHref>
     <a 
       onClick={onClick}
-      className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ripple"
+      className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
     >
       {children}
     </a>
