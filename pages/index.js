@@ -1,11 +1,14 @@
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../lib/posts';
 import Head from 'next/head';
 import Link from 'next/link';
 
+// 每页显示的文章数量
 const POSTS_PER_PAGE = 5;
 
+// 动态样式定义 
 const addDynamicStyles = () => {
   const style = document.createElement('style');
   style.textContent = `
@@ -479,9 +482,12 @@ const addDynamicStyles = () => {
 
 export default function Home({ allPostsData }) {
   const router = useRouter();
+  // 分页相关状态
   const [currentPage, setCurrentPage] = useState(1);
   const [paginatedPosts, setPaginatedPosts] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
+
+  // 其他原有状态
   const [transitionState, setTransitionState] = useState('idle');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [hitokoto, setHitokoto] = useState('');
@@ -489,12 +495,17 @@ export default function Home({ allPostsData }) {
   const [isMounted, setIsMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+
+  // 搜索相关状态
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+
+  // 滚动位置状态
   const [scrollPosition, setScrollPosition] = useState(0);
   const [isReturning, setIsReturning] = useState(false);
 
+  // 计算文章总数和标签总数
   const totalPosts = allPostsData.length;
   const allTags = new Set();
   allPostsData.forEach(post => {
@@ -504,22 +515,99 @@ export default function Home({ allPostsData }) {
   });
   const totalTags = allTags.size;
 
+  // 初始化分页
+  useEffect(() => {
+    const total = Math.ceil(allPostsData.length / POSTS_PER_PAGE);
+    setTotalPages(total);
+    updatePaginatedPosts(1);
+  }, [allPostsData]);
+
+  // 更新分页文章
+  const updatePaginatedPosts = (page) => {
+    const startIndex = (page - 1) * POSTS_PER_PAGE;
+    const endIndex = startIndex + POSTS_PER_PAGE;
+    setPaginatedPosts(allPostsData.slice(startIndex, endIndex));
+  };
+
+  // 处理分页变化
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+    updatePaginatedPosts(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // 处理搜索查询变化
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setSearchResults([]);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const results = allPostsData.filter(post => {
+      const titleMatch = post.title.toLowerCase().includes(query);
+      const excerptMatch = post.excerpt && post.excerpt.toLowerCase().includes(query);
+      const contentMatch = post.content && post.content.toLowerCase().includes(query);
+      const tagMatch = post.tags && post.tags.some(tag => tag.toLowerCase().includes(query));
+      
+      return titleMatch || excerptMatch || contentMatch || tagMatch;
+    }).map(post => ({
+      ...post,
+      // 高亮匹配的文本
+      highlightedTitle: highlightText(post.title, query),
+      highlightedExcerpt: post.excerpt ? highlightText(post.excerpt, query) : '',
+    }));
+
+    setSearchResults(results);
+  }, [searchQuery, allPostsData]);
+
+  // 高亮匹配文本的函数
+  const highlightText = (text, query) => {
+    if (!query) return text;
+    
+    const regex = new RegExp(`(${query})`, 'gi');
+    return text.replace(regex, '<span class="search-highlight">$1</span>');
+  };
+
+  // 打开搜索模态框
+  const openSearch = () => {
+    setIsSearchOpen(true);
+    // 聚焦搜索输入框
+    setTimeout(() => {
+      document.getElementById('search-input')?.focus();
+    }, 100);
+  };
+
+  // 关闭搜索模态框
+  const closeSearch = () => {
+    setIsSearchOpen(false);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  // 处理搜索结果的点击
+  const handleSearchResultClick = (slug) => {
+    closeSearch();
+    router.push(`/posts/${slug}`);
+  };
+
   useEffect(() => {
     addDynamicStyles();
 
-    // 初始化暗黑模式（先设置DOM类，再更新状态）
+    // 从本地存储获取暗黑模式设置
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    document.documentElement.classList.toggle('dark', savedDarkMode);
     setIsDarkMode(savedDarkMode);
+    document.documentElement.classList.toggle('dark', savedDarkMode);
 
     // 获取一言
     fetch('https://v1.hitokoto.cn')
-      .then(response => response.json())
-      .then(data => {
+      .then((response) => response.json())
+      .then((data) => {
         setHitokoto(data.hitokoto);
         typeWriterEffect(data.hitokoto);
       })
-      .catch(error => {
+      .catch((error) => {
         console.error('获取一言失败:', error);
         const defaultHitokoto = '生活不止眼前的苟且，还有诗和远方的田野。';
         setHitokoto(defaultHitokoto);
@@ -528,6 +616,7 @@ export default function Home({ allPostsData }) {
 
     // 路由事件监听
     const handleRouteChangeStart = (url) => {
+      // 如果是离开首页，保存滚动位置
       if (router.pathname === '/') {
         setScrollPosition(window.scrollY);
       }
@@ -544,6 +633,7 @@ export default function Home({ allPostsData }) {
     };
 
     const handleHistoryChange = (url, { shallow }) => {
+      // 检测是否是返回首页
       if (url === '/' && router.pathname !== '/') {
         setIsReturning(true);
       }
@@ -553,16 +643,14 @@ export default function Home({ allPostsData }) {
     router.events.on('routeChangeComplete', handleRouteChangeComplete);
     router.events.on('beforeHistoryChange', handleHistoryChange);
 
-    // 初始化分页
-    const total = Math.ceil(allPostsData.length / POSTS_PER_PAGE);
-    setTotalPages(total);
-    updatePaginatedPosts(1);
+    // 初始化页面动画
+    setIsMounted(true);
 
     // 初始化设备宽度检测
     checkMobile();
     window.addEventListener('resize', checkMobile);
 
-    // 添加键盘快捷键
+    // 添加键盘快捷键 (Cmd+K / Ctrl+K)
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
@@ -581,22 +669,30 @@ export default function Home({ allPostsData }) {
       window.removeEventListener('resize', checkMobile);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [router, allPostsData]);
+  }, [router]);
 
+  // 处理返回首页时的滚动位置
   useEffect(() => {
     if (isReturning) {
+      // 延迟执行以确保页面已经渲染完成
       const timer = setTimeout(() => {
-        window.scrollTo({ top: scrollPosition, behavior: 'auto' });
+        window.scrollTo({
+          top: scrollPosition,
+          behavior: 'auto'
+        });
         setIsReturning(false);
       }, 100);
+      
       return () => clearTimeout(timer);
     }
   }, [isReturning, scrollPosition]);
 
+  // 检测设备宽度
   const checkMobile = () => {
     setIsMobile(window.innerWidth < 768);
   };
 
+  // 打字机效果
   const typeWriterEffect = (text) => {
     let i = 0;
     const speed = 100;
@@ -620,6 +716,7 @@ export default function Home({ allPostsData }) {
     }, speed);
   };
 
+  // 动态背景渐变
   useEffect(() => {
     const lightColors = [
       'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%)',
@@ -671,13 +768,15 @@ export default function Home({ allPostsData }) {
     };
   }, [isDarkMode]);
 
+  // 切换暗黑模式
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
-    document.documentElement.classList.toggle('dark', newDarkMode);
-    localStorage.setItem('darkMode', newDarkMode);
     setIsDarkMode(newDarkMode);
+    localStorage.setItem('darkMode', newDarkMode);
+    document.documentElement.classList.toggle('dark', newDarkMode);
   };
 
+  // 获取过渡类名
   const getTransitionClass = () => {
     switch (transitionState) {
       case 'exiting':
@@ -689,78 +788,16 @@ export default function Home({ allPostsData }) {
     }
   };
 
+  // 截取250字左右的摘要
   const getExcerpt = (content) => {
     if (!content) return '';
-    const plainText = content.replace(/<[^>]*>/g, '');
+    const plainText = content.replace(/<[^>]*>/g, ''); // 去除HTML标签
     return plainText.length > 250 ? plainText.substring(0, 250) + '...' : plainText;
-  };
-
-  const updatePaginatedPosts = (page) => {
-    const startIndex = (page - 1) * POSTS_PER_PAGE;
-    const endIndex = startIndex + POSTS_PER_PAGE;
-    setPaginatedPosts(allPostsData.slice(startIndex, endIndex));
-  };
-
-  const handlePageChange = (page) => {
-    if (page < 1 || page > totalPages) return;
-    setCurrentPage(page);
-    updatePaginatedPosts(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleSearchResultClick = (slug) => {
-    closeSearch();
-    router.push(`/posts/${slug}`);
-  };
-
-  const handleSearchQueryChange = (e) => {
-    setSearchQuery(e.target.value);
-  };
-
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setSearchResults([]);
-      return;
-    }
-
-    const query = searchQuery.toLowerCase();
-    const results = allPostsData.filter(post => {
-      const titleMatch = post.title.toLowerCase().includes(query);
-      const excerptMatch = post.excerpt && post.excerpt.toLowerCase().includes(query);
-      const contentMatch = post.content && post.content.toLowerCase().includes(query);
-      const tagMatch = post.tags && post.tags.some(tag => tag.toLowerCase().includes(query));
-      
-      return titleMatch || excerptMatch || contentMatch || tagMatch;
-    }).map(post => ({
-      ...post,
-      highlightedTitle: highlightText(post.title, query),
-      highlightedExcerpt: post.excerpt ? highlightText(post.excerpt, query) : '',
-    }));
-
-    setSearchResults(results);
-  }, [searchQuery, allPostsData]);
-
-  const highlightText = (text, query) => {
-    if (!query) return text;
-    const regex = new RegExp(`(${query})`, 'gi');
-    return text.replace(regex, '<span class="search-highlight">$1</span>');
-  };
-
-  const openSearch = () => {
-    setIsSearchOpen(true);
-    setTimeout(() => {
-      document.getElementById('search-input')?.focus();
-    }, 100);
-  };
-
-  const closeSearch = () => {
-    setIsSearchOpen(false);
-    setSearchQuery('');
-    setSearchResults([]);
   };
 
   return (
     <>
+      {/* 导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-50">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
@@ -770,6 +807,7 @@ export default function Home({ allPostsData }) {
               </a>
             </Link>
 
+            {/* 桌面导航 */}
             <div className="hidden md:flex space-x-6 items-center">
               <NavLink href="/">首页</NavLink>
               <NavLink href="/about">关于</NavLink>
@@ -792,6 +830,7 @@ export default function Home({ allPostsData }) {
               </button>
             </div>
 
+            {/* 移动端菜单按钮 */}
             <div className="md:hidden flex items-center space-x-4">
               <button
                 onClick={openSearch}
@@ -815,6 +854,7 @@ export default function Home({ allPostsData }) {
         </div>
       </nav>
 
+      {/* 搜索模态框 */}
       {isSearchOpen && (
         <div className="search-modal">
           <div className="search-container">
@@ -828,7 +868,7 @@ export default function Home({ allPostsData }) {
                 className="search-input"
                 placeholder="搜索文章..."
                 value={searchQuery}
-                onChange={handleSearchQueryChange}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 autoComplete="off"
               />
               <button className="search-close" onClick={closeSearch}>
@@ -868,14 +908,17 @@ export default function Home({ allPostsData }) {
         </div>
       )}
 
+      {/* 移动端菜单 */}
       <div className={`fixed inset-0 z-50 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
+        {/* 遮罩层 */}
         <div 
           className={`absolute inset-0 bg-black/20 dark:bg-black/40 transition-opacity ${
             isMenuOpen ? 'opacity-100' : 'opacity-0'
           }`}
           onClick={() => setIsMenuOpen(false)}
         />
-
+        
+        {/* 菜单内容 */}
         <div 
           className={`absolute right-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-xl transition-transform duration-300 ${
             isMenuOpen ? 'translate-x-0' : 'translate-x-full'
@@ -890,14 +933,14 @@ export default function Home({ allPostsData }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-
+            
             <div className="mt-6 space-y-3">
               <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)}>首页</MobileNavLink>
               <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>关于</MobileNavLink>
               <MobileNavLink href="/archive" onClick={() => setIsMenuOpen(false)}>归档</MobileNavLink>
               <MobileNavLink href="/tags" onClick={() => setIsMenuOpen(false)}>标签</MobileNavLink>
             </div>
-
+            
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
               <button
                 onClick={toggleDarkMode}
@@ -911,6 +954,7 @@ export default function Home({ allPostsData }) {
         </div>
       </div>
 
+      {/* 页面内容 */}
       <div className={`min-h-screen p-8 pt-24 relative z-10 page-container ${
         isMounted ? 'mounted' : ''
       }`}>
@@ -929,11 +973,16 @@ export default function Home({ allPostsData }) {
           </div>
         </header>
 
+        {/* 主要内容区域 */}
         <div className="flex">
+          {/* 左侧简介栏 */}
           <aside className="w-1/4 pr-8 hidden lg:block">
+            {/* 简介板块和最新文章板块的容器 */}
             <div className="sticky top-24 space-y-6">
+              {/* 简介板块 */}
               <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
                 <div className="flex flex-col items-center">
+                  {/* 博主头像 */}
                   <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
                     <img 
                       src="https://ik.imagekit.io/terryzhang/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-04-17%20204625.png" 
@@ -970,6 +1019,7 @@ export default function Home({ allPostsData }) {
                     </Link>
                   </div>
 
+                  {/* 社交媒体图标 */}
                   <div className="social-icons">
                     <a 
                       href="mailto:zhang@mrzxr.com" 
@@ -1009,6 +1059,7 @@ export default function Home({ allPostsData }) {
                 </div>
               </div>
 
+              {/* 最新文章板块 */}
               <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
                 <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
                   最新文章
@@ -1031,6 +1082,7 @@ export default function Home({ allPostsData }) {
             </div>
           </aside>
 
+          {/* 文章列表 */}
           <main className="flex-1">
             <div className="grid gap-8">
               {paginatedPosts.map(({ slug, title, date, cover, excerpt, content, tags }) => (
@@ -1081,6 +1133,7 @@ export default function Home({ allPostsData }) {
               ))}
             </div>
 
+            {/* 分页组件 */}
             {totalPages > 0 && (
               <div className="pagination">
                 <li className="page-item">
@@ -1118,6 +1171,7 @@ export default function Home({ allPostsData }) {
           </main>
         </div>
 
+        {/* 页脚 */}
         <footer className="text-center mt-12">
           <a href="/api/sitemap" className="inline-block">
             <img
@@ -1151,6 +1205,7 @@ export default function Home({ allPostsData }) {
   );
 }
 
+// 桌面导航链接组件
 const NavLink = ({ href, children }) => (
   <Link href={href} passHref>
     <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
@@ -1159,6 +1214,7 @@ const NavLink = ({ href, children }) => (
   </Link>
 );
 
+// 移动端导航链接组件
 const MobileNavLink = ({ href, children, onClick }) => (
   <Link href={href} passHref>
     <a 
