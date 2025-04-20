@@ -90,7 +90,7 @@ const addDynamicStyles = () => {
       width: 100%;
       height: 100%;
       opacity: 0;
-      transition: opacity 1.5s ease-in-out;
+      transition: opacity 1s ease-in-out;
       z-index: -1;
     }
     .bg-visible {
@@ -101,7 +101,7 @@ const addDynamicStyles = () => {
     @media (max-width: 767px) {
       .cover-image-container {
         width: 100%;
-        height: 200px;
+        height: 180px;
       }
       .profile-card {
         width: 100% !important;
@@ -132,9 +132,9 @@ const addDynamicStyles = () => {
     }
 
     /* 其他样式 */
-    .line-clamp-3 {
+    .line-clamp-4 {
       display: -webkit-box;
-      -webkit-line-clamp: 3;
+      -webkit-line-clamp: 4;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -374,7 +374,10 @@ const addDynamicStyles = () => {
       overflow: hidden;
       transition: all 0.3s ease;
       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-      background: linear-gradient(145deg, #ffffff, #f5f7fa);
+      background: linear-gradient(145deg, #f8fafc, #f1f5f9);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
     }
     .dark .article-card {
       background: linear-gradient(145deg, #1f2937, #111827);
@@ -387,9 +390,13 @@ const addDynamicStyles = () => {
     .dark .article-card:hover {
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
     }
+    .article-cover-container {
+      height: 180px;
+      overflow: hidden;
+    }
     .article-cover {
-      height: 220px;
       width: 100%;
+      height: 100%;
       object-fit: cover;
       transition: transform 0.5s ease;
     }
@@ -398,6 +405,9 @@ const addDynamicStyles = () => {
     }
     .article-content {
       padding: 1.5rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
     }
     .article-date {
       display: inline-block;
@@ -426,6 +436,7 @@ const addDynamicStyles = () => {
       color: #6b7280;
       margin-bottom: 1.5rem;
       line-height: 1.625;
+      flex: 1;
     }
     .dark .article-excerpt {
       color: #9ca3af;
@@ -434,7 +445,7 @@ const addDynamicStyles = () => {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-top: 1.5rem;
+      margin-top: auto;
     }
     .read-more {
       display: inline-flex;
@@ -707,17 +718,17 @@ export default function Home({ allPostsData }) {
   // 动态背景渐变
   useEffect(() => {
     const lightColors = [
-      'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-      'linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 50%, #80deea 100%)',
-      'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #dee2e6 100%)',
-      'linear-gradient(135deg, #fff9c4 0%, #fff59d 50%, #fff176 100%)',
+      'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%)',
+      'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 50%, #ddd6fe 100%)',
+      'linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%)',
+      'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 50%, #a7f3d0 100%)',
     ];
 
     const darkColors = [
-      'linear-gradient(135deg, #1a237e 0%, #283593 50%, #3949ab 100%)',
-      'linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #1976d2 100%)',
-      'linear-gradient(135deg, #004d40 0%, #00695c 50%, #00796b 100%)',
-      'linear-gradient(135deg, #4a148c 0%, #6a1b9a 50%, #8e24aa 100%)',
+      'linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%)',
+      'linear-gradient(135deg, #312e81 0%, #3730a3 50%, #4338ca 100%)',
+      'linear-gradient(135deg, #0c4a6e 0%, #075985 50%, #0369a1 100%)',
+      'linear-gradient(135deg, #164e63 0%, #155e75 50%, #0e7490 100%)',
     ];
 
     const colors = isDarkMode ? darkColors : lightColors;
@@ -747,7 +758,7 @@ export default function Home({ allPostsData }) {
       }, 100);
     };
 
-    const intervalId = setInterval(changeBackground, 8000);
+    const intervalId = setInterval(changeBackground, 5000);
 
     return () => {
       clearInterval(intervalId);
@@ -774,6 +785,13 @@ export default function Home({ allPostsData }) {
       default:
         return '';
     }
+  };
+
+  // 截取250字左右的摘要
+  const getExcerpt = (content) => {
+    if (!content) return '';
+    const plainText = content.replace(/<[^>]*>/g, ''); // 去除HTML标签
+    return plainText.length > 250 ? plainText.substring(0, 250) + '...' : plainText;
   };
 
   return (
@@ -1066,14 +1084,14 @@ export default function Home({ allPostsData }) {
           {/* 文章列表 */}
           <main className="flex-1">
             <div className="grid gap-8">
-              {paginatedPosts.map(({ slug, title, date, cover, excerpt, tags }) => (
+              {paginatedPosts.map(({ slug, title, date, cover, excerpt, content, tags }) => (
                 <article key={slug} className="article-card">
                   {cover && (
-                    <div className="h-56 overflow-hidden">
+                    <div className="article-cover-container">
                       <img
                         src={cover}
                         alt={title}
-                        className="w-full h-full object-cover article-cover"
+                        className="article-cover"
                         loading="lazy"
                       />
                     </div>
@@ -1085,9 +1103,9 @@ export default function Home({ allPostsData }) {
                         <h2 className="article-title">{title}</h2>
                       </a>
                     </Link>
-                    {excerpt && (
-                      <p className="article-excerpt">{excerpt}</p>
-                    )}
+                    <p className="article-excerpt line-clamp-4">
+                      {excerpt || getExcerpt(content)}
+                    </p>
                     <div className="article-footer">
                       {tags && tags.length > 0 && (
                         <div className="tag-container">
