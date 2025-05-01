@@ -51,7 +51,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const [previewImage, setPreviewImage] = useState(null);
   const [activeHeading, setActiveHeading] = useState(null);
   const [isScrolling, setIsScrolling] = useState(false);
-  const [showScrollToComment, setShowScrollToComment] = useState(false);
   const walineInstance = useRef(null);
   const contentRef = useRef(null);
   const observerRef = useRef(null);
@@ -372,19 +371,11 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     window.addEventListener('resize', checkMobile);
 
     const handleScroll = () => {
-      const scrollPosition = window.scrollY;
-      const commentSection = commentSectionRef.current;
-      
-      if (commentSection) {
-        const commentPosition = commentSection.offsetTop;
-        setShowScrollToComment(scrollPosition > 200 && scrollPosition < commentPosition - 300);
-      }
-
       clearTimeout(scrollTimeoutRef.current);
       scrollTimeoutRef.current = setTimeout(() => {
         setIsScrolling(false);
       }, 100);
-      lastScrollPosition.current = scrollPosition;
+      lastScrollPosition.current = window.scrollY;
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -885,17 +876,16 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </div>
       )}
 
-      {showScrollToComment && (
-        <button 
-          className="scroll-to-comment-btn"
-          onClick={scrollToComments}
-          aria-label="滚动到评论区"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
-        </button>
-      )}
+      {/* 始终显示的滚动到评论区按钮 */}
+      <button 
+        className="scroll-to-comment-btn"
+        onClick={scrollToComments}
+        aria-label="滚动到评论区"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+      </button>
 
       <div className={`min-h-screen p-8 pt-24 relative z-10 bg-white dark:bg-gray-900 page-container ${
         isMounted ? 'mounted' : ''
@@ -960,18 +950,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
                     </a>
                   </li>
                 ))}
-                <li>
-                  <a
-                    href="#comments"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      scrollToComments();
-                    }}
-                    className="toc-item h1"
-                  >
-                    评论
-                  </a>
-                </li>
               </ul>
             </div>
           </aside>
