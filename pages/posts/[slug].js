@@ -50,6 +50,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const [isMobile, setIsMobile] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const walineInstance = useRef(null);
+  const contentRef = useRef(null);
 
   // 搜索相关状态
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -432,6 +433,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       if (contentHtml) {
         generateToc();
         setupImagePreview();
+        setupHeadingAnchors();
       }
     };
 
@@ -456,38 +458,69 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       });
     };
 
+    const setupHeadingAnchors = () => {
+      // 确保内容已经渲染
+      if (contentRef.current) {
+        const headings = contentRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6');
+        
+        headings.forEach((heading) => {
+          // 如果已经有ID则跳过
+          if (!heading.id) {
+            const id = heading.textContent.toLowerCase().replace(/\s+/g, '-');
+            heading.id = id;
+          }
+        });
+      }
+    };
+
     initializePage();
   }, [contentHtml]);
 
   const generateToc = () => {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(contentHtml, 'text/html');
-    const headings = doc.querySelectorAll('h1, h2');
-    const tocItems = [];
+    // 确保内容已经渲染
+    if (contentRef.current) {
+      const headings = contentRef.current.querySelectorAll('h1, h2');
+      const tocItems = [];
 
-    headings.forEach((heading) => {
-      const id = heading.textContent.toLowerCase().replace(/\s+/g, '-');
-      heading.id = id;
-      tocItems.push({
-        level: heading.tagName.toLowerCase(),
-        text: heading.textContent,
-        id,
-        active: true,
+      headings.forEach((heading) => {
+        // 如果已经有ID则使用现有ID，否则创建新ID
+        const id = heading.id || heading.textContent.toLowerCase().replace(/\s+/g, '-');
+        if (!heading.id) {
+          heading.id = id;
+        }
+        
+        tocItems.push({
+          level: heading.tagName.toLowerCase(),
+          text: heading.textContent,
+          id,
+          active: true,
+        });
       });
-    });
 
-    setToc(tocItems);
+      setToc(tocItems);
+    }
   };
 
   const handleTocClick = (e, id) => {
     e.preventDefault();
     const targetElement = document.getElementById(id);
     if (targetElement) {
-      targetElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
+      // 计算偏移量，考虑导航栏高度
+      const offset = 100;
+      const elementPosition = targetElement.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
       });
+
+      // 更新URL hash
       window.history.pushState(null, '', `#${id}`);
+      
+      // 手动触发focus，确保可访问性
+      targetElement.setAttribute('tabindex', '-1');
+      targetElement.focus();
     }
   };
 
@@ -680,7 +713,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </Head>
 
         <main className="flex">
-          <div className="flex-1">
+          <div className="flex-1" ref={contentRef}>
             {frontmatter.cover && (
               <div className="w-full h-48 md:h-64 mb-8">
                 <img
@@ -788,7 +821,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           <p className="mt-4 text-gray-600 dark:text-gray-400">
             由Terryzhang&mrche创建的
             <a
-              href="https://github.com/terryzhangxr/typace-i"
+              href="https://bgithub.xyz/terryzhangxr/typace-i"
               className="text-blue-600 hover:underline dark:text-blue-400"
             >
               Typace
