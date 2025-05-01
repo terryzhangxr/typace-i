@@ -49,8 +49,10 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  const [activeHeading, setActiveHeading] = useState(null);
   const walineInstance = useRef(null);
   const contentRef = useRef(null);
+  const observerRef = useRef(null);
 
   // 搜索相关状态
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -245,16 +247,46 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         background-color: #92400e;
         color: #fde68a;
       }
+
+      /* 目录项样式优化 */
+      .toc-item {
+        display: block;
+        transition: all 0.2s ease;
+        border-left: 2px solid transparent;
+      }
+      .toc-item:hover {
+        color: #3b82f6;
+        border-left-color: #3b82f6;
+      }
+      .dark .toc-item:hover {
+        color: #60a5fa;
+        border-left-color: #60a5fa;
+      }
+      .toc-item.active {
+        color: #3b82f6;
+        font-weight: 600;
+        border-left-color: #3b82f6;
+        transform: translateX(4px);
+      }
+      .dark .toc-item.active {
+        color: #60a5fa;
+        border-left-color: #60a5fa;
+      }
+      .toc-item.h2 {
+        padding-left: 1rem;
+        font-size: 0.875rem;
+      }
+      .toc-item.h1 {
+        padding-left: 0.5rem;
+        font-size: 1rem;
+      }
     `;
     document.head.appendChild(style);
 
     setIsMounted(true);
-
-    // 初始化设备宽度检测
     checkMobile();
     window.addEventListener('resize', checkMobile);
 
-    // 添加键盘快捷键 (Cmd+K / Ctrl+K)
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
@@ -270,6 +302,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       document.head.removeChild(style);
       window.removeEventListener('resize', checkMobile);
       window.removeEventListener('keydown', handleKeyDown);
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
     };
   }, []);
 
@@ -290,7 +325,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       return titleMatch || excerptMatch || contentMatch || tagMatch;
     }).map(post => ({
       ...post,
-      // 高亮匹配的文本
       highlightedTitle: highlightText(post.title, query),
       highlightedExcerpt: post.excerpt ? highlightText(post.excerpt, query) : '',
     }));
@@ -298,31 +332,25 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     setSearchResults(results);
   }, [searchQuery, allPostsData]);
 
-  // 高亮匹配文本的函数
   const highlightText = (text, query) => {
     if (!query) return text;
-    
     const regex = new RegExp(`(${query})`, 'gi');
     return text.replace(regex, '<span class="search-highlight">$1</span>');
   };
 
-  // 打开搜索模态框
   const openSearch = () => {
     setIsSearchOpen(true);
-    // 聚焦搜索输入框
     setTimeout(() => {
       document.getElementById('search-input')?.focus();
     }, 100);
   };
 
-  // 关闭搜索模态框
   const closeSearch = () => {
     setIsSearchOpen(false);
     setSearchQuery('');
     setSearchResults([]);
   };
 
-  // 处理搜索结果的点击
   const handleSearchResultClick = (slug) => {
     closeSearch();
     router.push(`/posts/${slug}`);
@@ -418,6 +446,34 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
   }, []);
 
+  // 初始化IntersectionObserver来跟踪当前可见的标题
+  const setupHeadingObserver = () => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    const headings = contentRef.current?.querySelectorAll('h1, h2');
+    if (!headings || headings.length === 0) return;
+
+    const options = {
+      root: null,
+      rootMargin: '-100px 0px -50% 0px', // 考虑导航栏高度
+      threshold: 0.5
+    };
+
+    observerRef.current = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setActiveHeading(entry.target.id);
+        }
+      });
+    }, options);
+
+    headings.forEach(heading => {
+      observerRef.current.observe(heading);
+    });
+  };
+
   useEffect(() => {
     const initializePage = async () => {
       const savedDarkMode = localStorage.getItem('darkMode') === 'true';
@@ -434,6 +490,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         generateToc();
         setupImagePreview();
         setupHeadingAnchors();
+        setTimeout(setupHeadingObserver, 500); // 延迟确保DOM完全渲染
       }
     };
 
@@ -459,12 +516,10 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
 
     const setupHeadingAnchors = () => {
-      // 确保内容已经渲染
       if (contentRef.current) {
         const headings = contentRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6');
         
         headings.forEach((heading) => {
-          // 如果已经有ID则跳过
           if (!heading.id) {
             const id = heading.textContent.toLowerCase().replace(/\s+/g, '-');
             heading.id = id;
@@ -477,13 +532,11 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   }, [contentHtml]);
 
   const generateToc = () => {
-    // 确保内容已经渲染
     if (contentRef.current) {
       const headings = contentRef.current.querySelectorAll('h1, h2');
       const tocItems = [];
 
       headings.forEach((heading) => {
-        // 如果已经有ID则使用现有ID，否则创建新ID
         const id = heading.id || heading.textContent.toLowerCase().replace(/\s+/g, '-');
         if (!heading.id) {
           heading.id = id;
@@ -493,7 +546,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           level: heading.tagName.toLowerCase(),
           text: heading.textContent,
           id,
-          active: true,
         });
       });
 
@@ -521,6 +573,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       // 手动触发focus，确保可访问性
       targetElement.setAttribute('tabindex', '-1');
       targetElement.focus();
+      
+      // 设置当前活动标题
+      setActiveHeading(id);
     }
   };
 
@@ -760,11 +815,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
                     <a
                       href={`#${item.id}`}
                       onClick={(e) => handleTocClick(e, item.id)}
-                      className={`block transition-colors duration-200 ${
-                        item.active
-                          ? 'text-blue-600 dark:text-blue-400 font-semibold scale-105'
-                          : 'text-gray-600 dark:text-gray-400 hover:text-blue-500'
-                      } ${item.level === 'h2' ? 'pl-4 text-sm' : 'pl-2 text-base'}`}
+                      className={`toc-item ${item.level} ${
+                        activeHeading === item.id ? 'active' : ''
+                      }`}
                     >
                       {item.text}
                     </a>
