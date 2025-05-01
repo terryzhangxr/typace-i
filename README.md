@@ -40,6 +40,7 @@ V1.2.1  Navigation bar optimization  2025.3
 
 V1.2.2  Add more new pages and fix bugs  (current)
 
+V2.0.1 The page has been redesigned, the animation has been optimized, and the article page table of contents has been added to the scrolling and positioning function and the direct button in the comment area
 
 For more details, check the [commit history](https://github.com/terryzhangxr/typace-i/commits).
 
