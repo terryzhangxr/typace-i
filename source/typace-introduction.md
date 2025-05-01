@@ -21,3 +21,6 @@ tags: ["教程"]
 - `lib/posts.js`:   包含从`source/`目录获取和排序博客文章数据的函数
 - `styles/globals.css`:   Global CSS 全局样式配置
 - `tailwind.config.js`:   tailwind css样式引用
+
+
+# P1 项目基本配置部署
