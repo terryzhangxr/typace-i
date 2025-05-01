@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../../lib/posts';
 import fs from 'fs'; 
@@ -50,9 +50,12 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const [isMobile, setIsMobile] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [activeHeading, setActiveHeading] = useState(null);
+  const [isScrolling, setIsScrolling] = useState(false);
   const walineInstance = useRef(null);
   const contentRef = useRef(null);
   const observerRef = useRef(null);
+  const scrollTimeoutRef = useRef(null);
+  const lastScrollPosition = useRef(0);
 
   // 搜索相关状态
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -63,6 +66,40 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const checkMobile = () => {
     setIsMobile(window.innerWidth < 768);
   };
+
+  // 平滑滚动到指定位置
+  const smoothScrollTo = useCallback((position, callback) => {
+    if (scrollTimeoutRef.current) {
+      cancelAnimationFrame(scrollTimeoutRef.current);
+    }
+
+    const startPosition = window.pageYOffset;
+    const distance = position - startPosition;
+    const duration = 500;
+    let startTime = null;
+
+    const animateScroll = (currentTime) => {
+      if (!startTime) startTime = currentTime;
+      const timeElapsed = currentTime - startTime;
+      const progress = Math.min(timeElapsed / duration, 1);
+      const easeProgress = easeInOutCubic(progress);
+      
+      window.scrollTo(0, startPosition + (distance * easeProgress));
+      
+      if (timeElapsed < duration) {
+        scrollTimeoutRef.current = requestAnimationFrame(animateScroll);
+      } else {
+        if (callback) callback();
+      }
+    };
+
+    const easeInOutCubic = (t) => {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    };
+
+    setIsScrolling(true);
+    scrollTimeoutRef.current = requestAnimationFrame(animateScroll);
+  }, []);
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -77,7 +114,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         transform: translateY(0);
       }
       
-      /* 图片圆角样式 */
       .prose img {
         border-radius: 0.5rem;
         cursor: zoom-in;
@@ -88,7 +124,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         transform: scale(1.02);
       }
       
-      /* 图片预览模态框样式 */
       .image-preview-overlay {
         position: fixed;
         top: 0;
@@ -137,7 +172,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         background: rgba(255, 255, 255, 0.3);
       }
 
-      /* 搜索模态框样式 */
       .search-modal {
         position: fixed;
         top: 0;
@@ -248,11 +282,15 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         color: #fde68a;
       }
 
-      /* 目录项样式优化 */
       .toc-item {
         display: block;
         transition: all 0.2s ease;
         border-left: 2px solid transparent;
+        padding: 0.25rem 0.5rem;
+        color: #4b5563;
+      }
+      .dark .toc-item {
+        color: #9ca3af;
       }
       .toc-item:hover {
         color: #3b82f6;
@@ -280,6 +318,10 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         padding-left: 0.5rem;
         font-size: 1rem;
       }
+
+      html {
+        scroll-padding-top: 100px;
+      }
     `;
     document.head.appendChild(style);
 
@@ -298,12 +340,30 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
     window.addEventListener('keydown', handleKeyDown);
 
+    const handleScrollEnd = () => {
+      setIsScrolling(false);
+    };
+
+    let scrollEndTimer;
+    const handleScroll = () => {
+      clearTimeout(scrollEndTimer);
+      scrollEndTimer = setTimeout(handleScrollEnd, 100);
+      lastScrollPosition.current = window.pageYOffset;
+    };
+
+    window.addEventListener('scroll', handleScroll);
+
     return () => {
       document.head.removeChild(style);
       window.removeEventListener('resize', checkMobile);
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(scrollEndTimer);
       if (observerRef.current) {
         observerRef.current.disconnect();
+      }
+      if (scrollTimeoutRef.current) {
+        cancelAnimationFrame(scrollTimeoutRef.current);
       }
     };
   }, []);
@@ -446,8 +506,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
   }, []);
 
-  // 初始化IntersectionObserver来跟踪当前可见的标题
-  const setupHeadingObserver = () => {
+  const setupHeadingObserver = useCallback(() => {
     if (observerRef.current) {
       observerRef.current.disconnect();
     }
@@ -457,14 +516,29 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
     const options = {
       root: null,
-      rootMargin: '-100px 0px -50% 0px', // 考虑导航栏高度
+      rootMargin: '-100px 0px -50% 0px',
       threshold: 0.5
     };
 
     observerRef.current = new IntersectionObserver((entries) => {
+      if (isScrolling) return;
+
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           setActiveHeading(entry.target.id);
+          
+          const currentScroll = window.pageYOffset;
+          if (currentScroll < lastScrollPosition.current) {
+            const headingTop = entry.target.getBoundingClientRect().top;
+            if (headingTop < 100) {
+              const scrollTo = window.pageYOffset + headingTop - 100;
+              window.scrollTo({
+                top: scrollTo,
+                behavior: 'smooth'
+              });
+            }
+          }
+          lastScrollPosition.current = currentScroll;
         }
       });
     }, options);
@@ -472,7 +546,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     headings.forEach(heading => {
       observerRef.current.observe(heading);
     });
-  };
+  }, [isScrolling]);
 
   useEffect(() => {
     const initializePage = async () => {
@@ -490,7 +564,13 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         generateToc();
         setupImagePreview();
         setupHeadingAnchors();
-        setTimeout(setupHeadingObserver, 500); // 延迟确保DOM完全渲染
+        setTimeout(() => {
+          setupHeadingObserver();
+          if (window.location.hash) {
+            const id = window.location.hash.substring(1);
+            scrollToHeading(id, false);
+          }
+        }, 500);
       }
     };
 
@@ -529,7 +609,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
 
     initializePage();
-  }, [contentHtml]);
+  }, [contentHtml, setupHeadingObserver]);
 
   const generateToc = () => {
     if (contentRef.current) {
@@ -553,30 +633,40 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     }
   };
 
-  const handleTocClick = (e, id) => {
-    e.preventDefault();
+  const scrollToHeading = useCallback((id, smooth = true) => {
     const targetElement = document.getElementById(id);
-    if (targetElement) {
-      // 计算偏移量，考虑导航栏高度
-      const offset = 100;
-      const elementPosition = targetElement.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - offset;
+    if (!targetElement) return;
 
+    const offset = 100;
+    const elementPosition = targetElement.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+    if (smooth) {
+      smoothScrollTo(offsetPosition, () => {
+        const finalPosition = targetElement.getBoundingClientRect().top;
+        if (finalPosition < offset) {
+          window.scrollBy({
+            top: finalPosition - offset,
+            behavior: 'auto'
+          });
+        }
+      });
+    } else {
       window.scrollTo({
         top: offsetPosition,
-        behavior: 'smooth'
+        behavior: 'auto'
       });
-
-      // 更新URL hash
-      window.history.pushState(null, '', `#${id}`);
-      
-      // 手动触发focus，确保可访问性
-      targetElement.setAttribute('tabindex', '-1');
-      targetElement.focus();
-      
-      // 设置当前活动标题
-      setActiveHeading(id);
     }
+
+    window.history.replaceState(null, '', `#${id}`);
+    targetElement.setAttribute('tabindex', '-1');
+    targetElement.focus();
+    setActiveHeading(id);
+  }, [smoothScrollTo]);
+
+  const handleTocClick = (e, id) => {
+    e.preventDefault();
+    scrollToHeading(id);
   };
 
   const closePreview = () => {
@@ -585,7 +675,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
   return (
     <>
-      {/* 导航栏 */}
       <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-50">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
@@ -595,7 +684,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
               </a>
             </Link>
 
-            {/* 桌面导航 */}
             <div className="hidden md:flex space-x-6 items-center">
               <NavLink href="/">首页</NavLink>
               <NavLink href="/about">关于</NavLink>
@@ -618,7 +706,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
               </button>
             </div>
 
-            {/* 移动端菜单按钮 */}
             <div className="md:hidden flex items-center space-x-4">
               <button
                 onClick={openSearch}
@@ -642,7 +729,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </div>
       </nav>
 
-      {/* 搜索模态框 */}
       {isSearchOpen && (
         <div className="search-modal">
           <div className="search-container">
@@ -696,9 +782,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </div>
       )}
 
-      {/* 移动端侧滑菜单 */}
       <div className={`fixed inset-0 z-50 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
-        {/* 遮罩层 */}
         <div 
           className={`absolute inset-0 bg-black/20 dark:bg-black/40 transition-opacity ${
             isMenuOpen ? 'opacity-100' : 'opacity-0'
@@ -706,14 +790,12 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           onClick={() => setIsMenuOpen(false)}
         />
         
-        {/* 菜单内容 */}
         <div 
           className={`absolute right-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-xl transition-transform duration-300 ${
             isMenuOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
           <div className="p-6 space-y-4 pt-2">
-            {/* 关闭按钮 */}
             <button
               className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
               onClick={() => setIsMenuOpen(false)}
@@ -723,7 +805,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
               </svg>
             </button>
             
-            {/* 菜单项 */}
             <div className="mt-6 space-y-3">
               <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)}>首页</MobileNavLink>
               <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>关于</MobileNavLink>
@@ -731,7 +812,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
               <MobileNavLink href="/tags" onClick={() => setIsMenuOpen(false)}>标签</MobileNavLink>
             </div>
             
-            {/* 暗黑模式按钮 */}
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
               <button
                 onClick={toggleDarkMode}
@@ -745,7 +825,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </div>
       </div>
 
-      {/* 图片预览模态框 */}
       {previewImage && (
         <div className="image-preview-overlay" onClick={closePreview}>
           <div className="image-preview-container" onClick={(e) => e.stopPropagation()}>
@@ -787,7 +866,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-8">
                 {frontmatter.date}
               </p>
-              {/* 显示标签 */}
               {frontmatter.tags && frontmatter.tags.length > 0 && (
                 <div className="mb-8">
                   {frontmatter.tags.map((tag) => (
@@ -818,6 +896,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
                       className={`toc-item ${item.level} ${
                         activeHeading === item.id ? 'active' : ''
                       }`}
+                      aria-current={activeHeading === item.id ? 'location' : undefined}
                     >
                       {item.text}
                     </a>
@@ -887,7 +966,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   );
 }
 
-// 桌面导航链接组件
 const NavLink = ({ href, children }) => (
   <Link href={href} passHref>
     <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
@@ -896,7 +974,6 @@ const NavLink = ({ href, children }) => (
   </Link>
 );
 
-// 移动端导航链接组件
 const MobileNavLink = ({ href, children, onClick }) => (
   <Link href={href} passHref>
     <a 
