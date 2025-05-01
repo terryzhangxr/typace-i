@@ -8,16 +8,17 @@ tags: ["教程"]
 注：本文为typace主题的中文教程，按照typace最新版本（不含测试版）进行编写，英文版请见github仓库
 
 # P0 项目框架结构
-Project Structure
+- `pages/`: 包含网站主要页面
+  - `about.js`: 从 `about.md`获取并展示关于页面内容
+  - `index.js`: 博客首页，包含博客基本信息
+  - `posts/`: 单页面文章存储
+  - `archives.js`: 按时间顺序归档文章
+  - `tags.js`: 按md表头标签分类文章
+  - `_document.js`: 网页标签栏信息
+  - `api/`: 存放api文件
+    - `sitemap.js`: sitemap
+- `source/`: 文章存放页
+- `lib/posts.js`: Functions for handling blog posts.
+- `source/`: Directory for markdown files of blog posts.
+- `styles/globals.css`: Global CSS styles.
 
-pages/: 包含网站主要页面及功能
-  _app.js: 导入全局 CSS 样式并设置主应用包装器
-  _document.js: 在 HTML 文档中添加 favicon 并设置页面标题
-  about.js: 从 about.md 获取并展示关于页面内容，具备搜索和暗黑模式功能
-  api/sitemap.js: 为网站生成 XML 格式的站点地图文件
-  index.js: 作为网站的首页
-  archive.js: 实现归档页面，包含文章列表和搜索功能
-  tags.js: 标签页面，按文章标签分类并在主页显示
-  posts/: 存放单个博客文章页面
-  
-source/: 存放博客文章
