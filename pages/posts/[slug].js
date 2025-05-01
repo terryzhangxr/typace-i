@@ -51,11 +51,13 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const [previewImage, setPreviewImage] = useState(null);
   const [activeHeading, setActiveHeading] = useState(null);
   const [isScrolling, setIsScrolling] = useState(false);
+  const [showScrollToComment, setShowScrollToComment] = useState(false);
   const walineInstance = useRef(null);
   const contentRef = useRef(null);
   const observerRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
   const lastScrollPosition = useRef(0);
+  const commentSectionRef = useRef(null);
 
   // 搜索相关状态
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -100,6 +102,17 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     setIsScrolling(true);
     scrollTimeoutRef.current = requestAnimationFrame(animateScroll);
   }, []);
+
+  // 滚动到评论区
+  const scrollToComments = useCallback(() => {
+    if (!commentSectionRef.current) return;
+    
+    const commentPosition = commentSectionRef.current.offsetTop;
+    const offset = 100; // 导航栏高度
+    const targetPosition = commentPosition - offset;
+    
+    smoothScrollTo(targetPosition);
+  }, [smoothScrollTo]);
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -322,12 +335,59 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       html {
         scroll-padding-top: 100px;
       }
+
+      .scroll-to-comment-btn {
+        position: fixed;
+        right: 2rem;
+        bottom: 2rem;
+        background-color: #3b82f6;
+        color: white;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+        z-index: 40;
+      }
+      .dark .scroll-to-comment-btn {
+        background-color: #2563eb;
+      }
+      .scroll-to-comment-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+      }
+      .scroll-to-comment-btn svg {
+        width: 24px;
+        height: 24px;
+      }
     `;
     document.head.appendChild(style);
 
     setIsMounted(true);
     checkMobile();
     window.addEventListener('resize', checkMobile);
+
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      const commentSection = commentSectionRef.current;
+      
+      if (commentSection) {
+        const commentPosition = commentSection.offsetTop;
+        setShowScrollToComment(scrollPosition > 200 && scrollPosition < commentPosition - 300);
+      }
+
+      clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsScrolling(false);
+      }, 100);
+      lastScrollPosition.current = scrollPosition;
+    };
+
+    window.addEventListener('scroll', handleScroll);
 
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -340,25 +400,11 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
     window.addEventListener('keydown', handleKeyDown);
 
-    const handleScrollEnd = () => {
-      setIsScrolling(false);
-    };
-
-    let scrollEndTimer;
-    const handleScroll = () => {
-      clearTimeout(scrollEndTimer);
-      scrollEndTimer = setTimeout(handleScrollEnd, 100);
-      lastScrollPosition.current = window.pageYOffset;
-    };
-
-    window.addEventListener('scroll', handleScroll);
-
     return () => {
       document.head.removeChild(style);
       window.removeEventListener('resize', checkMobile);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('scroll', handleScroll);
-      clearTimeout(scrollEndTimer);
       if (observerRef.current) {
         observerRef.current.disconnect();
       }
@@ -839,6 +885,18 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </div>
       )}
 
+      {showScrollToComment && (
+        <button 
+          className="scroll-to-comment-btn"
+          onClick={scrollToComments}
+          aria-label="滚动到评论区"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+        </button>
+      )}
+
       <div className={`min-h-screen p-8 pt-24 relative z-10 bg-white dark:bg-gray-900 page-container ${
         isMounted ? 'mounted' : ''
       }`}>
@@ -902,6 +960,18 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
                     </a>
                   </li>
                 ))}
+                <li>
+                  <a
+                    href="#comments"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      scrollToComments();
+                    }}
+                    className="toc-item h1"
+                  >
+                    评论
+                  </a>
+                </li>
               </ul>
             </div>
           </aside>
@@ -936,7 +1006,11 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           </section>
         )}
 
-        <section className="mt-12 max-w-4xl mx-auto">
+        <section 
+          id="comments"
+          ref={commentSectionRef}
+          className="mt-12 max-w-4xl mx-auto"
+        >
           <div id="waline-comment-container" className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
             <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">评论</h3>
           </div>
