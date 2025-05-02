@@ -29,6 +29,8 @@ sticky: 999
 
 项目当前版本 v2.0.1
 ## 1.1在线安装
-1.登入github，点击[此处](https://github.com/terryzhangxr/typace-i)去往GitHub仓库，点击fork将项目clone到自己仓库下，如下图
+1.本项目基于github作为托管平台，使用vercel部署，直接点击下方按钮即可自动clone仓库并在vercel进行部署
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fterryzhangxr%2Ftypace-i)
+
 
 
