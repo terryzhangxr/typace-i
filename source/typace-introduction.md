@@ -30,7 +30,7 @@ sticky: 999
 项目当前版本 v2.0.1
 ## 1.1在线安装
 1.本项目基于github作为托管平台，使用vercel部署，直接点击下方按钮即可自动clone仓库并在vercel进行部署
-                 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fterryzhangxr%2Ftypace-i)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fterryzhangxr%2Ftypace-i)
 > [注意]
 > 若未注册vercel账号，请在登陆注册界面使用github绑定快捷登录方便后续github自动抓取本仓库到您的账号下
                 
