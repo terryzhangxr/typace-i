@@ -33,6 +33,9 @@ sticky: 999
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fterryzhangxr%2Ftypace-i)
 > [注意]
 > 若未注册vercel账号，请在登陆注册界面使用github绑定快捷登录方便后续github自动抓取本仓库到您的账号下
+
+进入部署界面后命名项目，点击部署，如下
+
                 
 
 
