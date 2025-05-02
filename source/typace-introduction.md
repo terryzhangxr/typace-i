@@ -49,6 +49,8 @@ sticky: 999
 如果你有自己的域名，请按照下图操作
 ![vercel dp2](https://ik.imagekit.io/terryzhang/IMG_6400.jpeg?updatedAt=1746161243761)
 
+添加域名后，如果你是一级域名，vercel会建议你将原域名重定向到www开头，这样速度较快，下面用我原来的域名做个范例
+
 
 
 
