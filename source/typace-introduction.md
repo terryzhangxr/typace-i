@@ -37,10 +37,11 @@ sticky: 999
 2.进入部署界面后命名项目，点击部署，如下
 ![vercel dp1](https://ik.imagekit.io/terryzhang/IMG_6398.jpeg?updatedAt=1746152839523)
 接着vercel就开始自动为你部署项目，等待1-2分钟左右就可以看到项目部署完成了。vercel会给你一个congratulations的界面，点击`go to dashbord`去往控制台
+
 3.当看到如下界面时则部署成功，你可以看到博客的预览界面
 ![vercel dp2](https://ik.imagekit.io/terryzhang/IMG_6399.jpeg)
-那么这个时候vercel会给你一个`xxx.vercel.app`的域名，你可以点击页面右上角的`visit`访问，但是 <u>vercel在中国大陆被墙了！！！所以vercel二级域无法访问</u>
-
+那么这个时候vercel会给你一个`xxx.vercel.app`的域名，你可以点击页面右上角的`visit`访问，$\underline{\text{但是vercel在中国大陆被墙了！！！所以vercel二级域无法访问  }}$
+解决办法是绑定一个自己的域名，有域名的读者可以继续往下看vercel的教程，没有域名的话只能开vpn或者换成natlify或github pages部署，两者的教程尚未完成，这里向诸位抱歉
                 
 
 
