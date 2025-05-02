@@ -35,6 +35,9 @@ sticky: 999
 > 若未注册vercel账号，请在登陆注册界面使用github绑定快捷登录方便后续github自动抓取本仓库到您的账号下
 
 进入部署界面后命名项目，点击部署，如下
+![vercel dp1](https://ik.imagekit.io/terryzhang/IMG_6398.jpeg?updatedAt=1746152839523)
+
+
 
                 
 
