@@ -39,7 +39,7 @@ sticky: 999
 接着vercel就开始自动为你部署项目，等待1-2分钟左右就可以看到项目部署完成了。vercel会给你一个congratulations的界面，点击`go to dashbord`去往控制台
 3.当看到如下界面时则部署成功，你可以看到博客的预览界面
 ![vercel dp2](https://ik.imagekit.io/terryzhang/IMG_6399.jpeg)
-
+那么这个时候vercel会给你一个`xxx.vercel.app`的域名，你可以点击页面右上角的`visit`访问，但是 <u>vercel在中国大陆被墙了！！！所以vercel二级域无法访问</u>
 
                 
 
