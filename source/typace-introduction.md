@@ -34,9 +34,11 @@ sticky: 999
 > [注意]
 > 若未注册vercel账号，请在登陆注册界面使用github绑定快捷登录方便后续github自动抓取本仓库到您的账号下
 
-进入部署界面后命名项目，点击部署，如下
+2.进入部署界面后命名项目，点击部署，如下
 ![vercel dp1](https://ik.imagekit.io/terryzhang/IMG_6398.jpeg?updatedAt=1746152839523)
-
+接着vercel就开始自动为你部署项目，等待1-2分钟左右就可以看到项目部署完成了。vercel会给你一个congratulations的界面，点击`go to dashbord`去往控制台
+3.当看到如下界面时则部署成功，你可以看到博客的预览界面
+![vercel dp2](https://ik.imagekit.io/terryzhang/IMG_6399.jpeg)
 
 
                 
