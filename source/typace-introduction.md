@@ -43,7 +43,11 @@ sticky: 999
 那么这个时候vercel会给你一个`xxx.vercel.app`的域名，你可以点击页面右上角的`visit`访问，但是vercel在中国大陆被墙了！！！所以vercel二级域无法访问
 
 解决办法是绑定一个自己的域名，有域名的读者可以继续往下看vercel的教程，没有域名的话只能开vpn或者换成natlify或github pages部署，两者的教程尚未完成，这里向诸位抱歉
-                
+
+4.绑定自定义域名 
+
+如果你有自己的域名，请按照下图操作
+![vercel dp2](https://ik.imagekit.io/terryzhang/IMG_6400.jpeg?updatedAt=1746161243761)
 
 
 
