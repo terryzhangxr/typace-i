@@ -26,6 +26,9 @@ sticky: 999
 
 # P1 项目基本配置部署
 本博客支持github在线编辑开发，建议使用fork方式在线安装部署，本地安装也可
+
+项目当前版本 v2.0.1
 ## 1.1在线安装
+1.登入github，点击[此处](https://github.com/terryzhangxr/typace-i)去往GitHub仓库，点击fork将项目clone到自己仓库下，如下图
 
 
