@@ -61,4 +61,7 @@ sticky: 999
 以下开始是一些个性化配置，现在需要回到github进入clone本项目的仓库，进入`pages/` `index.js`开始配置
 ## 2.1网站标题基本配置
 在index.js中找到如下代码（大约在957行）
+![index](https://ik.imagekit.io/terryzhang/IMG_6410.jpeg?updatedAt=1746238192300)
+![index](https://ik.imagekit.io/terryzhang/IMG_6411.jpeg?updatedAt=1746238192041)
+
 
