@@ -363,6 +363,57 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         width: 24px;
         height: 24px;
       }
+
+      /* 代码高亮样式 */
+      pre {
+        border-radius: 0.5rem;
+        overflow: auto;
+        position: relative;
+        margin: 1.5rem 0;
+      }
+      
+      pre code {
+        display: block;
+        padding: 1rem;
+        font-family: 'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', monospace;
+        font-size: 0.875rem;
+        line-height: 1.5;
+      }
+      
+      .code-copy-btn {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+      
+      pre:hover .code-copy-btn {
+        opacity: 1;
+      }
+      
+      .code-copy-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+      
+      .code-copy-btn.copied {
+        background: rgba(0, 200, 0, 0.5);
+      }
+      
+      .code-language {
+        position: absolute;
+        top: 0.5rem;
+        left: 0.5rem;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+      }
     `;
     document.head.appendChild(style);
 
@@ -471,25 +522,58 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
   }, [router]);
 
-  const loadHighlightJS = (isDark) => {
-    return new Promise((resolve) => {
-      const existingTheme = document.querySelector('#hljs-theme');
-      if (existingTheme) existingTheme.remove();
+  const loadHighlightJS = useCallback(async (isDark) => {
+    if (typeof window === 'undefined') return;
 
-      const theme = document.createElement('link');
-      theme.id = 'hljs-theme';
-      theme.rel = 'stylesheet';
-      theme.href = isDark
-        ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
-        : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
-      
-      theme.onload = () => {
-        if (window.hljs) {
-          window.hljs.highlightAll();
-        }
-        resolve();
-      };
-      document.head.appendChild(theme);
+    // 加载highlight.js核心库
+    if (!window.hljs) {
+      await new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
+        script.onload = resolve;
+        document.head.appendChild(script);
+      });
+    }
+
+    // 加载语言支持
+    if (!window.hljs.getLanguage('javascript')) {
+      await Promise.all([
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/javascript.min.js'),
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/typescript.min.js'),
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/css.min.js'),
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/xml.min.js'),
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/bash.min.js'),
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/json.min.js')
+      ]);
+    }
+
+    // 设置主题
+    const existingTheme = document.querySelector('#hljs-theme');
+    if (existingTheme) existingTheme.remove();
+
+    const theme = document.createElement('link');
+    theme.id = 'hljs-theme';
+    theme.rel = 'stylesheet';
+    theme.href = isDark
+      ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
+      : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
+    
+    document.head.appendChild(theme);
+
+    // 初始化代码高亮
+    if (window.hljs) {
+      document.querySelectorAll('pre code').forEach((block) => {
+        window.hljs.highlightElement(block);
+      });
+    }
+  }, []);
+
+  const loadScript = (src) => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = resolve;
+      document.head.appendChild(script);
     });
   };
 
@@ -591,11 +675,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       setIsDarkMode(savedDarkMode);
       document.documentElement.classList.toggle('dark', savedDarkMode);
 
-      await Promise.all([
-        loadHighlightJS(savedDarkMode),
-        initializeWaline(),
-        loadHLJSBase()
-      ]);
+      await loadHighlightJS(savedDarkMode);
+      await initializeWaline();
 
       if (contentHtml) {
         generateToc();
@@ -609,18 +690,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           }
         }, 500);
       }
-    };
-
-    const loadHLJSBase = () => {
-      if (!window.hljs) {
-        return new Promise((resolve) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
-          script.onload = () => resolve();
-          document.head.appendChild(script);
-        });
-      }
-      return Promise.resolve();
     };
 
     const setupImagePreview = () => {
@@ -646,7 +715,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
 
     initializePage();
-  }, [contentHtml, setupHeadingObserver]);
+  }, [contentHtml, setupHeadingObserver, loadHighlightJS]);
 
   const generateToc = () => {
     if (contentRef.current) {
