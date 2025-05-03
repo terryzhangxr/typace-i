@@ -59,6 +59,28 @@ sticky: 999
 
 # P2 index.js配置
 以下开始是一些个性化配置，现在需要回到github进入clone本项目的仓库，进入`pages/` `index.js`开始配置
-## 2.1网站标题部分配置
+## 2.1网站标题基本配置
+在index.js中找到如下代码（大约在957行）
 
+```
+      {/* 页面内容 */}
+      <div className={`min-h-screen p-8 pt-24 relative z-10 page-container ${
+        isMounted ? 'mounted' : ''
+      }`}>
+        <Head>
+          <title>首页 - Typace</title>
+        </Head>
+
+        <header className="text-center mb-8">
+          <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
+            Typace
+          </h1>
+          <div className="hitokoto-container">
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 italic">
+              <span className="typewriter">{displayText}</span>
+            </p>
+          </div>
+        </header>
+```
+将其中的`Typace`和`首页-Typace`更改为你自己的网站标题，分别对应网站大标题和标签页首页标题，效果如下
 
