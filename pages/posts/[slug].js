@@ -126,14 +126,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         transform: translateY(0);
       }
       
-      .prose {
-        max-width: 100%;
-        overflow-x: auto;
-      }
-      
       .prose img {
-        max-width: 100%;
-        height: auto;
         border-radius: 0.5rem;
         cursor: zoom-in;
         transition: transform 0.2s ease;
@@ -141,27 +134,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       
       .prose img:hover {
         transform: scale(1.02);
-      }
-      
-      .prose pre {
-        max-width: 100%;
-        overflow-x: auto;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        background-color: #f8f8f8 !important;
-      }
-      
-      .dark .prose pre {
-        background-color: #2d2d2d !important;
-      }
-      
-      .prose code {
-        white-space: pre-wrap;
-        word-break: break-word;
-      }
-      
-      .prose pre code {
-        white-space: pre;
       }
       
       .image-preview-overlay {
@@ -390,18 +362,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       .scroll-to-comment-btn svg {
         width: 24px;
         height: 24px;
-      }
-
-      /* 响应式调整 */
-      @media (max-width: 1024px) {
-        .prose {
-          padding: 0 1rem;
-        }
-        .prose pre {
-          border-radius: 0;
-          margin-left: -1rem;
-          margin-right: -1rem;
-        }
       }
     `;
     document.head.appendChild(style);
@@ -666,8 +626,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     const setupImagePreview = () => {
       const articleImages = document.querySelectorAll('.prose img');
       articleImages.forEach(img => {
-        img.style.maxWidth = '100%';
-        img.style.height = 'auto';
         img.addEventListener('click', () => {
           setPreviewImage(img.src);
         });
@@ -936,8 +894,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           <title>{frontmatter.title} - Typace</title>
         </Head>
 
-        <main className="flex flex-col lg:flex-row">
-          <div className="flex-1 w-full lg:w-auto" ref={contentRef}>
+        <main className="flex">
+          <div className="flex-1" ref={contentRef}>
             {frontmatter.cover && (
               <div className="w-full h-48 md:h-64 mb-8">
                 <img
@@ -949,7 +907,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
               </div>
             )}
 
-            <article className="prose max-w-4xl w-full mx-auto dark:prose-invert">
+            <article className="prose max-w-4xl mx-auto dark:prose-invert">
               <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
                 {frontmatter.title}
               </h1>
@@ -974,7 +932,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             </article>
           </div>
 
-          <aside className="w-full lg:w-64 mt-8 lg:mt-0 lg:pl-8 lg:sticky lg:top-24 lg:self-start">
+          <aside className="w-64 hidden lg:block pl-8 sticky top-24 self-start">
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
               <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
               <ul className="space-y-2">
