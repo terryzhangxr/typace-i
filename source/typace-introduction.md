@@ -105,6 +105,6 @@ sticky: 999
 ```
  <a className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-red-600 dark:from-red-500 dark:to-red-700">
 ```
-此处对应的则是红色渐变色其他颜色将red改为可识别颜色即可
+此处对应的则是红色渐变色，其他颜色将原代码里的blue改为其他呀颜色即可
 
 
