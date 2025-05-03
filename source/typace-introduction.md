@@ -101,4 +101,10 @@ sticky: 999
 ```
 将其中的Typace改为你的标题，效果如下
 ![index](https://ik.imagekit.io/terryzhang/IMG_6412.jpeg)
+以上两段代码均可改字体颜色，分别位于“typace”的上方一行代码，若需更改字体颜色可按照js语法进行更改，例：
+```
+ <a className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-red-600 dark:from-red-500 dark:to-red-700">
+```
+此处对应的则是红色渐变色其他颜色将red改为可识别颜色即可
+
 
