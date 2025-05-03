@@ -47,12 +47,15 @@ sticky: 999
 4.绑定自定义域名 
 
 如果你有自己的域名，请按照下图操作
-![vercel dp2](https://ik.imagekit.io/terryzhang/IMG_6400.jpeg?updatedAt=1746161243761)
+![vercel dp3](https://ik.imagekit.io/terryzhang/IMG_6400.jpeg?updatedAt=1746161243761)
 
 添加域名后，如果你是一级域名，vercel会建议你将原域名重定向到www开头，这样速度较快，下面用我原来的域名做个范例
-![vercel dp2](https://ik.imagekit.io/terryzhang/IMG_6407.jpeg?updatedAt=1746235901184)
-按照上图，首先vercel会自动增加一个www开头的域名，将你现在的域名301重定向到www域名，并且在你的域名服务商那里增加一条dns
+![vercel dp4](https://ik.imagekit.io/terryzhang/IMG_6407.jpeg?updatedAt=1746235901184)
+按照上图，首先vercel会自动增加一个www开头的域名，将你现在的域名301重定向到www域名，并且在你的域名服务商那里增加两条dns，分别为主域名记录和子域名记录，按图操作
+![vercel dp4](https://ik.imagekit.io/terryzhang/IMG_6409.jpeg?updatedAt=1746236566827)
+如果使用子域名，则上述步骤在vercel仅需添加域名，服务商增加子域名记录就可
 
+现在你可以打开域名看看了
 
 
 
