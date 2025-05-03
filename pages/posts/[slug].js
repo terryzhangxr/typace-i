@@ -116,9 +116,17 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
+      .page-container {
+        opacity: 0;
+        transform: translateY(100px);
+        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .page-container.mounted {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      
       .prose img {
-        max-width: 100%;
-        height: auto;
         border-radius: 0.5rem;
         cursor: zoom-in;
         transition: transform 0.2s ease;
@@ -126,24 +134,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       
       .prose img:hover {
         transform: scale(1.02);
-      }
-      
-      /* 处理宽图片和代码块的溢出 */
-      .prose {
-        max-width: 100%;
-        overflow-x: auto;
-      }
-      
-      .prose pre {
-        max-width: 100%;
-        overflow-x: auto;
-      }
-      
-      .prose pre code {
-        display: block;
-        overflow-x: auto;
-        white-space: pre;
-        word-wrap: normal;
       }
       
       .image-preview-overlay {
@@ -372,21 +362,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       .scroll-to-comment-btn svg {
         width: 24px;
         height: 24px;
-      }
-      
-      /* 处理宽表格 */
-      .prose table {
-        display: block;
-        width: 100%;
-        overflow-x: auto;
-        white-space: nowrap;
-      }
-      
-      @media (min-width: 1024px) {
-        .prose table {
-          display: table;
-          white-space: normal;
-        }
       }
     `;
     document.head.appendChild(style);
@@ -919,8 +894,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           <title>{frontmatter.title} - Typace</title>
         </Head>
 
-        <main className="flex flex-col lg:flex-row">
-          <div className="flex-1 w-full lg:w-auto" ref={contentRef}>
+        <main className="flex">
+          <div className="flex-1" ref={contentRef}>
             {frontmatter.cover && (
               <div className="w-full h-48 md:h-64 mb-8">
                 <img
@@ -932,7 +907,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
               </div>
             )}
 
-            <article className="prose max-w-4xl mx-auto dark:prose-invert w-full overflow-x-hidden">
+            <article className="prose max-w-4xl mx-auto dark:prose-invert">
               <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
                 {frontmatter.title}
               </h1>
@@ -951,13 +926,13 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
                 </div>
               )}
               <div
-                className="text-gray-700 dark:text-gray-300 w-full overflow-x-auto"
+                className="text-gray-700 dark:text-gray-300"
                 dangerouslySetInnerHTML={{ __html: contentHtml }}
               />
             </article>
           </div>
 
-          <aside className="w-full lg:w-64 lg:pl-8 lg:sticky lg:top-24 lg:self-start mt-8 lg:mt-0">
+          <aside className="w-64 hidden lg:block pl-8 sticky top-24 self-start">
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
               <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
               <ul className="space-y-2">
