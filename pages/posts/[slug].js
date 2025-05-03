@@ -113,6 +113,33 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     smoothScrollTo(targetPosition);
   }, [smoothScrollTo]);
 
+  // 复制代码块内容
+  const copyCode = (codeBlock) => {
+    const code = codeBlock.querySelector('code').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      const copyBtn = codeBlock.querySelector('.copy-btn');
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => {
+        copyBtn.textContent = 'Copy';
+      }, 2000);
+    });
+  };
+
+  // 添加复制按钮到代码块
+  const addCopyButtons = () => {
+    const codeBlocks = document.querySelectorAll('pre');
+    codeBlocks.forEach((block) => {
+      if (!block.querySelector('.copy-btn')) {
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-btn';
+        copyBtn.textContent = 'Copy';
+        copyBtn.addEventListener('click', () => copyCode(block));
+        block.style.position = 'relative';
+        block.appendChild(copyBtn);
+      }
+    });
+  };
+
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -126,7 +153,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         transform: translateY(0);
       }
       
+      .prose {
+        max-width: 100%;
+        overflow-x: auto;
+      }
+      
       .prose img {
+        max-width: 100%;
+        height: auto;
         border-radius: 0.5rem;
         cursor: zoom-in;
         transition: transform 0.2s ease;
@@ -134,6 +168,58 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       
       .prose img:hover {
         transform: scale(1.02);
+      }
+      
+      .prose pre {
+        max-width: 100%;
+        overflow-x: auto;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: #f8f8f8 !important;
+        position: relative;
+        margin: 1.5rem 0;
+      }
+      
+      .dark .prose pre {
+        background-color: #2d2d2d !important;
+      }
+      
+      .prose code {
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      
+      .prose pre code {
+        white-space: pre;
+        display: block;
+        overflow-x: auto;
+        padding: 1em;
+      }
+      
+      .copy-btn {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        background-color: #e5e7eb;
+        border: none;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      
+      .dark .copy-btn {
+        background-color: #374151;
+        color: white;
+      }
+      
+      .copy-btn:hover {
+        background-color: #d1d5db;
+      }
+      
+      .dark .copy-btn:hover {
+        background-color: #4b5563;
       }
       
       .image-preview-overlay {
@@ -362,6 +448,24 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       .scroll-to-comment-btn svg {
         width: 24px;
         height: 24px;
+      }
+
+      /* 响应式调整 */
+      @media (max-width: 1024px) {
+        .prose {
+          padding: 0 1rem;
+        }
+        .prose pre {
+          border-radius: 0;
+          margin-left: -1rem;
+          margin-right: -1rem;
+        }
+      }
+      
+      @media (max-width: 768px) {
+        .toc-container {
+          display: none;
+        }
       }
     `;
     document.head.appendChild(style);
@@ -607,6 +711,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             const id = window.location.hash.substring(1);
             scrollToHeading(id, false);
           }
+          addCopyButtons();
         }, 500);
       }
     };
@@ -626,6 +731,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     const setupImagePreview = () => {
       const articleImages = document.querySelectorAll('.prose img');
       articleImages.forEach(img => {
+        img.style.maxWidth = '100%';
+        img.style.height = 'auto';
         img.addEventListener('click', () => {
           setPreviewImage(img.src);
         });
@@ -894,8 +1001,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           <title>{frontmatter.title} - Typace</title>
         </Head>
 
-        <main className="flex">
-          <div className="flex-1" ref={contentRef}>
+        <main className="flex flex-col lg:flex-row">
+          <div className="flex-1 w-full lg:w-auto" ref={contentRef}>
             {frontmatter.cover && (
               <div className="w-full h-48 md:h-64 mb-8">
                 <img
@@ -907,7 +1014,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
               </div>
             )}
 
-            <article className="prose max-w-4xl mx-auto dark:prose-invert">
+            <article className="prose max-w-4xl w-full mx-auto dark:prose-invert">
               <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
                 {frontmatter.title}
               </h1>
@@ -932,27 +1039,29 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             </article>
           </div>
 
-          <aside className="w-64 hidden lg:block pl-8 sticky top-24 self-start">
-            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
-              <ul className="space-y-2">
-                {toc.map((item) => (
-                  <li key={item.id}>
-                    <a
-                      href={`#${item.id}`}
-                      onClick={(e) => handleTocClick(e, item.id)}
-                      className={`toc-item ${item.level} ${
-                        activeHeading === item.id ? 'active' : ''
-                      }`}
-                      aria-current={activeHeading === item.id ? 'location' : undefined}
-                    >
-                      {item.text}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </aside>
+          {!isMobile && (
+            <aside className="w-full lg:w-64 mt-8 lg:mt-0 lg:pl-8 lg:sticky lg:top-24 lg:self-start">
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
+                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
+                <ul className="space-y-2">
+                  {toc.map((item) => (
+                    <li key={item.id}>
+                      <a
+                        href={`#${item.id}`}
+                        onClick={(e) => handleTocClick(e, item.id)}
+                        className={`toc-item ${item.level} ${
+                          activeHeading === item.id ? 'active' : ''
+                        }`}
+                        aria-current={activeHeading === item.id ? 'location' : undefined}
+                      >
+                        {item.text}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </aside>
+          )}
         </main>
 
         {recommendedPosts.length > 0 && (
