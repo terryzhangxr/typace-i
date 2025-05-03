@@ -44,11 +44,10 @@
       border-color 0.3s ease;
   }
 
-  /* 文章内容样式 */
+  /* Article content styles */
   .prose {
     color: var(--color-text-primary);
     max-width: 100%;
-    overflow-x: hidden;
   }
 
   .prose h1,
@@ -106,7 +105,7 @@
     transition: border-color 0.3s ease;
   }
 
-  /* 代码块样式 */
+  /* Code block styles */
   .prose pre {
     @apply rounded-xl border p-6 relative;
     background-color: var(--color-code-bg);
@@ -117,6 +116,21 @@
       border-color 0.3s ease;
     max-width: 100%;
     overflow-x: auto;
+    white-space: pre;
+    word-break: normal;
+    word-wrap: normal;
+    font-size: 0.95em;
+    line-height: 1.5;
+  }
+
+  .prose pre code {
+    display: block;
+    overflow-x: auto;
+    white-space: pre;
+    background: transparent;
+    padding: 0;
+    font-size: inherit;
+    line-height: inherit;
   }
 
   .prose code {
@@ -133,7 +147,7 @@
     content: '';
   }
 
-  /* 代码块语言标签样式 */
+  /* Code block language label */
   .code-language-label {
     @apply bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm px-3 py-1 rounded-t-lg;
     font-family: monospace;
@@ -143,7 +157,7 @@
     right: 0;
   }
 
-  /* 表格样式 */
+  /* Table styles */
   .prose table {
     @apply w-full border-collapse my-6;
     border-color: var(--color-border);
@@ -182,13 +196,16 @@
     background-color: var(--color-table-row-hover-bg);
   }
 
-  /* 图片样式 */
+  /* Image styles */
   .prose img {
     max-width: 100%;
     height: auto;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
   }
 
-  /* 移动端适配 */
+  /* Responsive adjustments */
   @media (min-width: 1024px) {
     .prose table {
       display: table;
@@ -197,7 +214,7 @@
   }
 }
 
-/* 页面容器动画 */
+/* Page container animation */
 .page-container {
   opacity: 0;
   transform: translateY(100px);
@@ -209,32 +226,28 @@
   transform: translateY(0);
 }
 
-/* 性能优化 */
+/* Performance optimization */
 @media (prefers-reduced-motion: no-preference) {
   .page-container {
     animation-duration: 0.6s;
   }
 }
 
-/* 处理宽内容 */
-.prose {
-  pre, code, table, img {
-    max-width: 100%;
-    overflow-x: auto;
-  }
-  
-  pre code {
-    white-space: pre;
-    word-wrap: normal;
-  }
-  
-  table {
-    display: block;
-    white-space: nowrap;
-    
-    @media (min-width: 1024px) {
-      display: table;
-      white-space: normal;
-    }
-  }
+/* Custom scrollbar for code blocks */
+.prose pre::-webkit-scrollbar {
+  height: 6px;
+}
+
+.prose pre::-webkit-scrollbar-track {
+  background: var(--color-code-bg);
+  border-radius: 0 0 0.5rem 0.5rem;
+}
+
+.prose pre::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 0 0 0.5rem 0.5rem;
+}
+
+.prose pre::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
 }
