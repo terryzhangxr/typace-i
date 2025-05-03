@@ -61,7 +61,48 @@ sticky: 999
 以下开始是一些个性化配置，现在需要回到github进入clone本项目的仓库，进入`pages/` `index.js`开始配置
 ## 2.1网站标题基本配置
 在index.js中找到如下代码（大约在957行）
+
+```
+      {/* 页面内容 */}
+      <div className={`min-h-screen p-8 pt-24 relative z-10 page-container ${
+        isMounted ? 'mounted' : ''
+      }`}>
+        <Head>
+          <title>首页 - Typace</title>
+        </Head>
+
+        <header className="text-center mb-8">
+          <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
+            Typace
+          </h1>
+          <div className="hitokoto-container">
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 italic">
+              <span className="typewriter">{displayText}</span>
+            </p>
+          </div>
+        </header>
+```
+将其中的`Typace`和`首页-Typace`更改为你自己的网站标题，分别对应网站大标题和标签页首页标题，效果如下
 ![index](https://ik.imagekit.io/terryzhang/IMG_6410.jpeg?updatedAt=1746238192300)
 ![index](https://ik.imagekit.io/terryzhang/IMG_6411.jpeg?updatedAt=1746238192041)
 
+找到如下代码，对应导航栏标题，大约在第800行
+```
+      {/* 导航栏 */}
+      <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-50">
+        <div className="container mx-auto px-8 py-4">
+          <div className="flex justify-between items-center">
+            <Link href="/" passHref>
+              <a className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
+                Typace
+              </a>
+            </Link>
 
+```
+将其中的Typace改为你的标题，效果如下
+![index](https://ik.imagekit.io/terryzhang/IMG_6412.jpeg)
+以上两段代码均可改字体颜色，分别位于“typace”的上方一行代码，若需更改字体颜色可按照js语法进行更改，例：
+```
+ <a className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-red-600 dark:from-red-500 dark:to-red-700">
+```
+此处对应的则是红色渐变色，其他颜色将原代码里的blue改为其他颜色即可
