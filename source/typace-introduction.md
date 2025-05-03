@@ -50,6 +50,8 @@ sticky: 999
 ![vercel dp2](https://ik.imagekit.io/terryzhang/IMG_6400.jpeg?updatedAt=1746161243761)
 
 添加域名后，如果你是一级域名，vercel会建议你将原域名重定向到www开头，这样速度较快，下面用我原来的域名做个范例
+![vercel dp2](https://ik.imagekit.io/terryzhang/IMG_6407.jpeg?updatedAt=1746235901184)
+按照上图，首先vercel会自动增加一个www开头的域名，将你现在的域名301重定向到www域名，并且在你的域名服务商那里增加一条dns
 
 
 
