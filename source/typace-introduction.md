@@ -83,4 +83,6 @@ sticky: 999
         </header>
 ```
 将其中的`Typace`和`首页-Typace`更改为你自己的网站标题，分别对应网站大标题和标签页首页标题，效果如下
+![index](https://ik.imagekit.io/terryzhang/IMG_6410.jpeg?updatedAt=1746238192300)
+![index](https://ik.imagekit.io/terryzhang/IMG_6411.jpeg?updatedAt=1746238192041)
 
