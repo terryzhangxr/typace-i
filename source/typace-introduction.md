@@ -86,3 +86,19 @@ sticky: 999
 ![index](https://ik.imagekit.io/terryzhang/IMG_6410.jpeg?updatedAt=1746238192300)
 ![index](https://ik.imagekit.io/terryzhang/IMG_6411.jpeg?updatedAt=1746238192041)
 
+找到如下代码，对应导航栏标题，大约在第800行
+```
+      {/* 导航栏 */}
+      <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-50">
+        <div className="container mx-auto px-8 py-4">
+          <div className="flex justify-between items-center">
+            <Link href="/" passHref>
+              <a className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
+                Typace
+              </a>
+            </Link>
+
+```
+将其中的Typace改为你的标题，效果如下
+![index](https://ik.imagekit.io/terryzhang/IMG_6412.jpeg)
+
