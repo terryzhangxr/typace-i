@@ -58,7 +58,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const lastScrollPosition = useRef(0);
   const commentSectionRef = useRef(null);
 
-  // 搜索相关状态
+  // 搜索功能相关状态
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -127,13 +127,40 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       }
       
       .prose img {
+        max-width: 100%;
+        height: auto;
         border-radius: 0.5rem;
         cursor: zoom-in;
         transition: transform 0.2s ease;
+        display: block;
+        margin: 0 auto;
       }
       
       .prose img:hover {
         transform: scale(1.02);
+      }
+      
+      .prose pre {
+        background-color: #f7f7f7;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        overflow-x: auto;
+        margin-bottom: 1rem;
+      }
+      
+      .prose pre code {
+        font-family: 'Consolas', 'Courier New', monospace;
+        color: #333;
+      }
+      
+      @media (max-width: 768px) {
+        .prose img {
+          width: 100%;
+        }
+        
+        .prose pre {
+          white-space: nowrap;
+        }
       }
       
       .image-preview-overlay {
@@ -997,7 +1024,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         <footer className="text-center mt-12">
           <a href="/api/sitemap" className="inline-block">
             <img
-              src="https://cdn.us.mrche.top/sitemap.svg"
+              src="/sitemap.svg"
               alt="Sitemap"
               className="block mx-auto w-8 h-8 dark:invert"
             />
@@ -1005,7 +1032,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           <p className="mt-4 text-gray-600 dark:text-gray-400">
             由Terryzhang&mrche创建的
             <a
-              href="https://bgithub.xyz/terryzhangxr/typace-i"
+              href="/"
               className="text-blue-600 hover:underline dark:text-blue-400"
             >
               Typace
