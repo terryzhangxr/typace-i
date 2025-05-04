@@ -51,16 +51,56 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const [previewImage, setPreviewImage] = useState(null);
   const [activeHeading, setActiveHeading] = useState(null);
   const [isScrolling, setIsScrolling] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // 新增加载状态
   const walineInstance = useRef(null);
   const contentRef = useRef(null);
   const observerRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
   const lastScrollPosition = useRef(0);
   const commentSectionRef = useRef(null);
+  const visibleContentRef = useRef(null); // 用于虚拟滚动
+  const contentChunksRef = useRef([]); // 内容分块
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+
+  // 分块渲染内容
+  const chunkContent = useCallback((html) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const elements = Array.from(doc.body.children);
+    const chunks = [];
+    let currentChunk = [];
+    let currentSize = 0;
+    const CHUNK_SIZE = 5000; // 每个块大约5KB
+
+    elements.forEach((el) => {
+      const html = el.outerHTML;
+      currentChunk.push(html);
+      currentSize += html.length;
+
+      if (currentSize >= CHUNK_SIZE) {
+        chunks.push(currentChunk.join(''));
+        currentChunk = [];
+        currentSize = 0;
+      }
+    });
+
+    if (currentChunk.length > 0) {
+      chunks.push(currentChunk.join(''));
+    }
+
+    return chunks;
+  }, []);
+
+  // 初始化分块内容
+  useEffect(() => {
+    if (contentHtml) {
+      contentChunksRef.current = chunkContent(contentHtml);
+      setIsLoading(false);
+    }
+  }, [contentHtml, chunkContent]);
 
   const checkMobile = () => {
     setIsMobile(window.innerWidth < 768);
@@ -138,7 +178,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         border-radius: 0.5rem;
         padding: 1.5rem 1rem 1rem;
         margin: 1.5rem 0;
-        overflow: hidden;
+        overflow-x: auto;
       }
 
       .prose pre code {
@@ -148,16 +188,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         font-family: 'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', monospace;
         font-size: 0.9em;
         line-height: 1.6;
-      }
-
-      /* Improved code block scrolling */
-      .prose pre {
-        overflow-x: auto;
-      }
-
-      .prose pre code {
-        display: block;
-        padding-right: 1rem;
       }
 
       /* Custom scrollbar for code blocks */
@@ -241,10 +271,36 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         --color-code-btn-success: #28a745;
       }
 
-      /* Smart code block width handling */
-      .prose pre {
-        width: 100%;
-        max-width: 100%;
+      /* Loading skeleton */
+      .skeleton {
+        animation: pulse 2s infinite ease-in-out;
+        background-color: #eee;
+        border-radius: 0.25rem;
+      }
+
+      .dark .skeleton {
+        background-color: #333;
+      }
+
+      @keyframes pulse {
+        0%, 100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      /* Content chunk transition */
+      .content-chunk {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+      }
+
+      .content-chunk.visible {
+        opacity: 1;
+        transform: translateY(0);
       }
 
       /* Table styles */
@@ -594,6 +650,30 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         setIsScrolling(false);
       }, 100);
       lastScrollPosition.current = window.scrollY;
+
+      // 虚拟滚动：检查哪些内容块应该显示
+      if (visibleContentRef.current) {
+        const viewportHeight = window.innerHeight;
+        const scrollPosition = window.scrollY;
+        const containerTop = visibleContentRef.current.offsetTop;
+        
+        // 计算可见区域
+        const visibleTop = scrollPosition - viewportHeight * 0.5;
+        const visibleBottom = scrollPosition + viewportHeight * 1.5;
+        
+        // 更新可见的内容块
+        const chunks = Array.from(visibleContentRef.current.querySelectorAll('.content-chunk'));
+        chunks.forEach((chunk, index) => {
+          const chunkTop = containerTop + (index * 1000); // 估计位置
+          const chunkBottom = chunkTop + 1000;
+          
+          if (chunkBottom > visibleTop && chunkTop < visibleBottom) {
+            chunk.classList.add('visible');
+          } else {
+            chunk.classList.remove('visible');
+          }
+        });
+      }
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -623,77 +703,81 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
   }, []);
 
+  // 延迟加载代码块复制按钮和高亮
   useEffect(() => {
-    if (!contentRef.current) return;
+    if (!contentRef.current || isLoading) return;
 
-    // Add copy buttons and handle code blocks
-    const codeBlocks = contentRef.current.querySelectorAll('pre');
-    codeBlocks.forEach((pre) => {
-      // Skip if already processed
-      if (pre.querySelector('.code-block-header')) return;
-
-      // Create copy button
-      const button = document.createElement('button');
-      button.className = 'copy-btn';
-      button.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-        </svg>
-        <span>复制</span>
-      `;
-
-      // Create header div
-      const header = document.createElement('div');
-      header.className = 'code-block-header';
+    const initCodeBlocks = () => {
+      const codeBlocks = contentRef.current.querySelectorAll('pre');
       
-      // Detect language (if specified in class)
-      const language = pre.className.match(/language-(\w+)/)?.[1] || '代码';
-      const languageSpan = document.createElement('span');
-      languageSpan.textContent = language;
-      
-      header.appendChild(languageSpan);
-      header.appendChild(button);
-      pre.insertBefore(header, pre.firstChild);
+      // 使用IntersectionObserver延迟初始化
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const pre = entry.target;
+            
+            // 跳过已处理的代码块
+            if (pre.querySelector('.code-block-header')) return;
 
-      // Add copy functionality
-      button.addEventListener('click', () => {
-        const code = pre.querySelector('code')?.textContent || '';
-        navigator.clipboard.writeText(code).then(() => {
-          button.classList.add('copied');
-          button.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-            <span>已复制</span>
-          `;
-          setTimeout(() => {
-            button.classList.remove('copied');
+            // 创建复制按钮
+            const button = document.createElement('button');
+            button.className = 'copy-btn';
             button.innerHTML = `
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
               </svg>
               <span>复制</span>
             `;
-          }, 2000);
-        });
-      });
-    });
 
-    // Handle window resize to re-check overflow
-    const handleResize = () => {
-      const codeBlocks = contentRef.current?.querySelectorAll('pre') || [];
-      codeBlocks.forEach((pre) => {
-        const codeElement = pre.querySelector('code');
-        if (codeElement) {
-          // Force reflow to ensure proper width calculation
-          void codeElement.offsetWidth;
-        }
+            // 创建header div
+            const header = document.createElement('div');
+            header.className = 'code-block-header';
+            
+            // 检测语言
+            const language = pre.className.match(/language-(\w+)/)?.[1] || '代码';
+            const languageSpan = document.createElement('span');
+            languageSpan.textContent = language;
+            
+            header.appendChild(languageSpan);
+            header.appendChild(button);
+            pre.insertBefore(header, pre.firstChild);
+
+            // 添加复制功能
+            button.addEventListener('click', () => {
+              const code = pre.querySelector('code')?.textContent || '';
+              navigator.clipboard.writeText(code).then(() => {
+                button.classList.add('copied');
+                button.innerHTML = `
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>已复制</span>
+                `;
+                setTimeout(() => {
+                  button.classList.remove('copied');
+                  button.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                    <span>复制</span>
+                  `;
+                }, 2000);
+              });
+            });
+
+            // 停止观察已处理的元素
+            observer.unobserve(pre);
+          }
+        });
+      }, {
+        rootMargin: '200px 0px'
       });
+
+      codeBlocks.forEach(pre => observer.observe(pre));
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [contentHtml]);
+    initCodeBlocks();
+  }, [contentHtml, isLoading]);
 
   const highlightText = (text, query) => {
     if (!query) return text;
@@ -774,7 +858,15 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       
       theme.onload = () => {
         if (window.hljs) {
-          window.hljs.highlightAll();
+          // 延迟高亮代码块
+          setTimeout(() => {
+            const codeBlocks = contentRef.current?.querySelectorAll('pre code') || [];
+            codeBlocks.forEach(block => {
+              if (!block.classList.contains('hljs')) {
+                window.hljs.highlightElement(block);
+              }
+            });
+          }, 500);
         }
         resolve();
       };
@@ -999,6 +1091,35 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     setPreviewImage(null);
   };
 
+  // 渲染内容分块
+  const renderContentChunks = () => {
+    if (isLoading) {
+      return (
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="skeleton h-6 w-full"></div>
+          ))}
+          <div className="skeleton h-32 w-full mt-4"></div>
+          {[...Array(3)].map((_, i) => (
+            <div key={`2-${i}`} className="skeleton h-6 w-full"></div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div ref={visibleContentRef}>
+        {contentChunksRef.current.map((chunk, index) => (
+          <div 
+            key={index} 
+            className="content-chunk"
+            dangerouslySetInnerHTML={{ __html: chunk }}
+          />
+        ))}
+      </div>
+    );
+  };
+
   return (
     <>
       <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-50">
@@ -1214,10 +1335,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
                     ))}
                   </div>
                 )}
-                <div
-                  className="text-gray-700 dark:text-gray-300 w-full"
-                  dangerouslySetInnerHTML={{ __html: contentHtml }}
-                />
+                <div className="text-gray-700 dark:text-gray-300 w-full">
+                  {renderContentChunks()}
+                </div>
               </article>
             </div>
 
