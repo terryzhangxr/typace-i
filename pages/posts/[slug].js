@@ -131,26 +131,108 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         transform: scale(1.02);
       }
       
+      /* Enhanced code block styles */
       .prose pre {
-        width: 100%;
-        max-width: 100%;
-        overflow-x: auto;
-        white-space: pre;
-        word-break: normal;
-        word-wrap: normal;
-        font-size: 0.95em;
-        line-height: 1.5;
-        padding: 1rem;
+        position: relative;
         background-color: var(--color-code-bg);
         border-radius: 0.5rem;
+        padding: 1.5rem 1rem 1rem;
+        margin: 1.5rem 0;
+        overflow: hidden;
       }
-      
+
       .prose pre code {
         display: block;
-        min-width: fit-content;
+        overflow-x: auto;
+        padding: 0;
+        background: transparent;
+        font-family: 'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', monospace;
+        font-size: 0.9em;
+        line-height: 1.6;
+      }
+
+      .code-block-header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        background-color: var(--color-code-header);
+        color: var(--color-code-text);
+        font-size: 0.75rem;
+        border-top-left-radius: 0.5rem;
+        border-top-right-radius: 0.5rem;
+      }
+
+      .copy-btn {
+        background: var(--color-code-btn-bg);
+        color: var(--color-code-btn-text);
+        border: none;
+        border-radius: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.7rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .copy-btn:hover {
+        background: var(--color-code-btn-hover);
+      }
+
+      .copy-btn.copied {
+        background: var(--color-code-btn-success);
+      }
+
+      .copy-btn svg {
+        width: 0.9rem;
+        height: 0.9rem;
+      }
+
+      :root {
+        --color-code-bg: #f6f8fa;
+        --color-code-header: #e1e4e8;
+        --color-code-text: #24292e;
+        --color-code-btn-bg: #e1e4e8;
+        --color-code-btn-text: #24292e;
+        --color-code-btn-hover: #d1d5da;
+        --color-code-btn-success: #28a745;
+      }
+
+      .dark {
+        --color-code-bg: #2d2d2d;
+        --color-code-header: #1e1e1e;
+        --color-code-text: #f8f8f2;
+        --color-code-btn-bg: #1e1e1e;
+        --color-code-btn-text: #f8f8f2;
+        --color-code-btn-hover: #333;
+        --color-code-btn-success: #28a745;
+      }
+
+      /* Smart code block width detection */
+      .prose pre:not(.overflowing) {
         width: auto;
-        overflow-x: visible;
-        padding-right: 2rem;
+        max-width: 100%;
+      }
+
+      .prose pre.overflowing {
+        width: 100%;
+        max-width: 100vw;
+        margin-left: calc(-50vw + 50%);
+        margin-right: calc(-50vw + 50%);
+      }
+
+      @media (min-width: 1024px) {
+        .prose pre.overflowing {
+          width: calc(100% + 8rem);
+          margin-left: -4rem;
+          margin-right: -4rem;
+        }
       }
       
       .prose table {
@@ -515,6 +597,90 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!contentRef.current) return;
+
+    // Add copy buttons and detect overflowing code blocks
+    const codeBlocks = contentRef.current.querySelectorAll('pre');
+    codeBlocks.forEach((pre) => {
+      // Create copy button
+      const button = document.createElement('button');
+      button.className = 'copy-btn';
+      button.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+        </svg>
+        <span>复制</span>
+      `;
+
+      // Create header div
+      const header = document.createElement('div');
+      header.className = 'code-block-header';
+      
+      // Detect language (if specified in class)
+      const language = pre.className.match(/language-(\w+)/)?.[1] || '代码';
+      const languageSpan = document.createElement('span');
+      languageSpan.textContent = language;
+      
+      header.appendChild(languageSpan);
+      header.appendChild(button);
+      pre.insertBefore(header, pre.firstChild);
+
+      // Add copy functionality
+      button.addEventListener('click', () => {
+        const code = pre.querySelector('code')?.textContent || '';
+        navigator.clipboard.writeText(code).then(() => {
+          button.classList.add('copied');
+          button.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>已复制</span>
+          `;
+          setTimeout(() => {
+            button.classList.remove('copied');
+            button.innerHTML = `
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+              </svg>
+              <span>复制</span>
+            `;
+          }, 2000);
+        });
+      });
+
+      // Detect if code overflows
+      const codeElement = pre.querySelector('code');
+      if (codeElement) {
+        const isOverflowing = codeElement.scrollWidth > codeElement.clientWidth;
+        if (isOverflowing) {
+          pre.classList.add('overflowing');
+        } else {
+          pre.classList.remove('overflowing');
+        }
+      }
+    });
+
+    // Handle window resize to re-check overflow
+    const handleResize = () => {
+      const codeBlocks = contentRef.current?.querySelectorAll('pre') || [];
+      codeBlocks.forEach((pre) => {
+        const codeElement = pre.querySelector('code');
+        if (codeElement) {
+          const isOverflowing = codeElement.scrollWidth > codeElement.clientWidth;
+          if (isOverflowing) {
+            pre.classList.add('overflowing');
+          } else {
+            pre.classList.remove('overflowing');
+          }
+        }
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [contentHtml]);
 
   const highlightText = (text, query) => {
     if (!query) return text;
