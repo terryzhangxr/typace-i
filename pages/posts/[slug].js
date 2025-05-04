@@ -131,7 +131,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         transform: scale(1.02);
       }
       
-      /* Enhanced code block styles with scrollable behavior */
+      /* Enhanced code block styles with reliable scroll behavior */
       .prose pre {
         position: relative;
         background-color: var(--color-code-bg);
@@ -140,6 +140,11 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         margin: 1.5rem 0;
         overflow: hidden;
         max-width: 100%;
+      }
+
+      .prose pre .code-container {
+        position: relative;
+        overflow: hidden;
       }
 
       .prose pre code {
@@ -152,16 +157,16 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         line-height: 1.6;
         overflow-x: auto;
         padding-bottom: 1rem;
+        scrollbar-width: thin;
       }
 
-      /* Hide scrollbar by default */
+      /* Scrollbar styling that doesn't interfere with header */
       .prose pre code::-webkit-scrollbar {
         height: 6px;
         opacity: 0;
         transition: opacity 0.3s ease;
       }
 
-      /* Show scrollbar on hover or when scrolling */
       .prose pre:hover code::-webkit-scrollbar,
       .prose pre.scrolling code::-webkit-scrollbar {
         opacity: 1;
@@ -169,6 +174,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
       .prose pre code::-webkit-scrollbar-track {
         background: transparent;
+        margin-top: 28px; /* Match header height */
         border-radius: 0 0 0.5rem 0.5rem;
       }
 
@@ -195,6 +201,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         font-size: 0.75rem;
         border-top-left-radius: 0.5rem;
         border-top-right-radius: 0.5rem;
+        z-index: 1; /* Ensure header stays above code */
       }
 
       .copy-btn {
@@ -209,6 +216,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         display: flex;
         align-items: center;
         gap: 0.25rem;
+        z-index: 2; /* Ensure button stays above everything */
       }
 
       .copy-btn:hover {
@@ -636,6 +644,18 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     // Add copy buttons and detect overflowing code blocks
     const codeBlocks = contentRef.current.querySelectorAll('pre');
     codeBlocks.forEach((pre) => {
+      // Create a container div for the code
+      const container = document.createElement('div');
+      container.className = 'code-container';
+      
+      // Move the code element into the container
+      const codeElement = pre.querySelector('code');
+      if (codeElement) {
+        container.appendChild(codeElement.cloneNode(true));
+        pre.innerHTML = '';
+        pre.appendChild(container);
+      }
+
       // Create copy button
       const button = document.createElement('button');
       button.className = 'copy-btn';
@@ -660,8 +680,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       pre.insertBefore(header, pre.firstChild);
 
       // Add copy functionality
-      button.addEventListener('click', () => {
-        const code = pre.querySelector('code')?.textContent || '';
+      button.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent interfering with scroll detection
+        const code = container.textContent || '';
         navigator.clipboard.writeText(code).then(() => {
           button.classList.add('copied');
           button.innerHTML = `
@@ -683,9 +704,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       });
 
       // Detect if code overflows
-      const codeElement = pre.querySelector('code');
-      if (codeElement) {
-        const isOverflowing = codeElement.scrollWidth > codeElement.clientWidth;
+      const codeEl = container.querySelector('code');
+      if (codeEl) {
+        const isOverflowing = codeEl.scrollWidth > codeEl.clientWidth;
         if (isOverflowing) {
           pre.classList.add('overflowing');
         } else {
@@ -695,26 +716,32 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
       // Add scroll detection for scrollbar visibility
       let scrollTimeout;
-      codeElement?.addEventListener('scroll', () => {
-        pre.classList.add('scrolling');
-        clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(() => {
-          pre.classList.remove('scrolling');
-        }, 1000);
-      });
+      const codeEl = container.querySelector('code');
+      if (codeEl) {
+        codeEl.addEventListener('scroll', () => {
+          pre.classList.add('scrolling');
+          clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(() => {
+            pre.classList.remove('scrolling');
+          }, 1000);
+        });
+      }
     });
 
     // Handle window resize to re-check overflow
     const handleResize = () => {
       const codeBlocks = contentRef.current?.querySelectorAll('pre') || [];
       codeBlocks.forEach((pre) => {
-        const codeElement = pre.querySelector('code');
-        if (codeElement) {
-          const isOverflowing = codeElement.scrollWidth > codeElement.clientWidth;
-          if (isOverflowing) {
-            pre.classList.add('overflowing');
-          } else {
-            pre.classList.remove('overflowing');
+        const container = pre.querySelector('.code-container');
+        if (container) {
+          const codeEl = container.querySelector('code');
+          if (codeEl) {
+            const isOverflowing = codeEl.scrollWidth > codeEl.clientWidth;
+            if (isOverflowing) {
+              pre.classList.add('overflowing');
+            } else {
+              pre.classList.remove('overflowing');
+            }
           }
         }
       });
