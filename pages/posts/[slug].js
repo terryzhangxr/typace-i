@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../../lib/posts';
-import fs from 'fs'; 
+import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 import { remark } from 'remark';
@@ -131,7 +131,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         transform: scale(1.02);
       }
       
-      /* Enhanced code block styles */
+      /* Enhanced code block styles with scrollable behavior */
       .prose pre {
         position: relative;
         background-color: var(--color-code-bg);
@@ -139,16 +139,46 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         padding: 1.5rem 1rem 1rem;
         margin: 1.5rem 0;
         overflow: hidden;
+        max-width: 100%;
       }
 
       .prose pre code {
         display: block;
-        overflow-x: auto;
-        padding: 0;
-        background: transparent;
+        white-space: pre;
+        word-break: normal;
+        word-wrap: normal;
         font-family: 'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', monospace;
         font-size: 0.9em;
         line-height: 1.6;
+        overflow-x: auto;
+        padding-bottom: 1rem;
+      }
+
+      /* Hide scrollbar by default */
+      .prose pre code::-webkit-scrollbar {
+        height: 6px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      /* Show scrollbar on hover or when scrolling */
+      .prose pre:hover code::-webkit-scrollbar,
+      .prose pre.scrolling code::-webkit-scrollbar {
+        opacity: 1;
+      }
+
+      .prose pre code::-webkit-scrollbar-track {
+        background: transparent;
+        border-radius: 0 0 0.5rem 0.5rem;
+      }
+
+      .prose pre code::-webkit-scrollbar-thumb {
+        background: var(--color-code-scroll);
+        border-radius: 0 0 0.5rem 0.5rem;
+      }
+
+      .prose pre code::-webkit-scrollbar-thumb:hover {
+        background: var(--color-code-scroll-hover);
       }
 
       .code-block-header {
@@ -202,6 +232,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         --color-code-btn-text: #24292e;
         --color-code-btn-hover: #d1d5da;
         --color-code-btn-success: #28a745;
+        --color-code-scroll: #c1c4c8;
+        --color-code-scroll-hover: #a1a4a8;
       }
 
       .dark {
@@ -212,6 +244,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         --color-code-btn-text: #f8f8f2;
         --color-code-btn-hover: #333;
         --color-code-btn-success: #28a745;
+        --color-code-scroll: #4a4a4a;
+        --color-code-scroll-hover: #5a5a5a;
       }
 
       /* Smart code block width detection */
@@ -223,8 +257,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       .prose pre.overflowing {
         width: 100%;
         max-width: 100vw;
-        margin-left: calc(-50vw + 50%);
-        margin-right: calc(-50vw + 50%);
       }
 
       @media (min-width: 1024px) {
@@ -660,6 +692,16 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           pre.classList.remove('overflowing');
         }
       }
+
+      // Add scroll detection for scrollbar visibility
+      let scrollTimeout;
+      codeElement?.addEventListener('scroll', () => {
+        pre.classList.add('scrolling');
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          pre.classList.remove('scrolling');
+        }, 1000);
+      });
     });
 
     // Handle window resize to re-check overflow
