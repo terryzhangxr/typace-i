@@ -151,26 +151,27 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       }
 
       /* Improved code block scrolling */
-      .prose pre code {
+      .prose pre {
         overflow-x: auto;
+      }
+
+      .prose pre code {
         display: block;
         padding-right: 1rem;
-        scrollbar-width: thin;
-        scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
       }
 
       /* Custom scrollbar for code blocks */
-      .prose pre code::-webkit-scrollbar {
+      .prose pre::-webkit-scrollbar {
         height: 6px;
         background-color: transparent;
       }
 
-      .prose pre code::-webkit-scrollbar-thumb {
+      .prose pre::-webkit-scrollbar-thumb {
         background-color: rgba(0, 0, 0, 0.2);
         border-radius: 3px;
       }
 
-      .dark .prose pre code::-webkit-scrollbar-thumb {
+      .dark .prose pre::-webkit-scrollbar-thumb {
         background-color: rgba(255, 255, 255, 0.2);
       }
 
@@ -676,16 +677,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           }, 2000);
         });
       });
-
-      // Ensure proper scrolling for code blocks
-      const codeElement = pre.querySelector('code');
-      if (codeElement) {
-        // Force reflow to ensure proper width calculation
-        void codeElement.offsetWidth;
-        
-        // Add padding to the right to ensure scrollbar doesn't overlap content
-        codeElement.style.paddingRight = '1rem';
-      }
     });
 
     // Handle window resize to re-check overflow
@@ -1163,10 +1154,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       {previewImage && (
         <div className="image-preview-overlay" onClick={closePreview}>
           <div className="image-preview-container" onClick={(e) => e.stopPropagation()}>
-            <img
-              src={previewImage}
-              alt="Preview"
-            />
+            <img src={previewImage} alt="Preview" />
             <button className="image-preview-close" onClick={closePreview}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
