@@ -48,6 +48,8 @@
   .prose {
     color: var(--color-text-primary);
     max-width: 100%;
+    width: 100%;
+    overflow-x: hidden;
   }
 
   .prose h1,
@@ -115,22 +117,23 @@
       background-color 0.3s ease,
       border-color 0.3s ease;
     max-width: 100%;
+    width: 100vw;
     overflow-x: auto;
     white-space: pre;
     word-break: normal;
     word-wrap: normal;
     font-size: 0.95em;
     line-height: 1.5;
+    margin: 1.5rem calc(-50vw + 50%);
   }
 
   .prose pre code {
     display: block;
-    overflow-x: auto;
-    white-space: pre;
+    min-width: fit-content;
+    width: auto;
+    overflow-x: visible;
+    padding-right: 2rem;
     background: transparent;
-    padding: 0;
-    font-size: inherit;
-    line-height: inherit;
   }
 
   .prose code {
@@ -207,6 +210,12 @@
 
   /* Responsive adjustments */
   @media (min-width: 1024px) {
+    .prose pre {
+      width: calc(100% + 8rem);
+      margin-left: -4rem;
+      margin-right: -4rem;
+    }
+    
     .prose table {
       display: table;
       white-space: normal;
