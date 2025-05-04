@@ -132,8 +132,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       }
       
       .prose pre {
+        width: 100%;
         max-width: 100%;
-        width: 100vw;
         overflow-x: auto;
         white-space: pre;
         word-break: normal;
@@ -143,7 +143,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         padding: 1rem;
         background-color: var(--color-code-bg);
         border-radius: 0.5rem;
-        margin: 1.5rem calc(-50vw + 50%);
       }
       
       .prose pre code {
@@ -152,32 +151,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         width: auto;
         overflow-x: visible;
         padding-right: 2rem;
-      }
-      
-      @media (min-width: 1024px) {
-        .prose pre {
-          width: calc(100% + 8rem);
-          margin-left: -4rem;
-          margin-right: -4rem;
-        }
-      }
-      
-      .prose pre::-webkit-scrollbar {
-        height: 6px;
-      }
-      
-      .prose pre::-webkit-scrollbar-track {
-        background: var(--color-code-bg);
-        border-radius: 0 0 0.5rem 0.5rem;
-      }
-      
-      .prose pre::-webkit-scrollbar-thumb {
-        background: var(--color-border);
-        border-radius: 0 0 0.5rem 0.5rem;
-      }
-      
-      .prose pre::-webkit-scrollbar-thumb:hover {
-        background: var(--color-text-secondary);
       }
       
       .prose table {
@@ -430,6 +403,76 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       .page-container.mounted {
         opacity: 1;
         transform: translateY(0);
+      }
+
+      /* Fixed layout styles */
+      .main-content-container {
+        max-width: 100%;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0 1rem;
+      }
+
+      @media (min-width: 1024px) {
+        .main-content-container {
+          max-width: calc(100% - 288px);
+          padding-right: 2rem;
+        }
+      }
+
+      .article-container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+
+      .prose {
+        font-size: 1rem;
+        line-height: 1.75;
+      }
+
+      .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+        margin-top: 1.5em;
+        margin-bottom: 0.5em;
+      }
+
+      .prose p {
+        margin-bottom: 1.25em;
+      }
+
+      .sidebar-container {
+        width: 288px;
+        position: sticky;
+        top: 6rem;
+        height: fit-content;
+        overflow-y: auto;
+        max-height: calc(100vh - 8rem);
+      }
+
+      .tag {
+        display: inline-block;
+        background-color: #e0f2fe;
+        color: #0369a1;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.2s ease;
+      }
+
+      .dark .tag {
+        background-color: #1e3a8a;
+        color: #bfdbfe;
+      }
+
+      .tag:hover {
+        background-color: #bae6fd;
+        color: #075985;
+      }
+
+      .dark .tag:hover {
+        background-color: #1e40af;
+        color: #93c5fd;
       }
     `;
     document.head.appendChild(style);
@@ -960,45 +1003,106 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           <title>{frontmatter.title} - Typace</title>
         </Head>
 
-        <main className="flex flex-col lg:flex-row">
-          <div className="flex-1 w-full lg:w-auto" ref={contentRef}>
-            {frontmatter.cover && (
-              <div className="w-full h-48 md:h-64 mb-8">
-                <img
-                  src={frontmatter.cover}
-                  alt={frontmatter.title}
-                  className="w-full h-full object-cover rounded-lg cursor-pointer"
-                  onClick={() => setPreviewImage(frontmatter.cover)}
-                />
-              </div>
-            )}
+        <div className="container mx-auto flex flex-col lg:flex-row">
+          <div className="main-content-container">
+            <div className="article-container">
+              {frontmatter.cover && (
+                <div className="w-full h-48 md:h-64 mb-8">
+                  <img
+                    src={frontmatter.cover}
+                    alt={frontmatter.title}
+                    className="w-full h-full object-cover rounded-lg cursor-pointer"
+                    onClick={() => setPreviewImage(frontmatter.cover)}
+                  />
+                </div>
+              )}
 
-            <article className="prose max-w-4xl mx-auto dark:prose-invert w-full">
-              <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
-                {frontmatter.title}
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-8">
-                {frontmatter.date}
-              </p>
-              {frontmatter.tags && frontmatter.tags.length > 0 && (
-                <div className="mb-8">
-                  {frontmatter.tags.map((tag) => (
-                    <Link key={tag} href={`/tags#${tag}`} passHref>
-                      <a className="tag">
-                        {tag}
+              <article className="prose max-w-none w-full" ref={contentRef}>
+                <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
+                  {frontmatter.title}
+                </h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-8">
+                  {frontmatter.date}
+                </p>
+                {frontmatter.tags && frontmatter.tags.length > 0 && (
+                  <div className="mb-8">
+                    {frontmatter.tags.map((tag) => (
+                      <Link key={tag} href={`/tags#${tag}`} passHref>
+                        <a className="tag">
+                          {tag}
+                        </a>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+                <div
+                  className="text-gray-700 dark:text-gray-300 w-full"
+                  dangerouslySetInnerHTML={{ __html: contentHtml }}
+                />
+              </article>
+            </div>
+
+            {recommendedPosts.length > 0 && (
+              <section className="mt-12">
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">推荐文章</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {recommendedPosts.map((post) => (
+                    <Link key={post.slug} href={`/posts/${post.slug}`} legacyBehavior>
+                      <a className="block bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition transform hover:scale-105">
+                        {post.cover && (
+                          <div className="w-full h-48">
+                            <img
+                              src={post.cover}
+                              alt={post.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="p-6">
+                          <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+                            {post.title}
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{post.date}</p>
+                        </div>
                       </a>
                     </Link>
                   ))}
                 </div>
-              )}
-              <div
-                className="text-gray-700 dark:text-gray-300 w-full"
-                dangerouslySetInnerHTML={{ __html: contentHtml }}
-              />
-            </article>
+              </section>
+            )}
+
+            <section 
+              id="comments"
+              ref={commentSectionRef}
+              className="mt-12"
+            >
+              <div id="waline-comment-container" className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+                <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">评论</h3>
+              </div>
+            </section>
+
+            <footer className="text-center mt-12">
+              <a href="/api/sitemap" className="inline-block">
+                <img
+                  src="https://cdn.us.mrche.top/sitemap.svg"
+                  alt="Sitemap"
+                  className="block mx-auto w-8 h-8 dark:invert"
+                />
+              </a>
+              <p className="mt-4 text-gray-600 dark:text-gray-400">
+                由Terryzhang&mrche创建的
+                <a
+                  href="https://bgithub.xyz/terryzhangxr/typace-i"
+                  className="text-blue-600 hover:underline dark:text-blue-400"
+                >
+                  Typace
+                </a>
+                强力驱动
+              </p>
+            </footer>
           </div>
 
-          <aside className="w-full lg:w-64 lg:pl-8 lg:sticky lg:top-24 lg:self-start mt-8 lg:mt-0">
+          <div className="sidebar-container hidden lg:block">
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
               <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
               <ul className="space-y-2">
@@ -1018,67 +1122,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
                 ))}
               </ul>
             </div>
-          </aside>
-        </main>
-
-        {recommendedPosts.length > 0 && (
-          <section className="mt-12">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">推荐文章</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {recommendedPosts.map((post) => (
-                <Link key={post.slug} href={`/posts/${post.slug}`} legacyBehavior>
-                  <a className="block bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition transform hover:scale-105">
-                    {post.cover && (
-                      <div className="w-full h-48">
-                        <img
-                          src={post.cover}
-                          alt={post.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                    <div className="p-6">
-                      <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-                        {post.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{post.date}</p>
-                    </div>
-                  </a>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section 
-          id="comments"
-          ref={commentSectionRef}
-          className="mt-12 max-w-4xl mx-auto"
-        >
-          <div id="waline-comment-container" className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-            <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">评论</h3>
           </div>
-        </section>
-
-        <footer className="text-center mt-12">
-          <a href="/api/sitemap" className="inline-block">
-            <img
-              src="https://cdn.us.mrche.top/sitemap.svg"
-              alt="Sitemap"
-              className="block mx-auto w-8 h-8 dark:invert"
-            />
-          </a>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">
-            由Terryzhang&mrche创建的
-            <a
-              href="https://bgithub.xyz/terryzhangxr/typace-i"
-              className="text-blue-600 hover:underline dark:text-blue-400"
-            >
-              Typace
-            </a>
-            强力驱动
-          </p>
-        </footer>
+        </div>
       </div>
     </>
   );
