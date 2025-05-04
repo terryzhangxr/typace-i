@@ -143,12 +143,35 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
       .prose pre code {
         display: block;
-        overflow-x: auto;
         padding: 0;
         background: transparent;
         font-family: 'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', monospace;
         font-size: 0.9em;
         line-height: 1.6;
+      }
+
+      /* Improved code block scrolling */
+      .prose pre code {
+        overflow-x: auto;
+        display: block;
+        padding-right: 1rem;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+      }
+
+      /* Custom scrollbar for code blocks */
+      .prose pre code::-webkit-scrollbar {
+        height: 6px;
+        background-color: transparent;
+      }
+
+      .prose pre code::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 3px;
+      }
+
+      .dark .prose pre code::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.2);
       }
 
       .code-block-header {
@@ -165,6 +188,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         font-size: 0.75rem;
         border-top-left-radius: 0.5rem;
         border-top-right-radius: 0.5rem;
+        z-index: 1;
       }
 
       .copy-btn {
@@ -179,6 +203,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         display: flex;
         align-items: center;
         gap: 0.25rem;
+        position: relative;
+        z-index: 2;
       }
 
       .copy-btn:hover {
@@ -214,32 +240,30 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         --color-code-btn-success: #28a745;
       }
 
-      /* Smart code block width detection */
-      .prose pre:not(.overflowing) {
-        width: auto;
+      /* Smart code block width handling */
+      .prose pre {
+        width: 100%;
         max-width: 100%;
       }
 
-      .prose pre.overflowing {
-        width: 100%;
-        max-width: 100vw;
-        margin-left: calc(-50vw + 50%);
-        margin-right: calc(-50vw + 50%);
-      }
-
-      @media (min-width: 1024px) {
-        .prose pre.overflowing {
-          width: calc(100% + 8rem);
-          margin-left: -4rem;
-          margin-right: -4rem;
-        }
-      }
-      
+      /* Table styles */
       .prose table {
         display: block;
         width: 100%;
         overflow-x: auto;
         white-space: nowrap;
+        margin: 1.5rem 0;
+      }
+      
+      .prose table th,
+      .prose table td {
+        padding: 0.5rem 1rem;
+        border: 1px solid #e5e7eb;
+      }
+      
+      .dark .prose table th,
+      .dark .prose table td {
+        border-color: #374151;
       }
       
       @media (min-width: 1024px) {
@@ -601,9 +625,12 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   useEffect(() => {
     if (!contentRef.current) return;
 
-    // Add copy buttons and detect overflowing code blocks
+    // Add copy buttons and handle code blocks
     const codeBlocks = contentRef.current.querySelectorAll('pre');
     codeBlocks.forEach((pre) => {
+      // Skip if already processed
+      if (pre.querySelector('.code-block-header')) return;
+
       // Create copy button
       const button = document.createElement('button');
       button.className = 'copy-btn';
@@ -650,15 +677,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         });
       });
 
-      // Detect if code overflows
+      // Ensure proper scrolling for code blocks
       const codeElement = pre.querySelector('code');
       if (codeElement) {
-        const isOverflowing = codeElement.scrollWidth > codeElement.clientWidth;
-        if (isOverflowing) {
-          pre.classList.add('overflowing');
-        } else {
-          pre.classList.remove('overflowing');
-        }
+        // Force reflow to ensure proper width calculation
+        void codeElement.offsetWidth;
+        
+        // Add padding to the right to ensure scrollbar doesn't overlap content
+        codeElement.style.paddingRight = '1rem';
       }
     });
 
@@ -668,12 +694,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       codeBlocks.forEach((pre) => {
         const codeElement = pre.querySelector('code');
         if (codeElement) {
-          const isOverflowing = codeElement.scrollWidth > codeElement.clientWidth;
-          if (isOverflowing) {
-            pre.classList.add('overflowing');
-          } else {
-            pre.classList.remove('overflowing');
-          }
+          // Force reflow to ensure proper width calculation
+          void codeElement.offsetWidth;
         }
       });
     };
