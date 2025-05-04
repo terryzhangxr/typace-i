@@ -58,17 +58,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const lastScrollPosition = useRef(0);
   const commentSectionRef = useRef(null);
 
-  // 搜索相关状态
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
 
-  // 检测设备宽度
   const checkMobile = () => {
     setIsMobile(window.innerWidth < 768);
   };
 
-  // 平滑滚动到指定位置
   const smoothScrollTo = useCallback((position, callback) => {
     if (scrollTimeoutRef.current) {
       cancelAnimationFrame(scrollTimeoutRef.current);
@@ -102,31 +99,27 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     scrollTimeoutRef.current = requestAnimationFrame(animateScroll);
   }, []);
 
-  // 滚动到评论区
   const scrollToComments = useCallback(() => {
     if (!commentSectionRef.current) return;
-    
     const commentPosition = commentSectionRef.current.offsetTop;
-    const offset = 100; // 导航栏高度
+    const offset = 100;
     const targetPosition = commentPosition - offset;
-    
     smoothScrollTo(targetPosition);
   }, [smoothScrollTo]);
 
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
-      .page-container {
-        opacity: 0;
-        transform: translateY(100px);
-        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      .page-container.mounted {
-        opacity: 1;
-        transform: translateY(0);
+      .prose {
+        max-width: 100%;
       }
       
       .prose img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
         border-radius: 0.5rem;
         cursor: zoom-in;
         transition: transform 0.2s ease;
@@ -134,6 +127,60 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       
       .prose img:hover {
         transform: scale(1.02);
+      }
+      
+      .prose pre {
+        max-width: 100%;
+        overflow-x: auto;
+        white-space: pre;
+        word-break: normal;
+        word-wrap: normal;
+        font-size: 0.95em;
+        line-height: 1.5;
+        padding: 1rem;
+        background-color: var(--color-code-bg);
+        border-radius: 0.5rem;
+        margin: 1.5rem 0;
+      }
+      
+      .prose pre code {
+        display: block;
+        overflow-x: auto;
+        white-space: pre;
+        background: transparent;
+        padding: 0;
+      }
+      
+      .prose pre::-webkit-scrollbar {
+        height: 6px;
+      }
+      
+      .prose pre::-webkit-scrollbar-track {
+        background: var(--color-code-bg);
+        border-radius: 0 0 0.5rem 0.5rem;
+      }
+      
+      .prose pre::-webkit-scrollbar-thumb {
+        background: var(--color-border);
+        border-radius: 0 0 0.5rem 0.5rem;
+      }
+      
+      .prose pre::-webkit-scrollbar-thumb:hover {
+        background: var(--color-text-secondary);
+      }
+      
+      .prose table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+      
+      @media (min-width: 1024px) {
+        .prose table {
+          display: table;
+          white-space: normal;
+        }
       }
       
       .image-preview-overlay {
@@ -364,55 +411,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         height: 24px;
       }
 
-      /* 代码高亮样式 */
-      pre {
-        border-radius: 0.5rem;
-        overflow: auto;
-        position: relative;
-        margin: 1.5rem 0;
-      }
-      
-      pre code {
-        display: block;
-        padding: 1rem;
-        font-family: 'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', monospace;
-        font-size: 0.875rem;
-        line-height: 1.5;
-      }
-      
-      .code-copy-btn {
-        position: absolute;
-        top: 0.5rem;
-        right: 0.5rem;
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        color: white;
-        padding: 0.25rem 0.5rem;
-        border-radius: 0.25rem;
-        cursor: pointer;
+      .page-container {
         opacity: 0;
-        transition: opacity 0.2s ease;
+        transform: translateY(100px);
+        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
       }
-      
-      pre:hover .code-copy-btn {
+      .page-container.mounted {
         opacity: 1;
-      }
-      
-      .code-copy-btn:hover {
-        background: rgba(255, 255, 255, 0.3);
-      }
-      
-      .code-copy-btn.copied {
-        background: rgba(0, 200, 0, 0.5);
-      }
-      
-      .code-language {
-        position: absolute;
-        top: 0.5rem;
-        left: 0.5rem;
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 0.75rem;
-        text-transform: uppercase;
+        transform: translateY(0);
       }
     `;
     document.head.appendChild(style);
@@ -456,30 +462,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
   }, []);
 
-  // 处理搜索查询变化
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setSearchResults([]);
-      return;
-    }
-
-    const query = searchQuery.toLowerCase();
-    const results = allPostsData.filter(post => {
-      const titleMatch = post.title.toLowerCase().includes(query);
-      const excerptMatch = post.excerpt && post.excerpt.toLowerCase().includes(query);
-      const contentMatch = post.content && post.content.toLowerCase().includes(query);
-      const tagMatch = post.tags && post.tags.some(tag => tag.toLowerCase().includes(query));
-      
-      return titleMatch || excerptMatch || contentMatch || tagMatch;
-    }).map(post => ({
-      ...post,
-      highlightedTitle: highlightText(post.title, query),
-      highlightedExcerpt: post.excerpt ? highlightText(post.excerpt, query) : '',
-    }));
-
-    setSearchResults(results);
-  }, [searchQuery, allPostsData]);
-
   const highlightText = (text, query) => {
     if (!query) return text;
     const regex = new RegExp(`(${query})`, 'gi');
@@ -505,6 +487,29 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   };
 
   useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setSearchResults([]);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const results = allPostsData.filter(post => {
+      const titleMatch = post.title.toLowerCase().includes(query);
+      const excerptMatch = post.excerpt && post.excerpt.toLowerCase().includes(query);
+      const contentMatch = post.content && post.content.toLowerCase().includes(query);
+      const tagMatch = post.tags && post.tags.some(tag => tag.toLowerCase().includes(query));
+      
+      return titleMatch || excerptMatch || contentMatch || tagMatch;
+    }).map(post => ({
+      ...post,
+      highlightedTitle: highlightText(post.title, query),
+      highlightedExcerpt: post.excerpt ? highlightText(post.excerpt, query) : '',
+    }));
+
+    setSearchResults(results);
+  }, [searchQuery, allPostsData]);
+
+  useEffect(() => {
     const handleRouteChangeStart = () => {
       setIsMounted(false);
     };
@@ -522,58 +527,25 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
   }, [router]);
 
-  const loadHighlightJS = useCallback(async (isDark) => {
-    if (typeof window === 'undefined') return;
-
-    // 加载highlight.js核心库
-    if (!window.hljs) {
-      await new Promise((resolve) => {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
-        script.onload = resolve;
-        document.head.appendChild(script);
-      });
-    }
-
-    // 加载语言支持
-    if (!window.hljs.getLanguage('javascript')) {
-      await Promise.all([
-        loadScript('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/javascript.min.js'),
-        loadScript('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/typescript.min.js'),
-        loadScript('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/css.min.js'),
-        loadScript('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/xml.min.js'),
-        loadScript('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/bash.min.js'),
-        loadScript('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/json.min.js')
-      ]);
-    }
-
-    // 设置主题
-    const existingTheme = document.querySelector('#hljs-theme');
-    if (existingTheme) existingTheme.remove();
-
-    const theme = document.createElement('link');
-    theme.id = 'hljs-theme';
-    theme.rel = 'stylesheet';
-    theme.href = isDark
-      ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
-      : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
-    
-    document.head.appendChild(theme);
-
-    // 初始化代码高亮
-    if (window.hljs) {
-      document.querySelectorAll('pre code').forEach((block) => {
-        window.hljs.highlightElement(block);
-      });
-    }
-  }, []);
-
-  const loadScript = (src) => {
+  const loadHighlightJS = (isDark) => {
     return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = src;
-      script.onload = resolve;
-      document.head.appendChild(script);
+      const existingTheme = document.querySelector('#hljs-theme');
+      if (existingTheme) existingTheme.remove();
+
+      const theme = document.createElement('link');
+      theme.id = 'hljs-theme';
+      theme.rel = 'stylesheet';
+      theme.href = isDark
+        ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
+        : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
+      
+      theme.onload = () => {
+        if (window.hljs) {
+          window.hljs.highlightAll();
+        }
+        resolve();
+      };
+      document.head.appendChild(theme);
     });
   };
 
@@ -675,8 +647,11 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       setIsDarkMode(savedDarkMode);
       document.documentElement.classList.toggle('dark', savedDarkMode);
 
-      await loadHighlightJS(savedDarkMode);
-      await initializeWaline();
+      await Promise.all([
+        loadHighlightJS(savedDarkMode),
+        initializeWaline(),
+        loadHLJSBase()
+      ]);
 
       if (contentHtml) {
         generateToc();
@@ -690,6 +665,18 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           }
         }, 500);
       }
+    };
+
+    const loadHLJSBase = () => {
+      if (!window.hljs) {
+        return new Promise((resolve) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
+          script.onload = () => resolve();
+          document.head.appendChild(script);
+        });
+      }
+      return Promise.resolve();
     };
 
     const setupImagePreview = () => {
@@ -715,7 +702,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
 
     initializePage();
-  }, [contentHtml, setupHeadingObserver, loadHighlightJS]);
+  }, [contentHtml, setupHeadingObserver]);
 
   const generateToc = () => {
     if (contentRef.current) {
@@ -945,7 +932,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </div>
       )}
 
-      {/* 始终显示的滚动到评论区按钮 */}
       <button 
         className="scroll-to-comment-btn"
         onClick={scrollToComments}
@@ -963,8 +949,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           <title>{frontmatter.title} - Typace</title>
         </Head>
 
-        <main className="flex">
-          <div className="flex-1" ref={contentRef}>
+        <main className="flex flex-col lg:flex-row">
+          <div className="flex-1 w-full lg:w-auto" ref={contentRef}>
             {frontmatter.cover && (
               <div className="w-full h-48 md:h-64 mb-8">
                 <img
@@ -976,7 +962,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
               </div>
             )}
 
-            <article className="prose max-w-4xl mx-auto dark:prose-invert">
+            <article className="prose max-w-4xl mx-auto dark:prose-invert w-full">
               <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
                 {frontmatter.title}
               </h1>
@@ -995,13 +981,13 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
                 </div>
               )}
               <div
-                className="text-gray-700 dark:text-gray-300"
+                className="text-gray-700 dark:text-gray-300 w-full"
                 dangerouslySetInnerHTML={{ __html: contentHtml }}
               />
             </article>
           </div>
 
-          <aside className="w-64 hidden lg:block pl-8 sticky top-24 self-start">
+          <aside className="w-full lg:w-64 lg:pl-8 lg:sticky lg:top-24 lg:self-start mt-8 lg:mt-0">
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
               <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
               <ul className="space-y-2">
