@@ -112,6 +112,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     style.textContent = `
       .prose {
         max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
       }
       
       .prose img {
@@ -131,6 +133,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       
       .prose pre {
         max-width: 100%;
+        width: 100vw;
         overflow-x: auto;
         white-space: pre;
         word-break: normal;
@@ -140,15 +143,23 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         padding: 1rem;
         background-color: var(--color-code-bg);
         border-radius: 0.5rem;
-        margin: 1.5rem 0;
+        margin: 1.5rem calc(-50vw + 50%);
       }
       
       .prose pre code {
         display: block;
-        overflow-x: auto;
-        white-space: pre;
-        background: transparent;
-        padding: 0;
+        min-width: fit-content;
+        width: auto;
+        overflow-x: visible;
+        padding-right: 2rem;
+      }
+      
+      @media (min-width: 1024px) {
+        .prose pre {
+          width: calc(100% + 8rem);
+          margin-left: -4rem;
+          margin-right: -4rem;
+        }
       }
       
       .prose pre::-webkit-scrollbar {
