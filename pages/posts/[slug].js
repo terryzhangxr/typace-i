@@ -73,7 +73,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
     const startPosition = window.pageYOffset;
     const distance = position - startPosition;
-    const duration = 800; // Increased duration for smoother scrolling
+    const duration = 500;
     let startTime = null;
 
     const animateScroll = (currentTime) => {
@@ -504,9 +504,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
       .page-container {
         opacity: 0;
-        transform: translateY(20px);
-        transition: opacity 0.8s ease-out, transform 0.8s ease-out;
-        will-change: opacity, transform;
+        transform: translateY(100px);
+        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .page-container.mounted {
         opacity: 1;
