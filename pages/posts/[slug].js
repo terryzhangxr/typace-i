@@ -1,7 +1,7 @@
-import { useEffect, useState, useRef, useCallback, memo } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../../lib/posts';
-import fs from 'fs';
+import fs from 'fs'; 
 import path from 'path';
 import matter from 'gray-matter';
 import { remark } from 'remark';
@@ -41,163 +41,6 @@ export async function getStaticProps({ params }) {
   };
 }
 
-const NavLink = memo(({ href, children }) => (
-  <Link href={href} passHref>
-    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
-      {children}
-    </a>
-  </Link>
-));
-
-const MobileNavLink = memo(({ href, children, onClick }) => (
-  <Link href={href} passHref>
-    <a 
-      onClick={onClick}
-      className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-    >
-      {children}
-    </a>
-  </Link>
-));
-
-const CodeBlock = memo(({ pre }) => {
-  const [copied, setCopied] = useState(false);
-  const codeRef = useRef(null);
-
-  const copyCode = useCallback(() => {
-    if (!codeRef.current) return;
-    
-    navigator.clipboard.writeText(codeRef.current.textContent).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  }, []);
-
-  const language = pre.className.match(/language-(\w+)/)?.[1] || '代码';
-
-  return (
-    <pre className={pre.className} style={{ position: 'relative' }}>
-      <div className="code-block-header">
-        <span>{language}</span>
-        <button 
-          className={`copy-btn ${copied ? 'copied' : ''}`}
-          onClick={copyCode}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={
-              copied ? "M5 13l4 4L19 7" : 
-              "M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
-            } />
-          </svg>
-          <span>{copied ? '已复制' : '复制'}</span>
-        </button>
-      </div>
-      <code ref={codeRef}>{pre.textContent}</code>
-    </pre>
-  );
-});
-
-const SearchModal = memo(({ 
-  isOpen, 
-  onClose, 
-  query, 
-  onQueryChange, 
-  results, 
-  onResultClick 
-}) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="search-modal">
-      <div className="search-container">
-        <div className="search-header">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            id="search-input"
-            type="text"
-            className="search-input"
-            placeholder="搜索文章..."
-            value={query}
-            onChange={(e) => onQueryChange(e.target.value)}
-            autoComplete="off"
-          />
-          <button className="search-close" onClick={onClose}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div className="search-results">
-          {results.length > 0 ? (
-            results.map((post) => (
-              <div
-                key={post.slug}
-                className="search-result-item"
-                onClick={() => onResultClick(post.slug)}
-              >
-                <h3 
-                  className="search-result-title"
-                  dangerouslySetInnerHTML={{ __html: post.highlightedTitle }}
-                />
-                {post.highlightedExcerpt && (
-                  <p 
-                    className="search-result-excerpt"
-                    dangerouslySetInnerHTML={{ __html: post.highlightedExcerpt }}
-                  />
-                )}
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{post.date}</p>
-              </div>
-            ))
-          ) : query ? (
-            <div className="no-results">没有找到匹配的文章</div>
-          ) : (
-            <div className="no-results">输入关键词搜索文章</div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-});
-
-const TocItem = memo(({ item, activeId, onClick }) => (
-  <li>
-    <a
-      href={`#${item.id}`}
-      onClick={(e) => onClick(e, item.id)}
-      className={`toc-item ${item.level} ${
-        activeId === item.id ? 'active' : ''
-      }`}
-      aria-current={activeId === item.id ? 'location' : undefined}
-    >
-      {item.text}
-    </a>
-  </li>
-));
-
-const RecommendedPost = memo(({ post }) => (
-  <Link key={post.slug} href={`/posts/${post.slug}`} legacyBehavior>
-    <a className="block bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition transform hover:scale-105">
-      {post.cover && (
-        <div className="w-full h-48">
-          <img
-            src={post.cover}
-            alt={post.title}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      )}
-      <div className="p-6">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-          {post.title}
-        </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{post.date}</p>
-      </div>
-    </a>
-  </Link>
-));
-
 export default function Post({ frontmatter, contentHtml, recommendedPosts, allPostsData }) {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -208,21 +51,20 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const [previewImage, setPreviewImage] = useState(null);
   const [activeHeading, setActiveHeading] = useState(null);
   const [isScrolling, setIsScrolling] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  
   const walineInstance = useRef(null);
   const contentRef = useRef(null);
   const observerRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
   const lastScrollPosition = useRef(0);
   const commentSectionRef = useRef(null);
-  const styleRef = useRef(null);
 
-  const checkMobile = useCallback(() => {
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+
+  const checkMobile = () => {
     setIsMobile(window.innerWidth < 768);
-  }, []);
+  };
 
   const smoothScrollTo = useCallback((position, callback) => {
     if (scrollTimeoutRef.current) {
@@ -238,7 +80,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       if (!startTime) startTime = currentTime;
       const timeElapsed = currentTime - startTime;
       const progress = Math.min(timeElapsed / duration, 1);
-      const easeProgress = 0.5 - Math.cos(progress * Math.PI) / 2;
+      const easeProgress = easeInOutCubic(progress);
       
       window.scrollTo(0, startPosition + (distance * easeProgress));
       
@@ -247,6 +89,10 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       } else {
         if (callback) callback();
       }
+    };
+
+    const easeInOutCubic = (t) => {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
     };
 
     setIsScrolling(true);
@@ -261,237 +107,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     smoothScrollTo(targetPosition);
   }, [smoothScrollTo]);
 
-  const highlightText = useCallback((text, query) => {
-    if (!query) return text;
-    const regex = new RegExp(`(${query})`, 'gi');
-    return text.replace(regex, '<span class="search-highlight">$1</span>');
-  }, []);
-
-  const openSearch = useCallback(() => {
-    setIsSearchOpen(true);
-    setTimeout(() => {
-      document.getElementById('search-input')?.focus();
-    }, 100);
-  }, []);
-
-  const closeSearch = useCallback(() => {
-    setIsSearchOpen(false);
-    setSearchQuery('');
-    setSearchResults([]);
-  }, []);
-
-  const handleSearchResultClick = useCallback((slug) => {
-    closeSearch();
-    router.push(`/posts/${slug}`);
-  }, [closeSearch, router]);
-
-  const toggleDarkMode = useCallback(async () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    localStorage.setItem('darkMode', newDarkMode);
-    document.documentElement.classList.toggle('dark', newDarkMode);
-
-    await loadHighlightJS(newDarkMode);
-    initializeWaline();
-  }, [isDarkMode]);
-
-  const scrollToHeading = useCallback((id, smooth = true) => {
-    const targetElement = document.getElementById(id);
-    if (!targetElement) return;
-
-    const offset = 100;
-    const elementPosition = targetElement.getBoundingClientRect().top;
-    const offsetPosition = elementPosition + window.pageYOffset - offset;
-
-    if (smooth) {
-      smoothScrollTo(offsetPosition, () => {
-        const finalPosition = targetElement.getBoundingClientRect().top;
-        if (finalPosition < offset) {
-          window.scrollBy({
-            top: finalPosition - offset,
-            behavior: 'auto'
-          });
-        }
-      });
-    } else {
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'auto'
-      });
-    }
-
-    window.history.replaceState(null, '', `#${id}`);
-    targetElement.setAttribute('tabindex', '-1');
-    targetElement.focus();
-    setActiveHeading(id);
-  }, [smoothScrollTo]);
-
-  const handleTocClick = useCallback((e, id) => {
-    e.preventDefault();
-    scrollToHeading(id);
-  }, [scrollToHeading]);
-
-  const closePreview = useCallback(() => {
-    setPreviewImage(null);
-  }, []);
-
-  const loadHighlightJS = useCallback((isDark) => {
-    return new Promise((resolve) => {
-      const existingTheme = document.querySelector('#hljs-theme');
-      if (existingTheme) existingTheme.remove();
-
-      const theme = document.createElement('link');
-      theme.id = 'hljs-theme';
-      theme.rel = 'stylesheet';
-      theme.href = isDark
-        ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
-        : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
-      
-      theme.onload = () => {
-        if (window.hljs) {
-          window.hljs.highlightAll();
-        }
-        resolve();
-      };
-      document.head.appendChild(theme);
-    });
-  }, []);
-
-  const initializeWaline = useCallback(async () => {
-    if (walineInstance.current) {
-      walineInstance.current.destroy();
-      walineInstance.current = null;
-    }
-
-    if (!document.querySelector('#waline-css')) {
-      const link = document.createElement('link');
-      link.id = 'waline-css';
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
-      document.head.appendChild(link);
-    }
-
-    if (typeof window.Waline === 'undefined') {
-      await new Promise((resolve) => {
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
-        script.onload = resolve;
-        document.body.appendChild(script);
-      });
-    }
-
-    walineInstance.current = window.Waline.init({
-      el: '#waline-comment-container',
-      serverURL: 'https://comment.mrzxr.top/',
-      dark: 'html.dark',
-      path: router.asPath,
-      locale: { placeholder: '欢迎留言讨论...' },
-    });
-  }, [router.asPath]);
-
-  const setupHeadingObserver = useCallback(() => {
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-    }
-
-    const headings = contentRef.current?.querySelectorAll('h1, h2');
-    if (!headings || headings.length === 0) return;
-
-    const options = {
-      root: null,
-      rootMargin: '-100px 0px -50% 0px',
-      threshold: 0.5
-    };
-
-    observerRef.current = new IntersectionObserver((entries) => {
-      if (isScrolling) return;
-
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          setActiveHeading(entry.target.id);
-          
-          const currentScroll = window.pageYOffset;
-          if (currentScroll < lastScrollPosition.current) {
-            const headingTop = entry.target.getBoundingClientRect().top;
-            if (headingTop < 100) {
-              const scrollTo = window.pageYOffset + headingTop - 100;
-              window.scrollTo({
-                top: scrollTo,
-                behavior: 'smooth'
-              });
-            }
-          }
-          lastScrollPosition.current = currentScroll;
-        }
-      });
-    }, options);
-
-    headings.forEach(heading => {
-      observerRef.current.observe(heading);
-    });
-  }, [isScrolling]);
-
-  const generateToc = useCallback(() => {
-    if (contentRef.current) {
-      const headings = contentRef.current.querySelectorAll('h1, h2');
-      const tocItems = [];
-
-      headings.forEach((heading) => {
-        const id = heading.id || heading.textContent.toLowerCase().replace(/\s+/g, '-');
-        if (!heading.id) {
-          heading.id = id;
-        }
-        
-        tocItems.push({
-          level: heading.tagName.toLowerCase(),
-          text: heading.textContent,
-          id,
-        });
-      });
-
-      setToc(tocItems);
-    }
-  }, []);
-
-  const setupImagePreview = useCallback(() => {
-    const articleImages = document.querySelectorAll('.prose img');
-    articleImages.forEach(img => {
-      img.addEventListener('click', () => {
-        setPreviewImage(img.src);
-      });
-    });
-  }, []);
-
-  const setupHeadingAnchors = useCallback(() => {
-    if (contentRef.current) {
-      const headings = contentRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6');
-      
-      headings.forEach((heading) => {
-        if (!heading.id) {
-          const id = heading.textContent.toLowerCase().replace(/\s+/g, '-');
-          heading.id = id;
-        }
-      });
-    }
-  }, []);
-
-  const processCodeBlocks = useCallback(() => {
-    if (!contentRef.current) return;
-
-    const codeBlocks = contentRef.current.querySelectorAll('pre');
-    codeBlocks.forEach((pre) => {
-      if (pre.querySelector('.code-block-header')) return;
-      
-      const container = document.createElement('div');
-      container.innerHTML = pre.innerHTML;
-      pre.innerHTML = '';
-      pre.appendChild(container);
-    });
-  }, []);
-
   useEffect(() => {
-    styleRef.current = document.createElement('style');
-    styleRef.current.textContent = `
+    const style = document.createElement('style');
+    style.textContent = `
       .prose {
         max-width: 100%;
         width: 100%;
@@ -513,6 +131,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         transform: scale(1.02);
       }
       
+      /* Enhanced code block styles */
       .prose pre {
         position: relative;
         background-color: var(--color-code-bg);
@@ -531,6 +150,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         line-height: 1.6;
       }
 
+      /* Improved code block scrolling */
       .prose pre {
         overflow-x: auto;
       }
@@ -540,6 +160,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         padding-right: 1rem;
       }
 
+      /* Custom scrollbar for code blocks */
       .prose pre::-webkit-scrollbar {
         height: 6px;
         background-color: transparent;
@@ -620,11 +241,13 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         --color-code-btn-success: #28a745;
       }
 
+      /* Smart code block width handling */
       .prose pre {
         width: 100%;
         max-width: 100%;
       }
 
+      /* Table styles */
       .prose table {
         display: block;
         width: 100%;
@@ -889,6 +512,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         transform: translateY(0);
       }
 
+      /* Fixed layout styles */
       .main-content-container {
         max-width: 100%;
         width: 100%;
@@ -958,7 +582,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         color: #93c5fd;
       }
     `;
-    document.head.appendChild(styleRef.current);
+    document.head.appendChild(style);
 
     setIsMounted(true);
     checkMobile();
@@ -986,9 +610,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      if (styleRef.current) {
-        document.head.removeChild(styleRef.current);
-      }
+      document.head.removeChild(style);
       window.removeEventListener('resize', checkMobile);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('scroll', handleScroll);
@@ -999,68 +621,103 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         cancelAnimationFrame(scrollTimeoutRef.current);
       }
     };
-  }, [checkMobile, closeSearch, openSearch]);
-
-  useEffect(() => {
-    const initializePage = async () => {
-      const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-      setIsDarkMode(savedDarkMode);
-      document.documentElement.classList.toggle('dark', savedDarkMode);
-
-      await Promise.all([
-        loadHighlightJS(savedDarkMode),
-        initializeWaline(),
-        loadHLJSBase()
-      ]);
-
-      if (contentHtml) {
-        generateToc();
-        setupImagePreview();
-        setupHeadingAnchors();
-        processCodeBlocks();
-        
-        setTimeout(() => {
-          setupHeadingObserver();
-          if (window.location.hash) {
-            const id = window.location.hash.substring(1);
-            scrollToHeading(id, false);
-          }
-        }, 500);
-      }
-    };
-
-    const loadHLJSBase = () => {
-      if (!window.hljs) {
-        return new Promise((resolve) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
-          script.onload = () => resolve();
-          document.head.appendChild(script);
-        });
-      }
-      return Promise.resolve();
-    };
-
-    initializePage();
-  }, [
-    contentHtml,
-    generateToc,
-    initializeWaline,
-    loadHighlightJS,
-    processCodeBlocks,
-    scrollToHeading,
-    setupHeadingAnchors,
-    setupHeadingObserver,
-    setupImagePreview
-  ]);
-
-  useEffect(() => {
-    return () => {
-      if (walineInstance.current) {
-        walineInstance.current.destroy();
-      }
-    };
   }, []);
+
+  useEffect(() => {
+    if (!contentRef.current) return;
+
+    // Add copy buttons and handle code blocks
+    const codeBlocks = contentRef.current.querySelectorAll('pre');
+    codeBlocks.forEach((pre) => {
+      // Skip if already processed
+      if (pre.querySelector('.code-block-header')) return;
+
+      // Create copy button
+      const button = document.createElement('button');
+      button.className = 'copy-btn';
+      button.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+        </svg>
+        <span>复制</span>
+      `;
+
+      // Create header div
+      const header = document.createElement('div');
+      header.className = 'code-block-header';
+      
+      // Detect language (if specified in class)
+      const language = pre.className.match(/language-(\w+)/)?.[1] || '代码';
+      const languageSpan = document.createElement('span');
+      languageSpan.textContent = language;
+      
+      header.appendChild(languageSpan);
+      header.appendChild(button);
+      pre.insertBefore(header, pre.firstChild);
+
+      // Add copy functionality
+      button.addEventListener('click', () => {
+        const code = pre.querySelector('code')?.textContent || '';
+        navigator.clipboard.writeText(code).then(() => {
+          button.classList.add('copied');
+          button.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>已复制</span>
+          `;
+          setTimeout(() => {
+            button.classList.remove('copied');
+            button.innerHTML = `
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+              </svg>
+              <span>复制</span>
+            `;
+          }, 2000);
+        });
+      });
+    });
+
+    // Handle window resize to re-check overflow
+    const handleResize = () => {
+      const codeBlocks = contentRef.current?.querySelectorAll('pre') || [];
+      codeBlocks.forEach((pre) => {
+        const codeElement = pre.querySelector('code');
+        if (codeElement) {
+          // Force reflow to ensure proper width calculation
+          void codeElement.offsetWidth;
+        }
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [contentHtml]);
+
+  const highlightText = (text, query) => {
+    if (!query) return text;
+    const regex = new RegExp(`(${query})`, 'gi');
+    return text.replace(regex, '<span class="search-highlight">$1</span>');
+  };
+
+  const openSearch = () => {
+    setIsSearchOpen(true);
+    setTimeout(() => {
+      document.getElementById('search-input')?.focus();
+    }, 100);
+  };
+
+  const closeSearch = () => {
+    setIsSearchOpen(false);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  const handleSearchResultClick = (slug) => {
+    closeSearch();
+    router.push(`/posts/${slug}`);
+  };
 
   useEffect(() => {
     if (searchQuery.trim() === '') {
@@ -1083,7 +740,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     }));
 
     setSearchResults(results);
-  }, [searchQuery, allPostsData, highlightText]);
+  }, [searchQuery, allPostsData]);
 
   useEffect(() => {
     const handleRouteChangeStart = () => {
@@ -1102,6 +759,245 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       router.events.off('routeChangeComplete', handleRouteChangeComplete);
     };
   }, [router]);
+
+  const loadHighlightJS = (isDark) => {
+    return new Promise((resolve) => {
+      const existingTheme = document.querySelector('#hljs-theme');
+      if (existingTheme) existingTheme.remove();
+
+      const theme = document.createElement('link');
+      theme.id = 'hljs-theme';
+      theme.rel = 'stylesheet';
+      theme.href = isDark
+        ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
+        : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
+      
+      theme.onload = () => {
+        if (window.hljs) {
+          window.hljs.highlightAll();
+        }
+        resolve();
+      };
+      document.head.appendChild(theme);
+    });
+  };
+
+  const initializeWaline = async () => {
+    if (walineInstance.current) {
+      walineInstance.current.destroy();
+      walineInstance.current = null;
+    }
+
+    if (!document.querySelector('#waline-css')) {
+      const link = document.createElement('link');
+      link.id = 'waline-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
+      document.head.appendChild(link);
+    }
+
+    if (typeof window.Waline === 'undefined') {
+      await new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
+        script.onload = resolve;
+        document.body.appendChild(script);
+      });
+    }
+
+    walineInstance.current = window.Waline.init({
+      el: '#waline-comment-container',
+      serverURL: 'https://comment.mrzxr.top/',
+      dark: 'html.dark',
+      path: router.asPath,
+      locale: { placeholder: '欢迎留言讨论...' },
+    });
+  };
+
+  const toggleDarkMode = async () => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    localStorage.setItem('darkMode', newDarkMode);
+    document.documentElement.classList.toggle('dark', newDarkMode);
+
+    await loadHighlightJS(newDarkMode);
+    initializeWaline();
+  };
+
+  useEffect(() => {
+    return () => {
+      if (walineInstance.current) {
+        walineInstance.current.destroy();
+      }
+    };
+  }, []);
+
+  const setupHeadingObserver = useCallback(() => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    const headings = contentRef.current?.querySelectorAll('h1, h2');
+    if (!headings || headings.length === 0) return;
+
+    const options = {
+      root: null,
+      rootMargin: '-100px 0px -50% 0px',
+      threshold: 0.5
+    };
+
+    observerRef.current = new IntersectionObserver((entries) => {
+      if (isScrolling) return;
+
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setActiveHeading(entry.target.id);
+          
+          const currentScroll = window.pageYOffset;
+          if (currentScroll < lastScrollPosition.current) {
+            const headingTop = entry.target.getBoundingClientRect().top;
+            if (headingTop < 100) {
+              const scrollTo = window.pageYOffset + headingTop - 100;
+              window.scrollTo({
+                top: scrollTo,
+                behavior: 'smooth'
+              });
+            }
+          }
+          lastScrollPosition.current = currentScroll;
+        }
+      });
+    }, options);
+
+    headings.forEach(heading => {
+      observerRef.current.observe(heading);
+    });
+  }, [isScrolling]);
+
+  useEffect(() => {
+    const initializePage = async () => {
+      const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+      setIsDarkMode(savedDarkMode);
+      document.documentElement.classList.toggle('dark', savedDarkMode);
+
+      await Promise.all([
+        loadHighlightJS(savedDarkMode),
+        initializeWaline(),
+        loadHLJSBase()
+      ]);
+
+      if (contentHtml) {
+        generateToc();
+        setupImagePreview();
+        setupHeadingAnchors();
+        setTimeout(() => {
+          setupHeadingObserver();
+          if (window.location.hash) {
+            const id = window.location.hash.substring(1);
+            scrollToHeading(id, false);
+          }
+        }, 500);
+      }
+    };
+
+    const loadHLJSBase = () => {
+      if (!window.hljs) {
+        return new Promise((resolve) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
+          script.onload = () => resolve();
+          document.head.appendChild(script);
+        });
+      }
+      return Promise.resolve();
+    };
+
+    const setupImagePreview = () => {
+      const articleImages = document.querySelectorAll('.prose img');
+      articleImages.forEach(img => {
+        img.addEventListener('click', () => {
+          setPreviewImage(img.src);
+        });
+      });
+    };
+
+    const setupHeadingAnchors = () => {
+      if (contentRef.current) {
+        const headings = contentRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6');
+        
+        headings.forEach((heading) => {
+          if (!heading.id) {
+            const id = heading.textContent.toLowerCase().replace(/\s+/g, '-');
+            heading.id = id;
+          }
+        });
+      }
+    };
+
+    initializePage();
+  }, [contentHtml, setupHeadingObserver]);
+
+  const generateToc = () => {
+    if (contentRef.current) {
+      const headings = contentRef.current.querySelectorAll('h1, h2');
+      const tocItems = [];
+
+      headings.forEach((heading) => {
+        const id = heading.id || heading.textContent.toLowerCase().replace(/\s+/g, '-');
+        if (!heading.id) {
+          heading.id = id;
+        }
+        
+        tocItems.push({
+          level: heading.tagName.toLowerCase(),
+          text: heading.textContent,
+          id,
+        });
+      });
+
+      setToc(tocItems);
+    }
+  };
+
+  const scrollToHeading = useCallback((id, smooth = true) => {
+    const targetElement = document.getElementById(id);
+    if (!targetElement) return;
+
+    const offset = 100;
+    const elementPosition = targetElement.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+    if (smooth) {
+      smoothScrollTo(offsetPosition, () => {
+        const finalPosition = targetElement.getBoundingClientRect().top;
+        if (finalPosition < offset) {
+          window.scrollBy({
+            top: finalPosition - offset,
+            behavior: 'auto'
+          });
+        }
+      });
+    } else {
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'auto'
+      });
+    }
+
+    window.history.replaceState(null, '', `#${id}`);
+    targetElement.setAttribute('tabindex', '-1');
+    targetElement.focus();
+    setActiveHeading(id);
+  }, [smoothScrollTo]);
+
+  const handleTocClick = (e, id) => {
+    e.preventDefault();
+    scrollToHeading(id);
+  };
+
+  const closePreview = () => {
+    setPreviewImage(null);
+  };
 
   return (
     <>
@@ -1159,14 +1055,58 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </div>
       </nav>
 
-      <SearchModal
-        isOpen={isSearchOpen}
-        onClose={closeSearch}
-        query={searchQuery}
-        onQueryChange={setSearchQuery}
-        results={searchResults}
-        onResultClick={handleSearchResultClick}
-      />
+      {isSearchOpen && (
+        <div className="search-modal">
+          <div className="search-container">
+            <div className="search-header">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                id="search-input"
+                type="text"
+                className="search-input"
+                placeholder="搜索文章..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoComplete="off"
+              />
+              <button className="search-close" onClick={closeSearch}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="search-results">
+              {searchResults.length > 0 ? (
+                searchResults.map((post) => (
+                  <div
+                    key={post.slug}
+                    className="search-result-item"
+                    onClick={() => handleSearchResultClick(post.slug)}
+                  >
+                    <h3 
+                      className="search-result-title"
+                      dangerouslySetInnerHTML={{ __html: post.highlightedTitle }}
+                    />
+                    {post.highlightedExcerpt && (
+                      <p 
+                        className="search-result-excerpt"
+                        dangerouslySetInnerHTML={{ __html: post.highlightedExcerpt }}
+                      />
+                    )}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{post.date}</p>
+                  </div>
+                ))
+              ) : searchQuery ? (
+                <div className="no-results">没有找到匹配的文章</div>
+              ) : (
+                <div className="no-results">输入关键词搜索文章</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className={`fixed inset-0 z-50 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
         <div 
@@ -1286,7 +1226,25 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
                 <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">推荐文章</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {recommendedPosts.map((post) => (
-                    <RecommendedPost key={post.slug} post={post} />
+                    <Link key={post.slug} href={`/posts/${post.slug}`} legacyBehavior>
+                      <a className="block bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition transform hover:scale-105">
+                        {post.cover && (
+                          <div className="w-full h-48">
+                            <img
+                              src={post.cover}
+                              alt={post.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="p-6">
+                          <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+                            {post.title}
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{post.date}</p>
+                        </div>
+                      </a>
+                    </Link>
                   ))}
                 </div>
               </section>
@@ -1328,12 +1286,18 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
               <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
               <ul className="space-y-2">
                 {toc.map((item) => (
-                  <TocItem 
-                    key={item.id} 
-                    item={item} 
-                    activeId={activeHeading} 
-                    onClick={handleTocClick} 
-                  />
+                  <li key={item.id}>
+                    <a
+                      href={`#${item.id}`}
+                      onClick={(e) => handleTocClick(e, item.id)}
+                      className={`toc-item ${item.level} ${
+                        activeHeading === item.id ? 'active' : ''
+                      }`}
+                      aria-current={activeHeading === item.id ? 'location' : undefined}
+                    >
+                      {item.text}
+                    </a>
+                  </li>
                 ))}
               </ul>
             </div>
@@ -1343,3 +1307,22 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     </>
   );
 }
+
+const NavLink = ({ href, children }) => (
+  <Link href={href} passHref>
+    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+      {children}
+    </a>
+  </Link>
+);
+
+const MobileNavLink = ({ href, children, onClick }) => (
+  <Link href={href} passHref>
+    <a 
+      onClick={onClick}
+      className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+    >
+      {children}
+    </a>
+  </Link>
+);
