@@ -51,69 +51,16 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const [previewImage, setPreviewImage] = useState(null);
   const [activeHeading, setActiveHeading] = useState(null);
   const [isScrolling, setIsScrolling] = useState(false);
-  const [loadedContent, setLoadedContent] = useState('');
-  const [isContentFullyLoaded, setIsContentFullyLoaded] = useState(false);
   const walineInstance = useRef(null);
   const contentRef = useRef(null);
   const observerRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
   const lastScrollPosition = useRef(0);
   const commentSectionRef = useRef(null);
-  const contentChunks = useRef([]);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-
-  // 初始化内容分块
-  const initializeContentChunks = useCallback(() => {
-    if (!contentHtml) return;
-    
-    // 使用临时div来解析HTML内容
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = contentHtml;
-    
-    // 获取所有顶级元素
-    const elements = Array.from(tempDiv.children);
-    const chunkSize = Math.ceil(elements.length / 2); // 分成两部分
-    
-    // 创建分块
-    contentChunks.current = [
-      elements.slice(0, chunkSize).map(el => el.outerHTML).join(''),
-      elements.slice(chunkSize).map(el => el.outerHTML).join('')
-    ];
-    
-    // 初始加载第一部分
-    setLoadedContent(contentChunks.current[0]);
-  }, [contentHtml]);
-
-  // 加载剩余内容
-  const loadRemainingContent = useCallback(() => {
-    if (isContentFullyLoaded || !contentChunks.current[1]) return;
-    
-    setLoadedContent(prev => prev + contentChunks.current[1]);
-    setIsContentFullyLoaded(true);
-  }, [isContentFullyLoaded]);
-
-  // 检查是否应该加载剩余内容
-  useEffect(() => {
-    if (!isMounted || isContentFullyLoaded) return;
-    
-    const handleScroll = () => {
-      if (isContentFullyLoaded) return;
-      
-      // 当用户滚动到页面60%位置时加载剩余内容
-      const scrollPosition = window.scrollY + window.innerHeight;
-      const pageHeight = document.documentElement.scrollHeight;
-      
-      if (scrollPosition > pageHeight * 0.6) {
-        loadRemainingContent();
-      }
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isMounted, isContentFullyLoaded, loadRemainingContent]);
 
   const checkMobile = () => {
     setIsMobile(window.innerWidth < 768);
@@ -634,32 +581,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         background-color: #1e40af;
         color: #93c5fd;
       }
-
-      /* Loading indicator styles */
-      .loading-indicator {
-        display: flex;
-        justify-content: center;
-        padding: 1rem;
-        margin: 2rem 0;
-      }
-      
-      .loading-spinner {
-        width: 40px;
-        height: 40px;
-        border: 4px solid rgba(59, 130, 246, 0.2);
-        border-radius: 50%;
-        border-top-color: #3b82f6;
-        animation: spin 1s ease-in-out infinite;
-      }
-      
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-      
-      .dark .loading-spinner {
-        border-top-color: #60a5fa;
-        border-color: rgba(96, 165, 250, 0.2);
-      }
     `;
     document.head.appendChild(style);
 
@@ -703,17 +624,15 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   }, []);
 
   useEffect(() => {
-    initializeContentChunks();
-  }, [contentHtml, initializeContentChunks]);
+    if (!contentRef.current) return;
 
-  useEffect(() => {
-    if (!contentRef.current || !loadedContent) return;
-
-    // 处理代码块
+    // Add copy buttons and handle code blocks
     const codeBlocks = contentRef.current.querySelectorAll('pre');
     codeBlocks.forEach((pre) => {
+      // Skip if already processed
       if (pre.querySelector('.code-block-header')) return;
 
+      // Create copy button
       const button = document.createElement('button');
       button.className = 'copy-btn';
       button.innerHTML = `
@@ -723,9 +642,11 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         <span>复制</span>
       `;
 
+      // Create header div
       const header = document.createElement('div');
       header.className = 'code-block-header';
       
+      // Detect language (if specified in class)
       const language = pre.className.match(/language-(\w+)/)?.[1] || '代码';
       const languageSpan = document.createElement('span');
       languageSpan.textContent = language;
@@ -734,6 +655,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       header.appendChild(button);
       pre.insertBefore(header, pre.firstChild);
 
+      // Add copy functionality
       button.addEventListener('click', () => {
         const code = pre.querySelector('code')?.textContent || '';
         navigator.clipboard.writeText(code).then(() => {
@@ -757,23 +679,13 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       });
     });
 
-    // 生成目录
-    generateToc();
-
-    // 处理图片预览
-    const articleImages = document.querySelectorAll('.prose img');
-    articleImages.forEach(img => {
-      img.addEventListener('click', () => {
-        setPreviewImage(img.src);
-      });
-    });
-
-    // 处理窗口大小变化
+    // Handle window resize to re-check overflow
     const handleResize = () => {
       const codeBlocks = contentRef.current?.querySelectorAll('pre') || [];
       codeBlocks.forEach((pre) => {
         const codeElement = pre.querySelector('code');
         if (codeElement) {
+          // Force reflow to ensure proper width calculation
           void codeElement.offsetWidth;
         }
       });
@@ -781,7 +693,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [loadedContent]);
+  }, [contentHtml]);
 
   const highlightText = (text, query) => {
     if (!query) return text;
@@ -974,7 +886,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         loadHLJSBase()
       ]);
 
-      if (loadedContent) {
+      if (contentHtml) {
+        generateToc();
+        setupImagePreview();
         setupHeadingAnchors();
         setTimeout(() => {
           setupHeadingObserver();
@@ -998,6 +912,15 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       return Promise.resolve();
     };
 
+    const setupImagePreview = () => {
+      const articleImages = document.querySelectorAll('.prose img');
+      articleImages.forEach(img => {
+        img.addEventListener('click', () => {
+          setPreviewImage(img.src);
+        });
+      });
+    };
+
     const setupHeadingAnchors = () => {
       if (contentRef.current) {
         const headings = contentRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6');
@@ -1012,7 +935,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
 
     initializePage();
-  }, [loadedContent, setupHeadingObserver]);
+  }, [contentHtml, setupHeadingObserver]);
 
   const generateToc = () => {
     if (contentRef.current) {
@@ -1293,14 +1216,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
                 )}
                 <div
                   className="text-gray-700 dark:text-gray-300 w-full"
-                  dangerouslySetInnerHTML={{ __html: loadedContent }}
+                  dangerouslySetInnerHTML={{ __html: contentHtml }}
                 />
-                
-                {!isContentFullyLoaded && (
-                  <div className="loading-indicator">
-                    <div className="loading-spinner"></div>
-                  </div>
-                )}
               </article>
             </div>
 
