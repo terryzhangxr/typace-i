@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+
+        import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../../lib/posts';
 import fs from 'fs'; 
@@ -57,7 +58,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const scrollTimeoutRef = useRef(null);
   const lastScrollPosition = useRef(0);
   const commentSectionRef = useRef(null);
-  const pageContainerRef = useRef(null);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -503,24 +503,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         height: 24px;
       }
 
-      /* Page transition styles */
-      .page-enter {
-        opacity: 0;
-        transform: translateY(-100px);
-      }
-      .page-enter-active {
-        opacity: 1;
-        transform: translateY(0);
-        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      .page-exit {
-        opacity: 1;
-        transform: translateY(0);
-      }
-      .page-exit-active {
+      .page-container {
         opacity: 0;
         transform: translateY(100px);
         transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .page-container.mounted {
+        opacity: 1;
+        transform: translateY(0);
       }
 
       /* Fixed layout styles */
@@ -1186,9 +1176,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </svg>
       </button>
 
-      <div className={`min-h-screen p-8 pt-24 relative z-10 bg-white dark:bg-gray-900 ${
-        isMounted ? 'page-enter-active' : 'page-enter'
-      }`} ref={pageContainerRef}>
+      <div className={`min-h-screen p-8 pt-24 relative z-10 bg-white dark:bg-gray-900 page-container ${
+        isMounted ? 'mounted' : ''
+      }`}>
         <Head>
           <title>{frontmatter.title} - Typace</title>
         </Head>
