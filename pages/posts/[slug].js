@@ -161,6 +161,26 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     smoothScrollTo(targetPosition);
   }, [smoothScrollTo]);
 
+  const generateToc = useCallback(() => {
+    if (typeof document === 'undefined') return;
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(contentHtml, 'text/html');
+    const headings = doc.querySelectorAll('h1, h2');
+    const tocItems = [];
+
+    headings.forEach((heading) => {
+      const id = heading.id || heading.textContent.toLowerCase().replace(/\s+/g, '-');
+      tocItems.push({
+        level: heading.tagName.toLowerCase(),
+        text: heading.textContent,
+        id,
+      });
+    });
+
+    setToc(tocItems);
+  }, [contentHtml]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -986,6 +1006,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   }, [isFullContentLoaded]);
 
   useEffect(() => {
+    // Generate TOC immediately when component mounts
+    generateToc();
+
     const initializePage = async () => {
       if (typeof window === 'undefined') return;
 
@@ -1005,7 +1028,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       ]);
 
       if (contentHtml) {
-        generateToc();
         setupImagePreview();
         setupHeadingAnchors();
         setTimeout(() => {
@@ -1056,7 +1078,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
 
     initializePage();
-  }, [contentHtml, setupHeadingObserver, setupLazyLoadObserver, splitContent]);
+  }, [contentHtml, setupHeadingObserver, setupLazyLoadObserver, splitContent, generateToc]);
 
   useEffect(() => {
     if (isFullContentLoaded) {
@@ -1071,28 +1093,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       setupHeadingObserver();
     }
   }, [isFullContentLoaded, contentHtml, splitContent, setupHeadingObserver]);
-
-  const generateToc = () => {
-    if (contentRef.current) {
-      const headings = contentRef.current.querySelectorAll('h1, h2');
-      const tocItems = [];
-
-      headings.forEach((heading) => {
-        const id = heading.id || heading.textContent.toLowerCase().replace(/\s+/g, '-');
-        if (!heading.id) {
-          heading.id = id;
-        }
-        
-        tocItems.push({
-          level: heading.tagName.toLowerCase(),
-          text: heading.textContent,
-          id,
-        });
-      });
-
-      setToc(tocItems);
-    }
-  };
 
   const scrollToHeading = useCallback((id, smooth = true) => {
     if (typeof window === 'undefined') return;
