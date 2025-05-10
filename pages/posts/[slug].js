@@ -51,16 +51,46 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const [previewImage, setPreviewImage] = useState(null);
   const [activeHeading, setActiveHeading] = useState(null);
   const [isScrolling, setIsScrolling] = useState(false);
+  const [isContentLoaded, setIsContentLoaded] = useState(false);
+  const [isFullContentLoaded, setIsFullContentLoaded] = useState(false);
+  const [visibleContentHtml, setVisibleContentHtml] = useState('');
   const walineInstance = useRef(null);
   const contentRef = useRef(null);
   const observerRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
   const lastScrollPosition = useRef(0);
   const commentSectionRef = useRef(null);
+  const lazyLoadObserverRef = useRef(null);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+
+  // 分割文章内容为两部分
+  const splitContent = useCallback((html) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const body = doc.body;
+    const totalHeight = body.scrollHeight;
+    const halfHeight = totalHeight / 2;
+    
+    let currentHeight = 0;
+    let splitIndex = 0;
+    const elements = Array.from(body.children);
+    
+    for (let i = 0; i < elements.length; i++) {
+      currentHeight += elements[i].scrollHeight;
+      if (currentHeight >= halfHeight) {
+        splitIndex = i;
+        break;
+      }
+    }
+    
+    const firstPart = elements.slice(0, splitIndex + 1).map(el => el.outerHTML).join('');
+    const secondPart = elements.slice(splitIndex + 1).map(el => el.outerHTML).join('');
+    
+    return { firstPart, secondPart };
+  }, []);
 
   const checkMobile = () => {
     setIsMobile(window.innerWidth < 768);
@@ -581,6 +611,22 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         background-color: #1e40af;
         color: #93c5fd;
       }
+
+      /* Lazy load placeholder */
+      .lazy-load-placeholder {
+        padding: 2rem 0;
+        text-align: center;
+        color: #6b7280;
+        font-size: 1rem;
+      }
+      .dark .lazy-load-placeholder {
+        color: #9ca3af;
+      }
+      .lazy-load-trigger {
+        height: 1px;
+        width: 100%;
+        visibility: hidden;
+      }
     `;
     document.head.appendChild(style);
 
@@ -616,6 +662,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       window.removeEventListener('scroll', handleScroll);
       if (observerRef.current) {
         observerRef.current.disconnect();
+      }
+      if (lazyLoadObserverRef.current) {
+        lazyLoadObserverRef.current.disconnect();
       }
       if (scrollTimeoutRef.current) {
         cancelAnimationFrame(scrollTimeoutRef.current);
@@ -693,7 +742,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [contentHtml]);
+  }, [contentHtml, isFullContentLoaded]);
 
   const highlightText = (text, query) => {
     if (!query) return text;
@@ -874,11 +923,45 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     });
   }, [isScrolling]);
 
+  // 设置懒加载观察器
+  const setupLazyLoadObserver = useCallback(() => {
+    if (lazyLoadObserverRef.current) {
+      lazyLoadObserverRef.current.disconnect();
+    }
+
+    const triggerElement = document.querySelector('.lazy-load-trigger');
+    if (!triggerElement) return;
+
+    const options = {
+      root: null,
+      rootMargin: '200px 0px',
+      threshold: 0.1
+    };
+
+    lazyLoadObserverRef.current = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !isFullContentLoaded) {
+          setIsFullContentLoaded(true);
+          if (lazyLoadObserverRef.current) {
+            lazyLoadObserverRef.current.disconnect();
+          }
+        }
+      });
+    }, options);
+
+    lazyLoadObserverRef.current.observe(triggerElement);
+  }, [isFullContentLoaded]);
+
   useEffect(() => {
     const initializePage = async () => {
       const savedDarkMode = localStorage.getItem('darkMode') === 'true';
       setIsDarkMode(savedDarkMode);
       document.documentElement.classList.toggle('dark', savedDarkMode);
+
+      // 分割内容为两部分
+      const { firstPart } = splitContent(contentHtml);
+      setVisibleContentHtml(firstPart);
+      setIsContentLoaded(true);
 
       await Promise.all([
         loadHighlightJS(savedDarkMode),
@@ -892,6 +975,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         setupHeadingAnchors();
         setTimeout(() => {
           setupHeadingObserver();
+          setupLazyLoadObserver(); // 初始化懒加载观察器
           if (window.location.hash) {
             const id = window.location.hash.substring(1);
             scrollToHeading(id, false);
@@ -935,7 +1019,26 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
 
     initializePage();
-  }, [contentHtml, setupHeadingObserver]);
+  }, [contentHtml, setupHeadingObserver, setupLazyLoadObserver, splitContent]);
+
+  // 当完整内容加载后，更新内容
+  useEffect(() => {
+    if (isFullContentLoaded) {
+      const { firstPart, secondPart } = splitContent(contentHtml);
+      setVisibleContentHtml(firstPart + secondPart);
+      
+      // 重新设置代码块高亮
+      if (window.hljs) {
+        window.hljs.highlightAll();
+      }
+      
+      // 重新设置图片预览
+      setupImagePreview();
+      
+      // 重新设置目录观察器
+      setupHeadingObserver();
+    }
+  }, [isFullContentLoaded, contentHtml, splitContent, setupHeadingObserver]);
 
   const generateToc = () => {
     if (contentRef.current) {
@@ -1216,8 +1319,17 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
                 )}
                 <div
                   className="text-gray-700 dark:text-gray-300 w-full"
-                  dangerouslySetInnerHTML={{ __html: contentHtml }}
+                  dangerouslySetInnerHTML={{ __html: isContentLoaded ? visibleContentHtml : '' }}
                 />
+                
+                {!isFullContentLoaded && isContentLoaded && (
+                  <>
+                    <div className="lazy-load-placeholder">
+                      继续滚动以加载剩余内容...
+                    </div>
+                    <div className="lazy-load-trigger" />
+                  </>
+                )}
               </article>
             </div>
 
