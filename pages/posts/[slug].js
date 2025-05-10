@@ -712,7 +712,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       const button = document.createElement('button');
       button.className = 'copy-btn';
       button.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg  " fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="<url id="d0fe7ofpfah3vvm78q20" type="url" status="failed" title="" wc="0">http://www.w3.org/2000/svg</url> " fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
         </svg>
         <span>复制</span>
@@ -737,7 +737,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         navigator.clipboard.writeText(code).then(() => {
           button.classList.add('copied');
           button.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg  " fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="<url id="d0fe7ofpfah3vvm78q20" type="url" status="failed" title="" wc="0">http://www.w3.org/2000/svg</url> " fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
             <span>已复制</span>
@@ -745,7 +745,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           setTimeout(() => {
             button.classList.remove('copied');
             button.innerHTML = `
-              <svg xmlns="http://www.w3.org/2000/svg  " fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="<url id="d0fe7ofpfah3vvm78q20" type="url" status="failed" title="" wc="0">http://www.w3.org/2000/svg</url> " fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
               </svg>
               <span>复制</span>
@@ -847,8 +847,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       theme.id = 'hljs-theme';
       theme.rel = 'stylesheet';
       theme.href = isDark
-        ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css  '
-        : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css  ';
+        ? '<url id="d0fe7ofpfah3vvm78pt0" type="url" status="failed" title="" wc="0">https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css</url> '
+        : '<url id="d0fe7ofpfah3vvm78ptg" type="url" status="failed" title="" wc="0">https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css</url> ';
       
       theme.onload = () => {
         if (window.hljs) {
@@ -872,14 +872,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       const link = document.createElement('link');
       link.id = 'waline-css';
       link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css  ';
+      link.href = '<url id="d0fe7ofpfah3vvm78pu0" type="url" status="failed" title="" wc="0">https://unpkg.com/@waline/client@v2/dist/waline.css</url> ';
       document.head.appendChild(link);
     }
 
     if (typeof window.Waline === 'undefined') {
       await new Promise((resolve) => {
         const script = document.createElement('script');
-        script.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js  ';
+        script.src = '<url id="d0fe7ofpfah3vvm78pug" type="url" status="parsed" title="" wc="163633">https://unpkg.com/@waline/client@v2/dist/waline.js</url> ';
         script.onload = resolve;
         document.body.appendChild(script);
       });
@@ -887,7 +887,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
     walineInstance.current = window.Waline.init({
       el: '#waline-comment-container',
-      serverURL: 'https://comment.mrzxr.top/  ',
+      serverURL: '<url id="d0fe7ofpfah3vvm78pv0" type="url" status="parsed" title="Waline Example" wc="580">https://comment.mrzxr.top/</url> ',
       dark: 'html.dark',
       path: router.asPath,
       locale: { placeholder: '欢迎留言讨论...' },
@@ -1026,7 +1026,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       if (!window.hljs) {
         return new Promise((resolve) => {
           const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js  ';
+          script.src = '<url id="d0fe7ofpfah3vvm78pvg" type="url" status="failed" title="" wc="0">https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js</url> ';
           script.onload = () => resolve();
           document.head.appendChild(script);
         });
@@ -1168,7 +1168,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
                 className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors p-2"
                 title="搜索 (Ctrl+K)"
               >
-                <svg xmlns="http://www.w3.org/2000/svg  " className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="<url id="d0fe7ofpfah3vvm78q20" type="url" status="failed" title="" wc="0">http://www.w3.org/2000/svg</url> " className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </button>
@@ -1186,7 +1186,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
                 className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 title="搜索"
               >
-                <svg xmlns="http://www.w3.org/2000/svg  " className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="<url id="d0fe7ofpfah3vvm78q20" type="url" status="failed" title="" wc="0">http://www.w3.org/2000/svg</url> " className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </button>
@@ -1207,7 +1207,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         <div className="search-modal">
           <div className="search-container">
             <div className="search-header">
-              <svg xmlns="http://www.w3.org/2000/svg  " className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="<url id="d0fe7ofpfah3vvm78q20" type="url" status="failed" title="" wc="0">http://www.w3.org/2000/svg</url> " className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
@@ -1220,7 +1220,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
                 autoComplete="off"
               />
               <button className="search-close" onClick={closeSearch}>
-                <svg xmlns="http://www.w3.org/2000/svg  " className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="<url id="d0fe7ofpfah3vvm78q20" type="url" status="failed" title="" wc="0">http://www.w3.org/2000/svg</url> " className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -1318,7 +1318,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         onClick={scrollToComments}
         aria-label="滚动到评论区"
       >
-        <svg xmlns="http://www.w3.org/2000/svg  " fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="<url id="d0fe7ofpfah3vvm78q20" type="url" status="failed" title="" wc="0">http://www.w3.org/2000/svg</url> " fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
       </button>
@@ -1420,7 +1420,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             <footer className="text-center mt-12">
               <a href="/api/sitemap" className="inline-block">
                 <img
-                  src="https://cdn.us.mrche.top/sitemap.svg  "
+                  src="<url id="d0fe7ofpfah3vvm78q2g" type="url" status="failed" title="" wc="0">https://cdn.us.mrche.top/sitemap.svg</url> "
                   alt="Sitemap"
                   className="block mx-auto w-8 h-8 dark:invert"
                 />
@@ -1428,7 +1428,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
               <p className="mt-4 text-gray-600 dark:text-gray-400">
                 由Terryzhang&mrche创建的
                 <a
-                  href="https://bgithub.xyz/terryzhangxr/typace-i  "
+                  href="<url id="d0fe7ofpfah3vvm78q30" type="url" status="failed" title="" wc="0">https://bgithub.xyz/terryzhangxr/typace-i</url> "
                   className="text-blue-600 hover:underline dark:text-blue-400"
                 >
                   Typace
@@ -1464,4 +1464,3 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     </>
   );
 }
-```
