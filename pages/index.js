@@ -11,7 +11,35 @@ const POSTS_PER_PAGE = 5;
 const addDynamicStyles = () => {
   const style = document.createElement('style');
   style.textContent = `
-    /* 新增分页样式 */
+    /* 页面切换动画 */
+    .page-transition-container {
+      position: relative;
+      min-height: 100vh;
+    }
+    
+    /* 页面离开动画 - 向下移动 */
+    .page-exit {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .page-exit-active {
+      opacity: 0;
+      transform: translateY(100px);
+      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* 页面进入动画 - 从上方进入 */
+    .page-enter {
+      opacity: 0;
+      transform: translateY(-100px);
+    }
+    .page-enter-active {
+      opacity: 1;
+      transform: translateY(0);
+      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* 分页样式 */
     .pagination {
       display: flex;
       justify-content: center;
@@ -60,28 +88,6 @@ const addDynamicStyles = () => {
       border-color: #3b82f6;
     }
 
-    /* 页面切换动画 */
-    .page-transition {
-      opacity: 1;
-      transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-    }
-    .page-transition-exit {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    .page-transition-exit-active {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    .page-transition-enter {
-      opacity: 0;
-      transform: translateY(-20px);
-    }
-    .page-transition-enter-active {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
     /* 背景渐变过渡 */
     .bg-transition {
       position: fixed;
@@ -110,58 +116,6 @@ const addDynamicStyles = () => {
       .pagination {
         flex-wrap: wrap;
       }
-    }
-
-    /* 打字机效果 */
-    .typewriter {
-      display: inline-block;
-      white-space: pre-wrap;
-      margin: 0 auto;
-      letter-spacing: 0.15em;
-      border-right: 0.15em solid #4a5568;
-      animation: blink-caret 0.75s step-end infinite;
-    }
-    @keyframes blink-caret {
-      from,
-      to {
-        border-color: transparent;
-      }
-      50% {
-        border-color: #4a5568;
-      }
-    }
-
-    /* 其他样式 */
-    .line-clamp-4 {
-      display: -webkit-box;
-      -webkit-line-clamp: 4;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    header h1 {
-      margin-bottom: 2rem;
-    }
-    header {
-      margin-bottom: 4rem;
-    }
-    .hitokoto-container {
-      max-width: 80%;
-      margin: 0 auto;
-      overflow-wrap: break-word;
-      word-wrap: break-word;
-      white-space: normal;
-    }
-
-    /* 新增动画样式 */
-    .page-container {
-      position: relative;
-      opacity: 0;
-      transform: translateY(100px);
-      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .page-container.mounted {
-      opacity: 1;
-      transform: translateY(0);
     }
 
     /* 标签样式 */
@@ -239,21 +193,6 @@ const addDynamicStyles = () => {
     .social-icon svg {
       width: 20px;
       height: 20px;
-    }
-    .social-icon img {
-      width: 20px;
-      height: 20px;
-      filter: grayscale(100%) contrast(0.5);
-      transition: filter 0.3s ease;
-    }
-    .social-icon:hover img {
-      filter: grayscale(0%) contrast(1);
-    }
-    .dark .social-icon img {
-      filter: grayscale(100%) contrast(1) invert(1);
-    }
-    .dark .social-icon:hover img {
-      filter: grayscale(0%) contrast(1) invert(0);
     }
 
     /* 搜索模态框样式 */
@@ -367,7 +306,7 @@ const addDynamicStyles = () => {
       color: #fde68a;
     }
 
-    /* 新增文章卡片样式 */
+    /* 文章卡片样式 */
     .article-card {
       position: relative;
       border-radius: 1rem;
@@ -475,6 +414,394 @@ const addDynamicStyles = () => {
       flex-wrap: wrap;
       gap: 0.5rem;
     }
+
+    /* 主布局样式 */
+    .min-h-screen {
+      min-height: 100vh;
+    }
+    .p-8 {
+      padding: 2rem;
+    }
+    .pt-24 {
+      padding-top: 6rem;
+    }
+    .relative {
+      position: relative;
+    }
+    .z-10 {
+      z-index: 10;
+    }
+    .text-center {
+      text-align: center;
+    }
+    .mb-8 {
+      margin-bottom: 2rem;
+    }
+    .flex {
+      display: flex;
+    }
+    .hidden {
+      display: none;
+    }
+    .lg\\:block {
+      display: block;
+    }
+    .w-1\\/4 {
+      width: 25%;
+    }
+    .pr-8 {
+      padding-right: 2rem;
+    }
+    .flex-1 {
+      flex: 1;
+    }
+    .grid {
+      display: grid;
+    }
+    .gap-8 {
+      gap: 2rem;
+    }
+    .mt-12 {
+      margin-top: 3rem;
+    }
+    .bg-white {
+      background-color: white;
+    }
+    .dark\\:bg-gray-900 {
+      background-color: #111827;
+    }
+    .opacity-100 {
+      opacity: 1;
+    }
+    .opacity-0 {
+      opacity: 0;
+    }
+    .transition-all {
+      transition-property: all;
+    }
+    .duration-300 {
+      transition-duration: 300ms;
+    }
+    .fixed {
+      position: fixed;
+    }
+    .top-0 {
+      top: 0;
+    }
+    .left-0 {
+      left: 0;
+    }
+    .w-full {
+      width: 100%;
+    }
+    .bg-white\\/80 {
+      background-color: rgba(255, 255, 255, 0.8);
+    }
+    .dark\\:bg-gray-800\\/80 {
+      background-color: rgba(31, 41, 55, 0.8);
+    }
+    .backdrop-blur-md {
+      backdrop-filter: blur(12px);
+    }
+    .shadow-md {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    .z-50 {
+      z-index: 50;
+    }
+    .container {
+      width: 100%;
+    }
+    .mx-auto {
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .px-8 {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+    .py-4 {
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+    }
+    .justify-between {
+      justify-content: space-between;
+    }
+    .items-center {
+      align-items: center;
+    }
+    .text-xl {
+      font-size: 1.25rem;
+      line-height: 1.75rem;
+    }
+    .font-bold {
+      font-weight: 700;
+    }
+    .bg-clip-text {
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+    .text-transparent {
+      color: transparent;
+    }
+    .bg-gradient-to-r {
+      background-image: linear-gradient(to right, var(--tw-gradient-stops));
+    }
+    .from-blue-400 {
+      --tw-gradient-from: #60a5fa;
+      --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(96, 165, 250, 0));
+    }
+    .to-blue-600 {
+      --tw-gradient-to: #2563eb;
+    }
+    .dark\\:from-blue-500 {
+      --tw-gradient-from: #3b82f6;
+      --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(59, 130, 246, 0));
+    }
+    .dark\\:to-blue-700 {
+      --tw-gradient-to: #1d4ed8;
+    }
+    .space-x-6 > :not([hidden]) ~ :not([hidden]) {
+      margin-left: 1.5rem;
+    }
+    .text-gray-600 {
+      color: #4b5563;
+    }
+    .hover\\:text-blue-600:hover {
+      color: #2563eb;
+    }
+    .dark\\:text-gray-300 {
+      color: #d1d5db;
+    }
+    .dark\\:hover\\:text-blue-400:hover {
+      color: #60a5fa;
+    }
+    .transition-colors {
+      transition-property: background-color, border-color, color, fill, stroke;
+      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      transition-duration: 150ms;
+    }
+    .p-2 {
+      padding: 0.5rem;
+    }
+    .h-5 {
+      height: 1.25rem;
+    }
+    .w-5 {
+      width: 1.25rem;
+    }
+    .fill-none {
+      fill: none;
+    }
+    .stroke-current {
+      stroke: currentColor;
+    }
+    .stroke-2 {
+      stroke-width: 2;
+    }
+    .md\\:flex {
+      display: flex;
+    }
+    .items-center {
+      align-items: center;
+    }
+    .rounded-lg {
+      border-radius: 0.5rem;
+    }
+    .hover\\:bg-gray-100:hover {
+      background-color: #f3f4f6;
+    }
+    .dark\\:hover\\:bg-gray-700:hover {
+      background-color: #374151;
+    }
+    .w-6 {
+      width: 1.5rem;
+    }
+    .h-6 {
+      height: 1.5rem;
+    }
+    .visible {
+      visibility: visible;
+    }
+    .invisible {
+      visibility: hidden;
+    }
+    .absolute {
+      position: absolute;
+    }
+    .inset-0 {
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+    }
+    .bg-black\\/20 {
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+    .dark\\:bg-black\\/40 {
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+    .opacity-100 {
+      opacity: 1;
+    }
+    .opacity-0 {
+      opacity: 0;
+    }
+    .h-\\[calc\\(100vh-4rem\\)\\] {
+      height: calc(100vh - 4rem);
+    }
+    .w-64 {
+      width: 16rem;
+    }
+    .bg-white\\/95 {
+      background-color: rgba(255, 255, 255, 0.95);
+    }
+    .dark\\:bg-gray-800\\/95 {
+      background-color: rgba(31, 41, 55, 0.95);
+    }
+    .shadow-xl {
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    .translate-x-0 {
+      transform: translateX(0);
+    }
+    .translate-x-full {
+      transform: translateX(100%);
+    }
+    .p-6 {
+      padding: 1.5rem;
+    }
+    .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+      margin-top: 1rem;
+    }
+    .pt-2 {
+      padding-top: 0.5rem;
+    }
+    .rounded-full {
+      border-radius: 9999px;
+    }
+    .mt-6 {
+      margin-top: 1.5rem;
+    }
+    .space-y-3 > :not([hidden]) ~ :not([hidden]) {
+      margin-top: 0.75rem;
+    }
+    .block {
+      display: block;
+    }
+    .border-t {
+      border-top-width: 1px;
+    }
+    .border-gray-200 {
+      border-color: #e5e7eb;
+    }
+    .dark\\:border-gray-700 {
+      border-color: #374151;
+    }
+    .w-full {
+      width: 100%;
+    }
+    .justify-between {
+      justify-content: space-between;
+    }
+    .text-gray-700 {
+      color: #374151;
+    }
+    .dark\\:text-gray-300 {
+      color: #d1d5db;
+    }
+    .text-6xl {
+      font-size: 3.75rem;
+      line-height: 1;
+    }
+    .font-extrabold {
+      font-weight: 800;
+    }
+    .mt-4 {
+      margin-top: 1rem;
+    }
+    .text-lg {
+      font-size: 1.125rem;
+      line-height: 1.75rem;
+    }
+    .italic {
+      font-style: italic;
+    }
+    .border {
+      border-width: 1px;
+    }
+    .sticky {
+      position: sticky;
+    }
+    .top-24 {
+      top: 6rem;
+    }
+    .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+      margin-top: 1.5rem;
+    }
+    .w-24 {
+      width: 6rem;
+    }
+    .h-24 {
+      height: 6rem;
+    }
+    .overflow-hidden {
+      overflow: hidden;
+    }
+    .mb-4 {
+      margin-bottom: 1rem;
+    }
+    .text-center {
+      text-align: center;
+    }
+    .text-sm {
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+    .text-gray-500 {
+      color: #6b7280;
+    }
+    .text-2xl {
+      font-size: 1.5rem;
+      line-height: 2rem;
+    }
+    .text-blue-600 {
+      color: #2563eb;
+    }
+    .dark\\:text-blue-400 {
+      color: #60a5fa;
+    }
+    .inline-block {
+      display: inline-block;
+    }
+    .mt-2 {
+      margin-top: 0.5rem;
+    }
+    .font-semibold {
+      font-weight: 600;
+    }
+    .inline-flex {
+      display: inline-flex;
+    }
+    .ml-0\\.5rem {
+      margin-left: 0.5rem;
+    }
+    .h-4 {
+      height: 1rem;
+    }
+    .w-4 {
+      width: 1rem;
+    }
+    .inline-block {
+      display: inline-block;
+    }
+    .mx-auto {
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .dark\\:invert {
+      filter: invert(1);
+    }
   `;
   document.head.appendChild(style);
 };
@@ -486,21 +813,19 @@ export default function Home({ allPostsData }) {
   const [paginatedPosts, setPaginatedPosts] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
 
-  // 其他原有状态
+  // 页面过渡状态
   const [transitionState, setTransitionState] = useState('idle');
+  const [isMounted, setIsMounted] = useState(false);
+
+  // 其他状态
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [hitokoto, setHitokoto] = useState('');
   const [displayText, setDisplayText] = useState('');
-  const [isMounted, setIsMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-
-  // 搜索相关状态
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-
-  // 滚动位置状态
   const [scrollPosition, setScrollPosition] = useState(0);
   const [isReturning, setIsReturning] = useState(false);
 
@@ -531,9 +856,22 @@ export default function Home({ allPostsData }) {
   // 处理分页变化
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
-    setCurrentPage(page);
-    updatePaginatedPosts(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // 开始页面过渡
+    setTransitionState('exiting');
+    
+    // 延迟执行分页切换，确保动画完成
+    setTimeout(() => {
+      setCurrentPage(page);
+      updatePaginatedPosts(page);
+      setTransitionState('entering');
+      
+      // 动画完成后恢复状态
+      setTimeout(() => {
+        setTransitionState('idle');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 600);
+    }, 600);
   };
 
   // 处理搜索查询变化
@@ -553,7 +891,6 @@ export default function Home({ allPostsData }) {
       return titleMatch || excerptMatch || contentMatch || tagMatch;
     }).map(post => ({
       ...post,
-      // 高亮匹配的文本
       highlightedTitle: highlightText(post.title, query),
       highlightedExcerpt: post.excerpt ? highlightText(post.excerpt, query) : '',
     }));
@@ -564,7 +901,6 @@ export default function Home({ allPostsData }) {
   // 高亮匹配文本的函数
   const highlightText = (text, query) => {
     if (!query) return text;
-    
     const regex = new RegExp(`(${query})`, 'gi');
     return text.replace(regex, '<span class="search-highlight">$1</span>');
   };
@@ -572,7 +908,6 @@ export default function Home({ allPostsData }) {
   // 打开搜索模态框
   const openSearch = () => {
     setIsSearchOpen(true);
-    // 聚焦搜索输入框
     setTimeout(() => {
       document.getElementById('search-input')?.focus();
     }, 100);
@@ -591,6 +926,19 @@ export default function Home({ allPostsData }) {
     router.push(`/posts/${slug}`);
   };
 
+  // 获取过渡类名
+  const getTransitionClass = () => {
+    switch (transitionState) {
+      case 'exiting':
+        return 'page-exit';
+      case 'entering':
+        return 'page-enter';
+      default:
+        return '';
+    }
+  };
+
+  // 初始化页面
   useEffect(() => {
     addDynamicStyles();
 
@@ -614,7 +962,7 @@ export default function Home({ allPostsData }) {
       });
 
     // 路由事件监听
-    const handleRouteChangeStart = (url) => {
+    const handleRouteChangeStart = () => {
       // 如果是离开首页，保存滚动位置
       if (router.pathname === '/') {
         setScrollPosition(window.scrollY);
@@ -623,12 +971,12 @@ export default function Home({ allPostsData }) {
       setIsMounted(false);
     };
 
-    const handleRouteChangeComplete = (url) => {
+    const handleRouteChangeComplete = () => {
       setTransitionState('entering');
       setTimeout(() => {
         setTransitionState('idle');
         setIsMounted(true);
-      }, 300);
+      }, 600);
     };
 
     const handleHistoryChange = (url, { shallow }) => {
@@ -701,7 +1049,7 @@ export default function Home({ allPostsData }) {
     const timer = setInterval(() => {
       if (i < text.length) {
         setDisplayText(text.slice(0, i + 1));
-        if (typewriterElement.scrollWidth > container.clientWidth) {
+        if (typewriterElement && typewriterElement.scrollWidth > container.clientWidth) {
           typewriterElement.style.whiteSpace = 'pre-wrap';
         }
         i++;
@@ -773,18 +1121,6 @@ export default function Home({ allPostsData }) {
     setIsDarkMode(newDarkMode);
     localStorage.setItem('darkMode', newDarkMode);
     document.documentElement.classList.toggle('dark', newDarkMode);
-  };
-
-  // 获取过渡类名
-  const getTransitionClass = () => {
-    switch (transitionState) {
-      case 'exiting':
-        return 'page-transition-exit';
-      case 'entering':
-        return 'page-transition-enter';
-      default:
-        return '';
-    }
   };
 
   // 截取250字左右的摘要
@@ -953,258 +1289,265 @@ export default function Home({ allPostsData }) {
         </div>
       </div>
 
-      {/* 页面内容 */}
-      <div className={`min-h-screen p-8 pt-24 relative z-10 page-container ${
-        isMounted ? 'mounted' : ''
+      {/* 页面内容 - 添加过渡效果 */}
+      <div className={`page-transition-container ${getTransitionClass()} ${
+        transitionState === 'entering' ? 'page-enter-active' : 
+        transitionState === 'exiting' ? 'page-exit-active' : ''
       }`}>
         <Head>
           <title>首页 - Typace</title>
         </Head>
 
-        <header className="text-center mb-8">
-          <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
-            Typace
-          </h1>
-          <div className="hitokoto-container">
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 italic">
-              <span className="typewriter">{displayText}</span>
-            </p>
-          </div>
-        </header>
-
         {/* 主要内容区域 */}
-        <div className="flex">
-          {/* 左侧简介栏 */}
-          <aside className="w-1/4 pr-8 hidden lg:block">
-            {/* 简介板块和最新文章板块的容器 */}
-            <div className="sticky top-24 space-y-6">
-              {/* 简介板块 */}
-              <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
-                <div className="flex flex-col items-center">
-                  {/* 博主头像 */}
-                  <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
-                    <img 
-                      src="https://ik.imagekit.io/terryzhang/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-04-17%20204625.png" 
-                      alt="博主头像" 
-                      className="w-full h-full object-cover profile-avatar"
-                    />
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">
-                    Typace
-                  </h2>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4 text-center">
-                    theme typace team
-                  </p>
-                  <div className="flex space-x-4">
-                    <Link href="/archive" passHref>
-                      <a className="text-center stats-card hover:transform hover:scale-105 transition-transform cursor-pointer">
-                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                          {totalPosts}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          文章
-                        </div>
-                      </a>
-                    </Link>
-                    <Link href="/tags" passHref>
-                      <a className="text-center stats-card hover:transform hover:scale-105 transition-transform cursor-pointer">
-                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                          {totalTags}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          标签
-                        </div>
-                      </a>
-                    </Link>
-                  </div>
+        <div className={`min-h-screen p-8 pt-24 relative z-10 ${
+          isMounted ? 'opacity-100' : 'opacity-0'
+        }`}>
+          {/* 头部区域 */}
+          <header className="text-center mb-8">
+            <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
+              Typace
+            </h1>
+            <div className="hitokoto-container">
+              <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 italic">
+                <span className="typewriter">{displayText}</span>
+              </p>
+            </div>
+          </header>
 
-                  {/* 社交媒体图标 */}
-                  <div className="social-icons">
-                    <a 
-                      href="mailto:zhang@mrzxr.com" 
-                      className="social-icon"
-                      title="发送邮件"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    </a>
-                    <a 
-                      href="https://bgithub.xyz/terryzhangxr" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="social-icon"
-                      title="GitHub"
-                    >
+          {/* 主体内容区域 */}
+          <div className="flex">
+            {/* 左侧边栏 */}
+            <aside className="w-1/4 pr-8 hidden lg:block">
+              {/* 简介板块和最新文章板块的容器 */}
+              <div className="sticky top-24 space-y-6">
+                {/* 简介板块 */}
+                <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
+                  <div className="flex flex-col items-center">
+                    {/* 博主头像 */}
+                    <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
                       <img 
-                        src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" 
-                        alt="GitHub" 
+                        src="https://ik.imagekit.io/terryzhang/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-04-17%20204625.png" 
+                        alt="博主头像" 
+                        className="w-full h-full object-cover profile-avatar"
                       />
-                    </a>
-                    <a 
-                      href="https://space.bilibili.com/3546622533306643?spm_id_from=333.337.0.0"
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="social-icon"
-                      title="Bilibili"
-                    >
-                      <img 
-                        src="https://www.bilibili.com/favicon.ico" 
-                        alt="Bilibili" 
-                        style={{ width: '20px', height: '20px' }}
-                      />
-                    </a>
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">
+                      Typace
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4 text-center">
+                      theme typace team
+                    </p>
+                    <div className="flex space-x-4">
+                      <Link href="/archive" passHref>
+                        <a className="text-center stats-card hover:transform hover:scale-105 transition-transform cursor-pointer">
+                          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                            {totalPosts}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            文章
+                          </div>
+                        </a>
+                      </Link>
+                      <Link href="/tags" passHref>
+                        <a className="text-center stats-card hover:transform hover:scale-105 transition-transform cursor-pointer">
+                          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                            {totalTags}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            标签
+                          </div>
+                        </a>
+                      </Link>
+                    </div>
+
+                    {/* 社交媒体图标 */}
+                    <div className="social-icons">
+                      <a 
+                        href="mailto:zhang@mrzxr.com" 
+                        className="social-icon"
+                        title="发送邮件"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </a>
+                      <a 
+                        href="https://bgithub.xyz/terryzhangxr" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="social-icon"
+                        title="GitHub"
+                      >
+                        <img 
+                          src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" 
+                          alt="GitHub" 
+                        />
+                      </a>
+                      <a 
+                        href="https://space.bilibili.com/3546622533306643?spm_id_from=333.337.0.0"
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="social-icon"
+                        title="Bilibili"
+                      >
+                        <img 
+                          src="https://www.bilibili.com/favicon.ico" 
+                          alt="Bilibili" 
+                          style={{ width: '20px', height: '20px' }}
+                        />
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* 最新文章板块 */}
-              <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
-                  最新文章
-                </h2>
-                <ul className="space-y-4">
-                  {allPostsData.slice(0, 5).map((post) => (
-                    <li key={post.slug}>
-                      <Link href={`/posts/${post.slug}`} passHref>
-                        <a className="block text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                          <h3 className="text-lg font-semibold">{post.title}</h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                            {post.date}
-                          </p>
-                        </a>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                {/* 最新文章板块 */}
+                <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
+                    最新文章
+                  </h2>
+                  <ul className="space-y-4">
+                    {allPostsData.slice(0, 5).map((post) => (
+                      <li key={post.slug}>
+                        <Link href={`/posts/${post.slug}`} passHref>
+                          <a className="block text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <h3 className="text-lg font-semibold">{post.title}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                              {post.date}
+                            </p>
+                          </a>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-            </div>
-          </aside>
+            </aside>
 
-          {/* 文章列表 */}
-          <main className="flex-1">
-            <div className="grid gap-8">
-              {paginatedPosts.map(({ slug, title, date, cover, excerpt, content, tags }) => (
-                <article key={slug} className="article-card">
-                  {cover && (
-                    <div className="article-cover-container">
-                      <img
-                        src={cover}
-                        alt={title}
-                        className="article-cover"
-                        loading="lazy"
-                      />
-                    </div>
-                  )}
-                  <div className="article-content">
-                    <span className="article-date">{date}</span>
-                    <Link href={`/posts/${slug}`} passHref>
-                      <a>
-                        <h2 className="article-title">{title}</h2>
-                      </a>
-                    </Link>
-                    <p className="article-excerpt line-clamp-4">
-                      {excerpt || getExcerpt(content)}
-                    </p>
-                    <div className="article-footer">
-                      {tags && tags.length > 0 && (
-                        <div className="tag-container">
-                          {tags.map((tag) => (
-                            <Link key={tag} href={`/tags#${tag}`} passHref>
-                              <a className="tag">
-                                {tag}
-                              </a>
-                            </Link>
-                          ))}
-                        </div>
-                      )}
+            {/* 文章列表 */}
+            <main className="flex-1">
+              <div className="grid gap-8">
+                {paginatedPosts.map(({ slug, title, date, cover, excerpt, content, tags }) => (
+                  <article key={slug} className="article-card">
+                    {cover && (
+                      <div className="article-cover-container">
+                        <img
+                          src={cover}
+                          alt={title}
+                          className="article-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
+                    <div className="article-content">
+                      <span className="article-date">{date}</span>
                       <Link href={`/posts/${slug}`} passHref>
-                        <a className="read-more">
-                          阅读更多
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
+                        <a>
+                          <h2 className="article-title">{title}</h2>
                         </a>
                       </Link>
+                      <p className="article-excerpt line-clamp-4">
+                        {excerpt || getExcerpt(content)}
+                      </p>
+                      <div className="article-footer">
+                        {tags && tags.length > 0 && (
+                          <div className="tag-container">
+                            {tags.map((tag) => (
+                              <Link key={tag} href={`/tags#${tag}`} passHref>
+                                <a className="tag">
+                                  {tag}
+                                </a>
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                        <Link href={`/posts/${slug}`} passHref>
+                          <a className="read-more">
+                            阅读更多
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </a>
+                        </Link>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              ))}
-            </div>
+                  </article>
+                ))}
+              </div>
 
-            {/* 分页组件 */}
-            {totalPages > 0 && (
-              <div className="pagination">
-                <li className="page-item">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    className={`page-link ${currentPage === 1 ? 'disabled' : ''}`}
-                    disabled={currentPage === 1}
-                  >
-                    上一页
-                  </button>
-                </li>
-                
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <li key={page} className="page-item">
+              {/* 分页组件 */}
+              {totalPages > 0 && (
+                <div className="pagination">
+                  <li className="page-item">
                     <button
-                      onClick={() => handlePageChange(page)}
-                      className={`page-link ${currentPage === page ? 'active' : ''}`}
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      className={`page-link ${currentPage === 1 ? 'disabled' : ''}`}
+                      disabled={currentPage === 1}
                     >
-                      {page}
+                      上一页
                     </button>
                   </li>
-                ))}
-                
-                <li className="page-item">
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    className={`page-link ${currentPage === totalPages ? 'disabled' : ''}`}
-                    disabled={currentPage === totalPages}
-                  >
-                    下一页
-                  </button>
-                </li>
-              </div>
-            )}
-          </main>
-        </div>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <li key={page} className="page-item">
+                      <button
+                        onClick={() => handlePageChange(page)}
+                        className={`page-link ${currentPage === page ? 'active' : ''}`}
+                      >
+                        {page}
+                      </button>
+                    </li>
+                  ))}
+                  
+                  <li className="page-item">
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      className={`page-link ${currentPage === totalPages ? 'disabled' : ''}`}
+                      disabled={currentPage === totalPages}
+                    >
+                      下一页
+                    </button>
+                  </li>
+                </div>
+              )}
+            </main>
+          </div>
 
-        {/* 页脚 */}
-        <footer className="text-center mt-12">
-          <a href="/api/sitemap" className="inline-block">
-            <img
-              src="https://cdn.us.mrche.top/sitemap.svg"
-              alt="Sitemap"
-              className="block mx-auto w-8 h-8 dark:invert"
-            />
-          </a>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">
-            由Terryzhang&mrche创建的
-            <a
-              href="https://bgithub.xyz/terryzhangxr/typace-i"
-              className="text-blue-600 hover:underline dark:text-blue-400"
-            >
-              Typace
+          {/* 页脚 */}
+          <footer className="text-center mt-12">
+            <a href="/api/sitemap" className="inline-block">
+              <img
+                src="https://cdn.us.mrche.top/sitemap.svg"
+                alt="Sitemap"
+                className="block mx-auto w-8 h-8 dark:invert"
+              />
             </a>
-            强势驱动
-          </p>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">
-              联系我们
-            <a
-              href="mailto:zhang@mrzxr.com"
-              className="text-blue-600 hover:underline dark:text-blue-400"
-            >
-              zhang@mrzxr.com
-            </a>
-          </p>
-        </footer>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">
+              由Terryzhang&mrche创建的
+              <a
+                href="https://bgithub.xyz/terryzhangxr/typace-i"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Typace
+              </a>
+              强势驱动
+            </p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">
+                联系我们
+              <a
+                href="mailto:zhang@mrzxr.com"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                zhang@mrzxr.com
+              </a>
+            </p>
+          </footer>
+        </div>
       </div>
     </>
   );
 }
 
-// 桌面导航链接组件
+// 导航组件
 const NavLink = ({ href, children }) => (
   <Link href={href} passHref>
     <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
@@ -1213,7 +1556,6 @@ const NavLink = ({ href, children }) => (
   </Link>
 );
 
-// 移动端导航链接组件
 const MobileNavLink = ({ href, children, onClick }) => (
   <Link href={href} passHref>
     <a 
