@@ -41,6 +41,25 @@ export async function getStaticProps({ params }) {
   };
 }
 
+const NavLink = ({ href, children }) => (
+  <Link href={href} passHref>
+    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+      {children}
+    </a>
+  </Link>
+);
+
+const MobileNavLink = ({ href, children, onClick }) => (
+  <Link href={href} passHref>
+    <a 
+      onClick={onClick}
+      className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+    >
+      {children}
+    </a>
+  </Link>
+);
+
 export default function Post({ frontmatter, contentHtml, recommendedPosts, allPostsData }) {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -66,8 +85,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
 
-  // 分割文章内容为两部分
   const splitContent = useCallback((html) => {
+    if (typeof window === 'undefined') return { firstPart: html, secondPart: '' };
+    
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     const body = doc.body;
@@ -93,10 +113,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   }, []);
 
   const checkMobile = () => {
-    setIsMobile(window.innerWidth < 768);
+    if (typeof window !== 'undefined') {
+      setIsMobile(window.innerWidth < 768);
+    }
   };
 
   const smoothScrollTo = useCallback((position, callback) => {
+    if (typeof window === 'undefined') return;
+    
     if (scrollTimeoutRef.current) {
       cancelAnimationFrame(scrollTimeoutRef.current);
     }
@@ -130,7 +154,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   }, []);
 
   const scrollToComments = useCallback(() => {
-    if (!commentSectionRef.current) return;
+    if (!commentSectionRef.current || typeof window === 'undefined') return;
     const commentPosition = commentSectionRef.current.offsetTop;
     const offset = 100;
     const targetPosition = commentPosition - offset;
@@ -138,6 +162,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   }, [smoothScrollTo]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const style = document.createElement('style');
     style.textContent = `
       .prose {
@@ -673,7 +699,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   }, []);
 
   useEffect(() => {
-    if (!contentRef.current) return;
+    if (!contentRef.current || typeof window === 'undefined') return;
 
     // Add copy buttons and handle code blocks
     const codeBlocks = contentRef.current.querySelectorAll('pre');
@@ -811,6 +837,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
   const loadHighlightJS = (isDark) => {
     return new Promise((resolve) => {
+      if (typeof window === 'undefined') return resolve();
+
       const existingTheme = document.querySelector('#hljs-theme');
       if (existingTheme) existingTheme.remove();
 
@@ -832,6 +860,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   };
 
   const initializeWaline = async () => {
+    if (typeof window === 'undefined') return;
+
     if (walineInstance.current) {
       walineInstance.current.destroy();
       walineInstance.current = null;
@@ -882,11 +912,13 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   }, []);
 
   const setupHeadingObserver = useCallback(() => {
+    if (typeof window === 'undefined' || !contentRef.current) return;
+
     if (observerRef.current) {
       observerRef.current.disconnect();
     }
 
-    const headings = contentRef.current?.querySelectorAll('h1, h2');
+    const headings = contentRef.current.querySelectorAll('h1, h2');
     if (!headings || headings.length === 0) return;
 
     const options = {
@@ -923,8 +955,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     });
   }, [isScrolling]);
 
-  // 设置懒加载观察器
   const setupLazyLoadObserver = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
     if (lazyLoadObserverRef.current) {
       lazyLoadObserverRef.current.disconnect();
     }
@@ -954,6 +987,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
   useEffect(() => {
     const initializePage = async () => {
+      if (typeof window === 'undefined') return;
+
       const savedDarkMode = localStorage.getItem('darkMode') === 'true';
       setIsDarkMode(savedDarkMode);
       document.documentElement.classList.toggle('dark', savedDarkMode);
@@ -975,7 +1010,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         setupHeadingAnchors();
         setTimeout(() => {
           setupHeadingObserver();
-          setupLazyLoadObserver(); // 初始化懒加载观察器
+          setupLazyLoadObserver();
           if (window.location.hash) {
             const id = window.location.hash.substring(1);
             scrollToHeading(id, false);
@@ -985,6 +1020,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
 
     const loadHLJSBase = () => {
+      if (typeof window === 'undefined') return Promise.resolve();
       if (!window.hljs) {
         return new Promise((resolve) => {
           const script = document.createElement('script');
@@ -997,6 +1033,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
 
     const setupImagePreview = () => {
+      if (typeof window === 'undefined') return;
       const articleImages = document.querySelectorAll('.prose img');
       articleImages.forEach(img => {
         img.addEventListener('click', () => {
@@ -1021,21 +1058,16 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     initializePage();
   }, [contentHtml, setupHeadingObserver, setupLazyLoadObserver, splitContent]);
 
-  // 当完整内容加载后，更新内容
   useEffect(() => {
     if (isFullContentLoaded) {
       const { firstPart, secondPart } = splitContent(contentHtml);
       setVisibleContentHtml(firstPart + secondPart);
       
-      // 重新设置代码块高亮
-      if (window.hljs) {
+      if (typeof window !== 'undefined' && window.hljs) {
         window.hljs.highlightAll();
       }
       
-      // 重新设置图片预览
       setupImagePreview();
-      
-      // 重新设置目录观察器
       setupHeadingObserver();
     }
   }, [isFullContentLoaded, contentHtml, splitContent, setupHeadingObserver]);
@@ -1063,6 +1095,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   };
 
   const scrollToHeading = useCallback((id, smooth = true) => {
+    if (typeof window === 'undefined') return;
     const targetElement = document.getElementById(id);
     if (!targetElement) return;
 
@@ -1101,6 +1134,16 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const closePreview = () => {
     setPreviewImage(null);
   };
+
+  const setupImagePreview = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const articleImages = document.querySelectorAll('.prose img');
+    articleImages.forEach(img => {
+      img.addEventListener('click', () => {
+        setPreviewImage(img.src);
+      });
+    });
+  }, []);
 
   return (
     <>
@@ -1419,22 +1462,3 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     </>
   );
 }
-
-const NavLink = ({ href, children }) => (
-  <Link href={href} passHref>
-    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
-      {children}
-    </a>
-  </Link>
-);
-
-const MobileNavLink = ({ href, children, onClick }) => (
-  <Link href={href} passHref>
-    <a 
-      onClick={onClick}
-      className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-    >
-      {children}
-    </a>
-  </Link>
-);
