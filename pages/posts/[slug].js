@@ -652,7 +652,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         background-color: #bae6fd;
         color: #075985;
       }
-
       .dark .tag:hover {
         background-color: #1e40af;
         color: #93c5fd;
