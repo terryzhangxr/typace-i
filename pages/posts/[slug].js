@@ -1,4 +1,3 @@
-```javascript
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../../lib/posts';
