@@ -80,6 +80,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const lastScrollPosition = useRef(0);
   const commentSectionRef = useRef(null);
   const lazyLoadObserverRef = useRef(null);
+  const [showToc, setShowToc] = useState(true); // Added state for TOC visibility
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1091,6 +1092,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       });
 
       setToc(tocItems);
+      setShowToc(true); // Automatically show TOC after generation
     }
   };
 
@@ -1436,27 +1438,29 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             </footer>
           </div>
 
-          <div className="sidebar-container hidden lg:block">
-            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
-              <ul className="space-y-2">
-                {toc.map((item) => (
-                  <li key={item.id}>
-                    <a
-                      href={`#${item.id}`}
-                      onClick={(e) => handleTocClick(e, item.id)}
-                      className={`toc-item ${item.level} ${
-                        activeHeading === item.id ? 'active' : ''
-                      }`}
-                      aria-current={activeHeading === item.id ? 'location' : undefined}
-                    >
-                      {item.text}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+          {showToc && ( // Only show TOC when showToc is true
+            <div className="sidebar-container hidden lg:block">
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
+                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
+                <ul className="space-y-2">
+                  {toc.map((item) => (
+                    <li key={item.id}>
+                      <a
+                        href={`#${item.id}`}
+                        onClick={(e) => handleTocClick(e, item.id)}
+                        className={`toc-item ${item.level} ${
+                          activeHeading === item.id ? 'active' : ''
+                        }`}
+                        aria-current={activeHeading === item.id ? 'location' : undefined}
+                      >
+                        {item.text}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </>
