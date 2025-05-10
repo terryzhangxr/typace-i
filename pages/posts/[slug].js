@@ -41,25 +41,6 @@ export async function getStaticProps({ params }) {
   };
 }
 
-const NavLink = ({ href, children }) => (
-  <Link href={href} passHref>
-    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
-      {children}
-    </a>
-  </Link>
-);
-
-const MobileNavLink = ({ href, children, onClick }) => (
-  <Link href={href} passHref>
-    <a 
-      onClick={onClick}
-      className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-    >
-      {children}
-    </a>
-  </Link>
-);
-
 export default function Post({ frontmatter, contentHtml, recommendedPosts, allPostsData }) {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -70,57 +51,22 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const [previewImage, setPreviewImage] = useState(null);
   const [activeHeading, setActiveHeading] = useState(null);
   const [isScrolling, setIsScrolling] = useState(false);
-  const [isContentLoaded, setIsContentLoaded] = useState(false);
-  const [isFullContentLoaded, setIsFullContentLoaded] = useState(false);
-  const [visibleContentHtml, setVisibleContentHtml] = useState('');
   const walineInstance = useRef(null);
   const contentRef = useRef(null);
   const observerRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
   const lastScrollPosition = useRef(0);
   const commentSectionRef = useRef(null);
-  const lazyLoadObserverRef = useRef(null);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
 
-  const splitContent = useCallback((html) => {
-    if (typeof window === 'undefined') return { firstPart: html, secondPart: '' };
-    
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const body = doc.body;
-    const totalHeight = body.scrollHeight;
-    const halfHeight = totalHeight / 2;
-    
-    let currentHeight = 0;
-    let splitIndex = 0;
-    const elements = Array.from(body.children);
-    
-    for (let i = 0; i < elements.length; i++) {
-      currentHeight += elements[i].scrollHeight;
-      if (currentHeight >= halfHeight) {
-        splitIndex = i;
-        break;
-      }
-    }
-    
-    const firstPart = elements.slice(0, splitIndex + 1).map(el => el.outerHTML).join('');
-    const secondPart = elements.slice(splitIndex + 1).map(el => el.outerHTML).join('');
-    
-    return { firstPart, secondPart };
-  }, []);
-
   const checkMobile = () => {
-    if (typeof window !== 'undefined') {
-      setIsMobile(window.innerWidth < 768);
-    }
+    setIsMobile(window.innerWidth < 768);
   };
 
   const smoothScrollTo = useCallback((position, callback) => {
-    if (typeof window === 'undefined') return;
-    
     if (scrollTimeoutRef.current) {
       cancelAnimationFrame(scrollTimeoutRef.current);
     }
@@ -154,7 +100,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   }, []);
 
   const scrollToComments = useCallback(() => {
-    if (!commentSectionRef.current || typeof window === 'undefined') return;
+    if (!commentSectionRef.current) return;
     const commentPosition = commentSectionRef.current.offsetTop;
     const offset = 100;
     const targetPosition = commentPosition - offset;
@@ -162,8 +108,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   }, [smoothScrollTo]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
     const style = document.createElement('style');
     style.textContent = `
       .prose {
@@ -637,22 +581,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         background-color: #1e40af;
         color: #93c5fd;
       }
-
-      /* Lazy load placeholder */
-      .lazy-load-placeholder {
-        padding: 2rem 0;
-        text-align: center;
-        color: #6b7280;
-        font-size: 1rem;
-      }
-      .dark .lazy-load-placeholder {
-        color: #9ca3af;
-      }
-      .lazy-load-trigger {
-        height: 1px;
-        width: 100%;
-        visibility: hidden;
-      }
     `;
     document.head.appendChild(style);
 
@@ -689,9 +617,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       if (observerRef.current) {
         observerRef.current.disconnect();
       }
-      if (lazyLoadObserverRef.current) {
-        lazyLoadObserverRef.current.disconnect();
-      }
       if (scrollTimeoutRef.current) {
         cancelAnimationFrame(scrollTimeoutRef.current);
       }
@@ -699,7 +624,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   }, []);
 
   useEffect(() => {
-    if (!contentRef.current || typeof window === 'undefined') return;
+    if (!contentRef.current) return;
 
     // Add copy buttons and handle code blocks
     const codeBlocks = contentRef.current.querySelectorAll('pre');
@@ -768,7 +693,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [contentHtml, isFullContentLoaded]);
+  }, [contentHtml]);
 
   const highlightText = (text, query) => {
     if (!query) return text;
@@ -837,8 +762,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
   const loadHighlightJS = (isDark) => {
     return new Promise((resolve) => {
-      if (typeof window === 'undefined') return resolve();
-
       const existingTheme = document.querySelector('#hljs-theme');
       if (existingTheme) existingTheme.remove();
 
@@ -860,8 +783,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   };
 
   const initializeWaline = async () => {
-    if (typeof window === 'undefined') return;
-
     if (walineInstance.current) {
       walineInstance.current.destroy();
       walineInstance.current = null;
@@ -912,13 +833,11 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   }, []);
 
   const setupHeadingObserver = useCallback(() => {
-    if (typeof window === 'undefined' || !contentRef.current) return;
-
     if (observerRef.current) {
       observerRef.current.disconnect();
     }
 
-    const headings = contentRef.current.querySelectorAll('h1, h2');
+    const headings = contentRef.current?.querySelectorAll('h1, h2');
     if (!headings || headings.length === 0) return;
 
     const options = {
@@ -955,48 +874,11 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     });
   }, [isScrolling]);
 
-  const setupLazyLoadObserver = useCallback(() => {
-    if (typeof window === 'undefined') return;
-
-    if (lazyLoadObserverRef.current) {
-      lazyLoadObserverRef.current.disconnect();
-    }
-
-    const triggerElement = document.querySelector('.lazy-load-trigger');
-    if (!triggerElement) return;
-
-    const options = {
-      root: null,
-      rootMargin: '200px 0px',
-      threshold: 0.1
-    };
-
-    lazyLoadObserverRef.current = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting && !isFullContentLoaded) {
-          setIsFullContentLoaded(true);
-          if (lazyLoadObserverRef.current) {
-            lazyLoadObserverRef.current.disconnect();
-          }
-        }
-      });
-    }, options);
-
-    lazyLoadObserverRef.current.observe(triggerElement);
-  }, [isFullContentLoaded]);
-
   useEffect(() => {
     const initializePage = async () => {
-      if (typeof window === 'undefined') return;
-
       const savedDarkMode = localStorage.getItem('darkMode') === 'true';
       setIsDarkMode(savedDarkMode);
       document.documentElement.classList.toggle('dark', savedDarkMode);
-
-      // 分割内容为两部分
-      const { firstPart } = splitContent(contentHtml);
-      setVisibleContentHtml(firstPart);
-      setIsContentLoaded(true);
 
       await Promise.all([
         loadHighlightJS(savedDarkMode),
@@ -1010,7 +892,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         setupHeadingAnchors();
         setTimeout(() => {
           setupHeadingObserver();
-          setupLazyLoadObserver();
           if (window.location.hash) {
             const id = window.location.hash.substring(1);
             scrollToHeading(id, false);
@@ -1020,7 +901,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
 
     const loadHLJSBase = () => {
-      if (typeof window === 'undefined') return Promise.resolve();
       if (!window.hljs) {
         return new Promise((resolve) => {
           const script = document.createElement('script');
@@ -1033,7 +913,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
 
     const setupImagePreview = () => {
-      if (typeof window === 'undefined') return;
       const articleImages = document.querySelectorAll('.prose img');
       articleImages.forEach(img => {
         img.addEventListener('click', () => {
@@ -1056,21 +935,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
 
     initializePage();
-  }, [contentHtml, setupHeadingObserver, setupLazyLoadObserver, splitContent]);
-
-  useEffect(() => {
-    if (isFullContentLoaded) {
-      const { firstPart, secondPart } = splitContent(contentHtml);
-      setVisibleContentHtml(firstPart + secondPart);
-      
-      if (typeof window !== 'undefined' && window.hljs) {
-        window.hljs.highlightAll();
-      }
-      
-      setupImagePreview();
-      setupHeadingObserver();
-    }
-  }, [isFullContentLoaded, contentHtml, splitContent, setupHeadingObserver]);
+  }, [contentHtml, setupHeadingObserver]);
 
   const generateToc = () => {
     if (contentRef.current) {
@@ -1095,7 +960,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   };
 
   const scrollToHeading = useCallback((id, smooth = true) => {
-    if (typeof window === 'undefined') return;
     const targetElement = document.getElementById(id);
     if (!targetElement) return;
 
@@ -1134,16 +998,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const closePreview = () => {
     setPreviewImage(null);
   };
-
-  const setupImagePreview = useCallback(() => {
-    if (typeof window === 'undefined') return;
-    const articleImages = document.querySelectorAll('.prose img');
-    articleImages.forEach(img => {
-      img.addEventListener('click', () => {
-        setPreviewImage(img.src);
-      });
-    });
-  }, []);
 
   return (
     <>
@@ -1362,17 +1216,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
                 )}
                 <div
                   className="text-gray-700 dark:text-gray-300 w-full"
-                  dangerouslySetInnerHTML={{ __html: isContentLoaded ? visibleContentHtml : '' }}
+                  dangerouslySetInnerHTML={{ __html: contentHtml }}
                 />
-                
-                {!isFullContentLoaded && isContentLoaded && (
-                  <>
-                    <div className="lazy-load-placeholder">
-                      继续滚动以加载剩余内容...
-                    </div>
-                    <div className="lazy-load-trigger" />
-                  </>
-                )}
               </article>
             </div>
 
@@ -1436,7 +1281,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             </footer>
           </div>
 
-          {/* Always show the TOC sidebar */}
           <div className="sidebar-container hidden lg:block">
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
               <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
@@ -1463,3 +1307,22 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     </>
   );
 }
+
+const NavLink = ({ href, children }) => (
+  <Link href={href} passHref>
+    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+      {children}
+    </a>
+  </Link>
+);
+
+const MobileNavLink = ({ href, children, onClick }) => (
+  <Link href={href} passHref>
+    <a 
+      onClick={onClick}
+      className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+    >
+      {children}
+    </a>
+  </Link>
+);
