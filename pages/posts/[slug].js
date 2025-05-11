@@ -1409,7 +1409,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
               <ul className="space-y-2">
                 {toc.map((item) => (
                   <li key={item.id}>
-                    <a
+                    <a 
                       href={`#${item.id}`}
                       onClick={(e) => handleTocClick(e, item.id)}
                       className={`toc-item ${item.level} ${
