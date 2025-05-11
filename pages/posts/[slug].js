@@ -22,6 +22,25 @@ export async function getStaticProps({ params }) {
   const fileContents = fs.readFileSync(filePath, 'utf8');
   const { data, content } = matter(fileContents);
 
+  // 提前解析标题生成目录
+  const headings = [];
+  const lines = content.split('\n');
+  lines.forEach(line => {
+    if (line.startsWith('# ')) {
+      headings.push({
+        level: 'h1',
+        text: line.replace('# ', '').trim(),
+        id: line.replace('# ', '').trim().toLowerCase().replace(/\s+/g, '-')
+      });
+    } else if (line.startsWith('## ')) {
+      headings.push({
+        level: 'h2',
+        text: line.replace('## ', '').trim(),
+        id: line.replace('## ', '').trim().toLowerCase().replace(/\s+/g, '-')
+      });
+    }
+  });
+
   const processedContent = await remark().use(html).process(content);
   const contentHtml = processedContent.toString();
 
@@ -37,30 +56,83 @@ export async function getStaticProps({ params }) {
       contentHtml,
       recommendedPosts,
       allPostsData,
+      headings // 提前解析好的目录信息
     },
   };
 }
 
-export default function Post({ frontmatter, contentHtml, recommendedPosts, allPostsData }) {
+export default function Post({ frontmatter, contentHtml, recommendedPosts, allPostsData, headings }) {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [toc, setToc] = useState([]);
+  const [toc, setToc] = useState(headings); // 使用预先生成的目录
   const [isMounted, setIsMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [activeHeading, setActiveHeading] = useState(null);
   const [isScrolling, setIsScrolling] = useState(false);
+  const [visibleContent, setVisibleContent] = useState('');
+  const [isContentFullyLoaded, setIsContentFullyLoaded] = useState(false);
+  const [isShortContent, setIsShortContent] = useState(false);
   const walineInstance = useRef(null);
   const contentRef = useRef(null);
   const observerRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
   const lastScrollPosition = useRef(0);
   const commentSectionRef = useRef(null);
+  const contentObserverRef = useRef(null);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+
+  // 检查内容是否较短（小于2000字符）
+  useEffect(() => {
+    if (contentHtml.length < 2000) {
+      setIsShortContent(true);
+      setIsContentFullyLoaded(true);
+      setVisibleContent(contentHtml);
+    } else {
+      // 初始只加载前半部分内容
+      const halfLength = Math.floor(contentHtml.length / 2);
+      setVisibleContent(contentHtml.substring(0, halfLength));
+    }
+  }, [contentHtml]);
+
+  // 设置内容懒加载观察器
+  useEffect(() => {
+    if (isShortContent || isContentFullyLoaded) return;
+
+    const options = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.1
+    };
+
+    const handleIntersection = (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          // 加载剩余内容
+          setVisibleContent(contentHtml);
+          setIsContentFullyLoaded(true);
+          if (contentObserverRef.current) {
+            contentObserverRef.current.disconnect();
+          }
+        }
+      });
+    };
+
+    contentObserverRef.current = new IntersectionObserver(handleIntersection, options);
+    if (contentRef.current) {
+      contentObserverRef.current.observe(contentRef.current);
+    }
+
+    return () => {
+      if (contentObserverRef.current) {
+        contentObserverRef.current.disconnect();
+      }
+    };
+  }, [contentHtml, isShortContent, isContentFullyLoaded]);
 
   const checkMobile = () => {
     setIsMobile(window.innerWidth < 768);
@@ -581,6 +653,32 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         background-color: #1e40af;
         color: #93c5fd;
       }
+
+      /* Loading indicator */
+      .loading-indicator {
+        display: flex;
+        justify-content: center;
+        padding: 1rem;
+        margin: 2rem 0;
+      }
+      
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(59, 130, 246, 0.2);
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      
+      .dark .loading-spinner {
+        border-top-color: #60a5fa;
+        border-color: rgba(96, 165, 250, 0.2);
+      }
     `;
     document.head.appendChild(style);
 
@@ -620,11 +718,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       if (scrollTimeoutRef.current) {
         cancelAnimationFrame(scrollTimeoutRef.current);
       }
+      if (contentObserverRef.current) {
+        contentObserverRef.current.disconnect();
+      }
     };
   }, []);
 
   useEffect(() => {
-    if (!contentRef.current) return;
+    if (!contentRef.current || !visibleContent) return;
 
     // Add copy buttons and handle code blocks
     const codeBlocks = contentRef.current.querySelectorAll('pre');
@@ -693,7 +794,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [contentHtml]);
+  }, [visibleContent]);
 
   const highlightText = (text, query) => {
     if (!query) return text;
@@ -887,7 +988,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       ]);
 
       if (contentHtml) {
-        generateToc();
         setupImagePreview();
         setupHeadingAnchors();
         setTimeout(() => {
@@ -936,28 +1036,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
     initializePage();
   }, [contentHtml, setupHeadingObserver]);
-
-  const generateToc = () => {
-    if (contentRef.current) {
-      const headings = contentRef.current.querySelectorAll('h1, h2');
-      const tocItems = [];
-
-      headings.forEach((heading) => {
-        const id = heading.id || heading.textContent.toLowerCase().replace(/\s+/g, '-');
-        if (!heading.id) {
-          heading.id = id;
-        }
-        
-        tocItems.push({
-          level: heading.tagName.toLowerCase(),
-          text: heading.textContent,
-          id,
-        });
-      });
-
-      setToc(tocItems);
-    }
-  };
 
   const scrollToHeading = useCallback((id, smooth = true) => {
     const targetElement = document.getElementById(id);
@@ -1216,8 +1294,13 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
                 )}
                 <div
                   className="text-gray-700 dark:text-gray-300 w-full"
-                  dangerouslySetInnerHTML={{ __html: contentHtml }}
+                  dangerouslySetInnerHTML={{ __html: visibleContent }}
                 />
+                {!isContentFullyLoaded && !isShortContent && (
+                  <div className="loading-indicator">
+                    <div className="loading-spinner" />
+                  </div>
+                )}
               </article>
             </div>
 
