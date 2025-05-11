@@ -57,7 +57,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const scrollTimeoutRef = useRef(null);
   const lastScrollPosition = useRef(0);
   const commentSectionRef = useRef(null);
-  const pageContainerRef = useRef(null);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -472,7 +471,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
       html {
         scroll-padding-top: 100px;
-        scroll-behavior: smooth;
       }
 
       .scroll-to-comment-btn {
@@ -506,9 +504,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
       .page-container {
         opacity: 0;
-        transform: translateY(20px);
-        transition: opacity 0.4s ease-out, transform 0.4s ease-out;
-        will-change: opacity, transform;
+        transform: translateY(100px);
+        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .page-container.mounted {
         opacity: 1;
@@ -587,11 +584,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     `;
     document.head.appendChild(style);
 
-    // Initialize mounted state after a small delay to allow CSS to load
-    const timer = setTimeout(() => {
-      setIsMounted(true);
-    }, 50);
-
+    setIsMounted(true);
     checkMobile();
     window.addEventListener('resize', checkMobile);
 
@@ -627,7 +620,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       if (scrollTimeoutRef.current) {
         cancelAnimationFrame(scrollTimeoutRef.current);
       }
-      clearTimeout(timer);
     };
   }, []);
 
@@ -1183,12 +1175,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </svg>
       </button>
 
-      <div 
-        ref={pageContainerRef}
-        className={`min-h-screen p-8 pt-24 relative z-10 bg-white dark:bg-gray-900 page-container ${
-          isMounted ? 'mounted' : ''
-        }`}
-      >
+      <div className={`min-h-screen p-8 pt-24 relative z-10 bg-white dark:bg-gray-900 page-container ${
+        isMounted ? 'mounted' : ''
+      }`}>
         <Head>
           <title>{frontmatter.title} - Typace</title>
         </Head>
