@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../../lib/posts';
-import fs from 'fs';
+import fs from 'fs'; 
 import path from 'path';
 import matter from 'gray-matter';
 import { remark } from 'remark';
@@ -22,33 +22,27 @@ export async function getStaticProps({ params }) {
   const fileContents = fs.readFileSync(filePath, 'utf8');
   const { data, content } = matter(fileContents);
 
-  const processedContent = await remark().use(html).process(content);
-  const contentHtml = processedContent.toString();
-
-  // 使用正则表达式从 Markdown 内容中提取标题
+  // 预解析标题生成目录
   const headings = [];
   const lines = content.split('\n');
-  
-  for (const line of lines) {
-    const h1Match = line.match(/^#\s+(.+)/);
-    const h2Match = line.match(/^##\s+(.+)/);
-    
-    if (h1Match) {
+  lines.forEach(line => {
+    if (line.startsWith('# ')) {
       headings.push({
         level: 'h1',
-        text: h1Match[1].trim(),
-        id: h1Match[1].trim().toLowerCase().replace(/\s+/g, '-')
+        text: line.replace('# ', '').trim(),
+        id: line.replace('# ', '').trim().toLowerCase().replace(/\s+/g, '-')
       });
-    } else if (h2Match) {
+    } else if (line.startsWith('## ')) {
       headings.push({
         level: 'h2',
-        text: h2Match[1].trim(),
-        id: h2Match[1].trim().toLowerCase().replace(/\s+/g, '-')
+        text: line.replace('## ', '').trim(),
+        id: line.replace('## ', '').trim().toLowerCase().replace(/\s+/g, '-')
       });
     }
-  }
+  });
 
-  const contentLength = content.length;
+  const processedContent = await remark().use(html).process(content);
+  const contentHtml = processedContent.toString();
 
   const allPostsData = getSortedPostsData();
   const filteredPosts = allPostsData.filter((post) => post.slug !== params.slug);
@@ -62,96 +56,99 @@ export async function getStaticProps({ params }) {
       contentHtml,
       recommendedPosts,
       allPostsData,
-      fullToc: headings,
-      contentLength
+      headings
     },
   };
 }
 
-export default function Post({ 
-  frontmatter, 
-  contentHtml, 
-  recommendedPosts, 
-  allPostsData,
-  fullToc,
-  contentLength
-}) {
+export default function Post({ frontmatter, contentHtml, recommendedPosts, allPostsData, headings }) {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [toc, setToc] = useState(fullToc);
+  const [toc, setToc] = useState(headings);
   const [isMounted, setIsMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [activeHeading, setActiveHeading] = useState(null);
   const [isScrolling, setIsScrolling] = useState(false);
-  const [loadedContent, setLoadedContent] = useState('');
+  const [visibleContent, setVisibleContent] = useState('');
   const [isContentFullyLoaded, setIsContentFullyLoaded] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isShortContent, setIsShortContent] = useState(false);
   const walineInstance = useRef(null);
   const contentRef = useRef(null);
   const observerRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
   const lastScrollPosition = useRef(0);
   const commentSectionRef = useRef(null);
+  const contentObserverRef = useRef(null);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
 
-  const SHORT_ARTICLE_THRESHOLD = 1000;
-
+  // 检查内容是否较短（小于2000字符）
   useEffect(() => {
-    const initializeContent = async () => {
-      setIsLoading(true);
-      
-      if (contentLength <= SHORT_ARTICLE_THRESHOLD) {
-        setLoadedContent(contentHtml);
-        setIsContentFullyLoaded(true);
-      } else {
-        const halfContent = getPartialContent(contentHtml, 0.5);
-        setLoadedContent(halfContent);
-        setIsContentFullyLoaded(false);
-      }
-      
-      setIsLoading(false);
-    };
-
-    initializeContent();
-  }, [contentHtml, contentLength]);
-
-  useEffect(() => {
-    if (isContentFullyLoaded || contentLength <= SHORT_ARTICLE_THRESHOLD) return;
-
-    const handleScroll = () => {
-      const scrollPosition = window.innerHeight + window.pageYOffset;
-      const pageHeight = document.documentElement.scrollHeight;
-      const threshold = pageHeight * 0.9;
-
-      if (scrollPosition >= threshold && !isContentFullyLoaded) {
-        setLoadedContent(contentHtml);
-        setIsContentFullyLoaded(true);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [contentHtml, isContentFullyLoaded, contentLength]);
-
-  const getPartialContent = (html, percentage) => {
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
-    
-    const elements = Array.from(tempDiv.children);
-    const totalElements = elements.length;
-    const elementsToKeep = Math.ceil(totalElements * percentage);
-    
-    for (let i = elementsToKeep; i < totalElements; i++) {
-      tempDiv.removeChild(elements[i]);
+    if (contentHtml.length < 2000) {
+      setIsShortContent(true);
+      setIsContentFullyLoaded(true);
+      setVisibleContent(contentHtml);
+    } else {
+      // 初始只加载前半部分内容
+      const halfLength = Math.floor(contentHtml.length / 2);
+      setVisibleContent(contentHtml.substring(0, halfLength));
     }
+  }, [contentHtml]);
+
+  // 设置内容懒加载观察器
+  useEffect(() => {
+    if (isShortContent || isContentFullyLoaded) return;
+
+    const options = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.1
+    };
+
+    const handleIntersection = (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          // 加载剩余内容
+          setVisibleContent(contentHtml);
+          setIsContentFullyLoaded(true);
+          if (contentObserverRef.current) {
+            contentObserverRef.current.disconnect();
+          }
+          // 内容加载完成后初始化相关功能
+          initializeContentFeatures();
+        }
+      });
+    };
+
+    contentObserverRef.current = new IntersectionObserver(handleIntersection, options);
+    if (contentRef.current) {
+      contentObserverRef.current.observe(contentRef.current);
+    }
+
+    return () => {
+      if (contentObserverRef.current) {
+        contentObserverRef.current.disconnect();
+      }
+    };
+  }, [contentHtml, isShortContent, isContentFullyLoaded]);
+
+  // 初始化内容相关功能
+  const initializeContentFeatures = useCallback(() => {
+    setupCodeBlocks();
+    setupImagePreview();
+    setupHeadingAnchors();
+    setupHeadingObserver();
     
-    return tempDiv.innerHTML;
-  };
+    // 处理hash跳转
+    if (window.location.hash) {
+      const id = window.location.hash.substring(1);
+      scrollToHeading(id, false);
+    }
+  }, []);
 
   const checkMobile = () => {
     setIsMobile(window.innerWidth < 768);
@@ -197,6 +194,134 @@ export default function Post({
     const targetPosition = commentPosition - offset;
     smoothScrollTo(targetPosition);
   }, [smoothScrollTo]);
+
+  // 设置代码块复制按钮
+  const setupCodeBlocks = useCallback(() => {
+    if (!contentRef.current) return;
+
+    const codeBlocks = contentRef.current.querySelectorAll('pre');
+    codeBlocks.forEach((pre) => {
+      // Skip if already processed
+      if (pre.querySelector('.code-block-header')) return;
+
+      // Create copy button
+      const button = document.createElement('button');
+      button.className = 'copy-btn';
+      button.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+        </svg>
+        <span>复制</span>
+      `;
+
+      // Create header div
+      const header = document.createElement('div');
+      header.className = 'code-block-header';
+      
+      // Detect language (if specified in class)
+      const language = pre.className.match(/language-(\w+)/)?.[1] || '代码';
+      const languageSpan = document.createElement('span');
+      languageSpan.textContent = language;
+      
+      header.appendChild(languageSpan);
+      header.appendChild(button);
+      pre.insertBefore(header, pre.firstChild);
+
+      // Add copy functionality
+      button.addEventListener('click', () => {
+        const code = pre.querySelector('code')?.textContent || '';
+        navigator.clipboard.writeText(code).then(() => {
+          button.classList.add('copied');
+          button.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>已复制</span>
+          `;
+          setTimeout(() => {
+            button.classList.remove('copied');
+            button.innerHTML = `
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+              </svg>
+              <span>复制</span>
+            `;
+          }, 2000);
+        });
+      });
+    });
+  }, []);
+
+  // 设置图片预览功能
+  const setupImagePreview = useCallback(() => {
+    const articleImages = document.querySelectorAll('.prose img');
+    articleImages.forEach(img => {
+      // Remove existing listeners to avoid duplicates
+      img.removeEventListener('click', handleImageClick);
+      img.addEventListener('click', handleImageClick);
+    });
+
+    function handleImageClick() {
+      setPreviewImage(this.src);
+    }
+  }, []);
+
+  // 设置标题锚点
+  const setupHeadingAnchors = useCallback(() => {
+    if (contentRef.current) {
+      const headings = contentRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      
+      headings.forEach((heading) => {
+        if (!heading.id) {
+          const id = heading.textContent.toLowerCase().replace(/\s+/g, '-');
+          heading.id = id;
+        }
+      });
+    }
+  }, []);
+
+  // 设置标题观察器
+  const setupHeadingObserver = useCallback(() => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    const headings = contentRef.current?.querySelectorAll('h1, h2');
+    if (!headings || headings.length === 0) return;
+
+    const options = {
+      root: null,
+      rootMargin: '-100px 0px -50% 0px',
+      threshold: 0.5
+    };
+
+    observerRef.current = new IntersectionObserver((entries) => {
+      if (isScrolling) return;
+
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setActiveHeading(entry.target.id);
+          
+          const currentScroll = window.pageYOffset;
+          if (currentScroll < lastScrollPosition.current) {
+            const headingTop = entry.target.getBoundingClientRect().top;
+            if (headingTop < 100) {
+              const scrollTo = window.pageYOffset + headingTop - 100;
+              window.scrollTo({
+                top: scrollTo,
+                behavior: 'smooth'
+              });
+            }
+          }
+          lastScrollPosition.current = currentScroll;
+        }
+      });
+    }, options);
+
+    headings.forEach(heading => {
+      observerRef.current.observe(heading);
+    });
+  }, [isScrolling]);
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -670,23 +795,26 @@ export default function Post({
       .loading-indicator {
         display: flex;
         justify-content: center;
-        padding: 2rem;
+        padding: 1rem;
+        margin: 2rem 0;
       }
+      
       .loading-spinner {
         width: 40px;
         height: 40px;
         border: 4px solid rgba(59, 130, 246, 0.2);
-        border-top: 4px solid #3b82f6;
+        border-top-color: #3b82f6;
         border-radius: 50%;
         animation: spin 1s linear infinite;
       }
-      .dark .loading-spinner {
-        border-color: rgba(96, 165, 250, 0.2);
-        border-top-color: #60a5fa;
-      }
+      
       @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        to { transform: rotate(360deg); }
+      }
+      
+      .dark .loading-spinner {
+        border-top-color: #60a5fa;
+        border-color: rgba(96, 165, 250, 0.2);
       }
     `;
     document.head.appendChild(style);
@@ -727,72 +855,45 @@ export default function Post({
       if (scrollTimeoutRef.current) {
         cancelAnimationFrame(scrollTimeoutRef.current);
       }
+      if (contentObserverRef.current) {
+        contentObserverRef.current.disconnect();
+      }
     };
   }, []);
 
+  // 初始化页面
   useEffect(() => {
-    if (!contentRef.current) return;
+    const initializePage = async () => {
+      const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+      setIsDarkMode(savedDarkMode);
+      document.documentElement.classList.toggle('dark', savedDarkMode);
 
-    const codeBlocks = contentRef.current.querySelectorAll('pre');
-    codeBlocks.forEach((pre) => {
-      if (pre.querySelector('.code-block-header')) return;
+      await Promise.all([
+        loadHighlightJS(savedDarkMode),
+        initializeWaline(),
+        loadHLJSBase()
+      ]);
 
-      const button = document.createElement('button');
-      button.className = 'copy-btn';
-      button.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-        </svg>
-        <span>复制</span>
-      `;
-
-      const header = document.createElement('div');
-      header.className = 'code-block-header';
-      
-      const language = pre.className.match(/language-(\w+)/)?.[1] || '代码';
-      const languageSpan = document.createElement('span');
-      languageSpan.textContent = language;
-      
-      header.appendChild(languageSpan);
-      header.appendChild(button);
-      pre.insertBefore(header, pre.firstChild);
-
-      button.addEventListener('click', () => {
-        const code = pre.querySelector('code')?.textContent || '';
-        navigator.clipboard.writeText(code).then(() => {
-          button.classList.add('copied');
-          button.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-            <span>已复制</span>
-          `;
-          setTimeout(() => {
-            button.classList.remove('copied');
-            button.innerHTML = `
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-              </svg>
-              <span>复制</span>
-            `;
-          }, 2000);
-        });
-      });
-    });
-
-    const handleResize = () => {
-      const codeBlocks = contentRef.current?.querySelectorAll('pre') || [];
-      codeBlocks.forEach((pre) => {
-        const codeElement = pre.querySelector('code');
-        if (codeElement) {
-          void codeElement.offsetWidth;
-        }
-      });
+      // 如果是短内容，直接初始化所有功能
+      if (isShortContent) {
+        initializeContentFeatures();
+      }
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [loadedContent]);
+    const loadHLJSBase = () => {
+      if (!window.hljs) {
+        return new Promise((resolve) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
+          script.onload = () => resolve();
+          document.head.appendChild(script);
+        });
+      }
+      return Promise.resolve();
+    };
+
+    initializePage();
+  }, [initializeContentFeatures, isShortContent]);
 
   const highlightText = (text, query) => {
     if (!query) return text;
@@ -931,110 +1032,6 @@ export default function Post({
     };
   }, []);
 
-  const setupHeadingObserver = useCallback(() => {
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-    }
-
-    const headings = contentRef.current?.querySelectorAll('h1, h2');
-    if (!headings || headings.length === 0) return;
-
-    const options = {
-      root: null,
-      rootMargin: '-100px 0px -50% 0px',
-      threshold: 0.5
-    };
-
-    observerRef.current = new IntersectionObserver((entries) => {
-      if (isScrolling) return;
-
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          setActiveHeading(entry.target.id);
-          
-          const currentScroll = window.pageYOffset;
-          if (currentScroll < lastScrollPosition.current) {
-            const headingTop = entry.target.getBoundingClientRect().top;
-            if (headingTop < 100) {
-              const scrollTo = window.pageYOffset + headingTop - 100;
-              window.scrollTo({
-                top: scrollTo,
-                behavior: 'smooth'
-              });
-            }
-          }
-          lastScrollPosition.current = currentScroll;
-        }
-      });
-    }, options);
-
-    headings.forEach(heading => {
-      observerRef.current.observe(heading);
-    });
-  }, [isScrolling]);
-
-  useEffect(() => {
-    const initializePage = async () => {
-      const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-      setIsDarkMode(savedDarkMode);
-      document.documentElement.classList.toggle('dark', savedDarkMode);
-
-      await Promise.all([
-        loadHighlightJS(savedDarkMode),
-        initializeWaline(),
-        loadHLJSBase()
-      ]);
-
-      if (contentHtml) {
-        setupImagePreview();
-        setupHeadingAnchors();
-        setTimeout(() => {
-          setupHeadingObserver();
-          if (window.location.hash) {
-            const id = window.location.hash.substring(1);
-            scrollToHeading(id, false);
-          }
-        }, 500);
-      }
-    };
-
-    const loadHLJSBase = () => {
-      if (!window.hljs) {
-        return new Promise((resolve) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
-          script.onload = () => resolve();
-          document.head.appendChild(script);
-        });
-      }
-      return Promise.resolve();
-    };
-
-    const setupImagePreview = () => {
-      const articleImages = document.querySelectorAll('.prose img');
-      articleImages.forEach(img => {
-        img.addEventListener('click', () => {
-          setPreviewImage(img.src);
-        });
-      });
-    };
-
-    const setupHeadingAnchors = () => {
-      if (contentRef.current) {
-        const headings = contentRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6');
-        
-        headings.forEach((heading) => {
-          if (!heading.id) {
-            const id = heading.textContent.toLowerCase().replace(/\s+/g, '-');
-            heading.id = id;
-          }
-        });
-      }
-    };
-
-    initializePage();
-  }, [contentHtml, setupHeadingObserver, loadedContent]);
-
   const scrollToHeading = useCallback((id, smooth = true) => {
     const targetElement = document.getElementById(id);
     if (!targetElement) return;
@@ -1087,10 +1084,26 @@ export default function Post({
             </Link>
 
             <div className="hidden md:flex space-x-6 items-center">
-              <NavLink href="/">首页</NavLink>
-              <NavLink href="/about">关于</NavLink>
-              <NavLink href="/archive">归档</NavLink>
-              <NavLink href="/tags">标签</NavLink>
+              <Link href="/" passHref>
+                <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                  首页
+                </a>
+              </Link>
+              <Link href="/about" passHref>
+                <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                  关于
+                </a>
+              </Link>
+              <Link href="/archive" passHref>
+                <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                  归档
+                </a>
+              </Link>
+              <Link href="/tags" passHref>
+                <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+                  标签
+                </a>
+              </Link>
               <button
                 onClick={openSearch}
                 className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors p-2"
@@ -1208,10 +1221,38 @@ export default function Post({
             </button>
             
             <div className="mt-6 space-y-3">
-              <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)}>首页</MobileNavLink>
-              <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>关于</MobileNavLink>
-              <MobileNavLink href="/archive" onClick={() => setIsMenuOpen(false)}>归档</MobileNavLink>
-              <MobileNavLink href="/tags" onClick={() => setIsMenuOpen(false)}>标签</MobileNavLink>
+              <Link href="/" passHref>
+                <a 
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                >
+                  首页
+                </a>
+              </Link>
+              <Link href="/about" passHref>
+                <a 
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                >
+                  关于
+                </a>
+              </Link>
+              <Link href="/archive" passHref>
+                <a 
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                >
+                  归档
+                </a>
+              </Link>
+              <Link href="/tags" passHref>
+                <a 
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                >
+                  标签
+                </a>
+              </Link>
             </div>
             
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
@@ -1292,12 +1333,11 @@ export default function Post({
                 )}
                 <div
                   className="text-gray-700 dark:text-gray-300 w-full"
-                  dangerouslySetInnerHTML={{ __html: loadedContent }}
+                  dangerouslySetInnerHTML={{ __html: visibleContent }}
                 />
-                
-                {!isContentFullyLoaded && contentLength > SHORT_ARTICLE_THRESHOLD && (
+                {!isContentFullyLoaded && !isShortContent && (
                   <div className="loading-indicator">
-                    <div className="loading-spinner"></div>
+                    <div className="loading-spinner" />
                   </div>
                 )}
               </article>
@@ -1389,22 +1429,3 @@ export default function Post({
     </>
   );
 }
-
-const NavLink = ({ href, children }) => (
-  <Link href={href} passHref>
-    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
-      {children}
-    </a>
-  </Link>
-);
-
-const MobileNavLink = ({ href, children, onClick }) => (
-  <Link href={href} passHref>
-    <a 
-      onClick={onClick}
-      className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-    >
-      {children}
-    </a>
-  </Link>
-);
