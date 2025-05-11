@@ -51,7 +51,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const [previewImage, setPreviewImage] = useState(null);
   const [activeHeading, setActiveHeading] = useState(null);
   const [isScrolling, setIsScrolling] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const walineInstance = useRef(null);
   const contentRef = useRef(null);
   const observerRef = useRef(null);
@@ -503,50 +502,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         height: 24px;
       }
 
-      /* 优化的页面过渡动画 */
       .page-container {
         opacity: 0;
-        transform: translateY(20px);
-        transition: 
-          opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-          transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-        will-change: opacity, transform;
+        transform: translateY(100px);
+        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .page-container.mounted {
         opacity: 1;
         transform: translateY(0);
-      }
-
-      /* 加载指示器 */
-      .loading-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: white;
-        z-index: 9999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: opacity 0.6s ease-out;
-      }
-      .dark .loading-overlay {
-        background-color: #111827;
-      }
-      .loading-spinner {
-        width: 48px;
-        height: 48px;
-        border: 5px solid rgba(59, 130, 246, 0.2);
-        border-radius: 50%;
-        border-top-color: #3b82f6;
-        animation: spin 1s ease-in-out infinite;
-      }
-      .dark .loading-spinner {
-        border-top-color: #60a5fa;
-      }
-      @keyframes spin {
-        to { transform: rotate(360deg); }
       }
 
       /* Fixed layout styles */
@@ -621,12 +584,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     `;
     document.head.appendChild(style);
 
-    // 设置加载状态
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-      setIsMounted(true);
-    }, 400); // 确保最短显示时间
-
+    setIsMounted(true);
     checkMobile();
     window.addEventListener('resize', checkMobile);
 
@@ -662,7 +620,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       if (scrollTimeoutRef.current) {
         cancelAnimationFrame(scrollTimeoutRef.current);
       }
-      clearTimeout(timer);
     };
   }, []);
 
@@ -788,15 +745,10 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   useEffect(() => {
     const handleRouteChangeStart = () => {
       setIsMounted(false);
-      setIsLoading(true);
     };
 
     const handleRouteChangeComplete = () => {
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-        setIsMounted(true);
-      }, 400);
-      return () => clearTimeout(timer);
+      setIsMounted(true);
     };
 
     router.events.on('routeChangeStart', handleRouteChangeStart);
@@ -1049,13 +1001,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
   return (
     <>
-      {/* 加载指示器 */}
-      {isLoading && (
-        <div className="loading-overlay">
-          <div className="loading-spinner"></div>
-        </div>
-      )}
-
       <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-50">
         <div className="container mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
