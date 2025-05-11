@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../../lib/posts';
-import fs from 'fs'; 
+import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 import { remark } from 'remark';
@@ -22,27 +22,33 @@ export async function getStaticProps({ params }) {
   const fileContents = fs.readFileSync(filePath, 'utf8');
   const { data, content } = matter(fileContents);
 
-  // 提前解析标题生成目录
-  const headings = [];
-  const lines = content.split('\n');
-  lines.forEach(line => {
-    if (line.startsWith('# ')) {
-      headings.push({
-        level: 'h1',
-        text: line.replace('# ', '').trim(),
-        id: line.replace('# ', '').trim().toLowerCase().replace(/\s+/g, '-')
-      });
-    } else if (line.startsWith('## ')) {
-      headings.push({
-        level: 'h2',
-        text: line.replace('## ', '').trim(),
-        id: line.replace('## ', '').trim().toLowerCase().replace(/\s+/g, '-')
-      });
-    }
-  });
-
   const processedContent = await remark().use(html).process(content);
   const contentHtml = processedContent.toString();
+
+  // 使用正则表达式从 Markdown 内容中提取标题
+  const headings = [];
+  const lines = content.split('\n');
+  
+  for (const line of lines) {
+    const h1Match = line.match(/^#\s+(.+)/);
+    const h2Match = line.match(/^##\s+(.+)/);
+    
+    if (h1Match) {
+      headings.push({
+        level: 'h1',
+        text: h1Match[1].trim(),
+        id: h1Match[1].trim().toLowerCase().replace(/\s+/g, '-')
+      });
+    } else if (h2Match) {
+      headings.push({
+        level: 'h2',
+        text: h2Match[1].trim(),
+        id: h2Match[1].trim().toLowerCase().replace(/\s+/g, '-')
+      });
+    }
+  }
+
+  const contentLength = content.length;
 
   const allPostsData = getSortedPostsData();
   const filteredPosts = allPostsData.filter((post) => post.slug !== params.slug);
@@ -56,83 +62,96 @@ export async function getStaticProps({ params }) {
       contentHtml,
       recommendedPosts,
       allPostsData,
-      headings // 提前解析好的目录信息
+      fullToc: headings,
+      contentLength
     },
   };
 }
 
-export default function Post({ frontmatter, contentHtml, recommendedPosts, allPostsData, headings }) {
+export default function Post({ 
+  frontmatter, 
+  contentHtml, 
+  recommendedPosts, 
+  allPostsData,
+  fullToc,
+  contentLength
+}) {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [toc, setToc] = useState(headings); // 使用预先生成的目录
+  const [toc, setToc] = useState(fullToc);
   const [isMounted, setIsMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [activeHeading, setActiveHeading] = useState(null);
   const [isScrolling, setIsScrolling] = useState(false);
-  const [visibleContent, setVisibleContent] = useState('');
+  const [loadedContent, setLoadedContent] = useState('');
   const [isContentFullyLoaded, setIsContentFullyLoaded] = useState(false);
-  const [isShortContent, setIsShortContent] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const walineInstance = useRef(null);
   const contentRef = useRef(null);
   const observerRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
   const lastScrollPosition = useRef(0);
   const commentSectionRef = useRef(null);
-  const contentObserverRef = useRef(null);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
 
-  // 检查内容是否较短（小于2000字符）
-  useEffect(() => {
-    if (contentHtml.length < 2000) {
-      setIsShortContent(true);
-      setIsContentFullyLoaded(true);
-      setVisibleContent(contentHtml);
-    } else {
-      // 初始只加载前半部分内容
-      const halfLength = Math.floor(contentHtml.length / 2);
-      setVisibleContent(contentHtml.substring(0, halfLength));
-    }
-  }, [contentHtml]);
+  const SHORT_ARTICLE_THRESHOLD = 1000;
 
-  // 设置内容懒加载观察器
   useEffect(() => {
-    if (isShortContent || isContentFullyLoaded) return;
-
-    const options = {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0.1
+    const initializeContent = async () => {
+      setIsLoading(true);
+      
+      if (contentLength <= SHORT_ARTICLE_THRESHOLD) {
+        setLoadedContent(contentHtml);
+        setIsContentFullyLoaded(true);
+      } else {
+        const halfContent = getPartialContent(contentHtml, 0.5);
+        setLoadedContent(halfContent);
+        setIsContentFullyLoaded(false);
+      }
+      
+      setIsLoading(false);
     };
 
-    const handleIntersection = (entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          // 加载剩余内容
-          setVisibleContent(contentHtml);
-          setIsContentFullyLoaded(true);
-          if (contentObserverRef.current) {
-            contentObserverRef.current.disconnect();
-          }
-        }
-      });
-    };
+    initializeContent();
+  }, [contentHtml, contentLength]);
 
-    contentObserverRef.current = new IntersectionObserver(handleIntersection, options);
-    if (contentRef.current) {
-      contentObserverRef.current.observe(contentRef.current);
-    }
+  useEffect(() => {
+    if (isContentFullyLoaded || contentLength <= SHORT_ARTICLE_THRESHOLD) return;
 
-    return () => {
-      if (contentObserverRef.current) {
-        contentObserverRef.current.disconnect();
+    const handleScroll = () => {
+      const scrollPosition = window.innerHeight + window.pageYOffset;
+      const pageHeight = document.documentElement.scrollHeight;
+      const threshold = pageHeight * 0.9;
+
+      if (scrollPosition >= threshold && !isContentFullyLoaded) {
+        setLoadedContent(contentHtml);
+        setIsContentFullyLoaded(true);
       }
     };
-  }, [contentHtml, isShortContent, isContentFullyLoaded]);
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [contentHtml, isContentFullyLoaded, contentLength]);
+
+  const getPartialContent = (html, percentage) => {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    
+    const elements = Array.from(tempDiv.children);
+    const totalElements = elements.length;
+    const elementsToKeep = Math.ceil(totalElements * percentage);
+    
+    for (let i = elementsToKeep; i < totalElements; i++) {
+      tempDiv.removeChild(elements[i]);
+    }
+    
+    return tempDiv.innerHTML;
+  };
 
   const checkMobile = () => {
     setIsMobile(window.innerWidth < 768);
@@ -203,7 +222,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         transform: scale(1.02);
       }
       
-      /* Enhanced code block styles */
       .prose pre {
         position: relative;
         background-color: var(--color-code-bg);
@@ -222,7 +240,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         line-height: 1.6;
       }
 
-      /* Improved code block scrolling */
       .prose pre {
         overflow-x: auto;
       }
@@ -232,7 +249,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         padding-right: 1rem;
       }
 
-      /* Custom scrollbar for code blocks */
       .prose pre::-webkit-scrollbar {
         height: 6px;
         background-color: transparent;
@@ -313,13 +329,11 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         --color-code-btn-success: #28a745;
       }
 
-      /* Smart code block width handling */
       .prose pre {
         width: 100%;
         max-width: 100%;
       }
 
-      /* Table styles */
       .prose table {
         display: block;
         width: 100%;
@@ -584,7 +598,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         transform: translateY(0);
       }
 
-      /* Fixed layout styles */
       .main-content-container {
         max-width: 100%;
         width: 100%;
@@ -654,30 +667,26 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         color: #93c5fd;
       }
 
-      /* Loading indicator */
       .loading-indicator {
         display: flex;
         justify-content: center;
-        padding: 1rem;
-        margin: 2rem 0;
+        padding: 2rem;
       }
-      
       .loading-spinner {
         width: 40px;
         height: 40px;
         border: 4px solid rgba(59, 130, 246, 0.2);
-        border-top-color: #3b82f6;
+        border-top: 4px solid #3b82f6;
         border-radius: 50%;
         animation: spin 1s linear infinite;
       }
-      
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-      
       .dark .loading-spinner {
-        border-top-color: #60a5fa;
         border-color: rgba(96, 165, 250, 0.2);
+        border-top-color: #60a5fa;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
       }
     `;
     document.head.appendChild(style);
@@ -718,22 +727,16 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       if (scrollTimeoutRef.current) {
         cancelAnimationFrame(scrollTimeoutRef.current);
       }
-      if (contentObserverRef.current) {
-        contentObserverRef.current.disconnect();
-      }
     };
   }, []);
 
   useEffect(() => {
-    if (!contentRef.current || !visibleContent) return;
+    if (!contentRef.current) return;
 
-    // Add copy buttons and handle code blocks
     const codeBlocks = contentRef.current.querySelectorAll('pre');
     codeBlocks.forEach((pre) => {
-      // Skip if already processed
       if (pre.querySelector('.code-block-header')) return;
 
-      // Create copy button
       const button = document.createElement('button');
       button.className = 'copy-btn';
       button.innerHTML = `
@@ -743,11 +746,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         <span>复制</span>
       `;
 
-      // Create header div
       const header = document.createElement('div');
       header.className = 'code-block-header';
       
-      // Detect language (if specified in class)
       const language = pre.className.match(/language-(\w+)/)?.[1] || '代码';
       const languageSpan = document.createElement('span');
       languageSpan.textContent = language;
@@ -756,7 +757,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       header.appendChild(button);
       pre.insertBefore(header, pre.firstChild);
 
-      // Add copy functionality
       button.addEventListener('click', () => {
         const code = pre.querySelector('code')?.textContent || '';
         navigator.clipboard.writeText(code).then(() => {
@@ -780,13 +780,11 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       });
     });
 
-    // Handle window resize to re-check overflow
     const handleResize = () => {
       const codeBlocks = contentRef.current?.querySelectorAll('pre') || [];
       codeBlocks.forEach((pre) => {
         const codeElement = pre.querySelector('code');
         if (codeElement) {
-          // Force reflow to ensure proper width calculation
           void codeElement.offsetWidth;
         }
       });
@@ -794,7 +792,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [visibleContent]);
+  }, [loadedContent]);
 
   const highlightText = (text, query) => {
     if (!query) return text;
@@ -1035,7 +1033,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
 
     initializePage();
-  }, [contentHtml, setupHeadingObserver]);
+  }, [contentHtml, setupHeadingObserver, loadedContent]);
 
   const scrollToHeading = useCallback((id, smooth = true) => {
     const targetElement = document.getElementById(id);
@@ -1294,11 +1292,12 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
                 )}
                 <div
                   className="text-gray-700 dark:text-gray-300 w-full"
-                  dangerouslySetInnerHTML={{ __html: visibleContent }}
+                  dangerouslySetInnerHTML={{ __html: loadedContent }}
                 />
-                {!isContentFullyLoaded && !isShortContent && (
+                
+                {!isContentFullyLoaded && contentLength > SHORT_ARTICLE_THRESHOLD && (
                   <div className="loading-indicator">
-                    <div className="loading-spinner" />
+                    <div className="loading-spinner"></div>
                   </div>
                 )}
               </article>
