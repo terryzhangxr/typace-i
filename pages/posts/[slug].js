@@ -1,13 +1,33 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../../lib/posts';
-import fs from 'fs'; 
+import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 import { remark } from 'remark';
 import html from 'remark-html';
 import Head from 'next/head';
 import Link from 'next/link';
+
+// 工具组件定义
+const NavLink = ({ href, children }) => (
+  <Link href={href} passHref>
+    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+      {children}
+    </a>
+  </Link>
+);
+
+const MobileNavLink = ({ href, children, onClick }) => (
+  <Link href={href} passHref>
+    <a 
+      onClick={onClick}
+      className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+    >
+      {children}
+    </a>
+  </Link>
+);
 
 export async function getStaticPaths() {
   const posts = getSortedPostsData();
@@ -25,6 +45,23 @@ export async function getStaticProps({ params }) {
   const processedContent = await remark().use(html).process(content);
   const contentHtml = processedContent.toString();
 
+  // 提取标题用于目录
+  const headings = [];
+  const lines = content.split('\n');
+  lines.forEach((line) => {
+    if (line.startsWith('# ')) {
+      headings.push({
+        level: 'h1',
+        text: line.replace('# ', '').trim(),
+      });
+    } else if (line.startsWith('## ')) {
+      headings.push({
+        level: 'h2',
+        text: line.replace('## ', '').trim(),
+      });
+    }
+  });
+
   const allPostsData = getSortedPostsData();
   const filteredPosts = allPostsData.filter((post) => post.slug !== params.slug);
   const recommendedPosts = filteredPosts
@@ -37,11 +74,12 @@ export async function getStaticProps({ params }) {
       contentHtml,
       recommendedPosts,
       allPostsData,
+      headings,
     },
   };
 }
 
-export default function Post({ frontmatter, contentHtml, recommendedPosts, allPostsData }) {
+export default function Post({ frontmatter, contentHtml, recommendedPosts, allPostsData, headings }) {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [toc, setToc] = useState([]);
@@ -51,6 +89,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const [previewImage, setPreviewImage] = useState(null);
   const [activeHeading, setActiveHeading] = useState(null);
   const [isScrolling, setIsScrolling] = useState(false);
+  const [loadedContent, setLoadedContent] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFullyLoaded, setIsFullyLoaded] = useState(false);
   const walineInstance = useRef(null);
   const contentRef = useRef(null);
   const observerRef = useRef(null);
@@ -61,6 +102,30 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+
+  // 初始化懒加载内容
+  const initializeLazyContent = useCallback(() => {
+    if (!contentHtml) return;
+
+    if (contentHtml.length < 2000) {
+      setLoadedContent(contentHtml);
+      setIsFullyLoaded(true);
+      setIsLoading(false);
+      return;
+    }
+
+    const halfLength = Math.floor(contentHtml.length / 2);
+    const firstHalf = contentHtml.substring(0, halfLength);
+    setLoadedContent(firstHalf);
+    setIsLoading(false);
+
+    const timer = setTimeout(() => {
+      setLoadedContent(contentHtml);
+      setIsFullyLoaded(true);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [contentHtml]);
 
   const checkMobile = () => {
     setIsMobile(window.innerWidth < 768);
@@ -107,6 +172,176 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     smoothScrollTo(targetPosition);
   }, [smoothScrollTo]);
 
+  const highlightText = (text, query) => {
+    if (!query) return text;
+    const regex = new RegExp(`(${query})`, 'gi');
+    return text.replace(regex, '<span class="search-highlight">$1</span>');
+  };
+
+  const openSearch = () => {
+    setIsSearchOpen(true);
+    setTimeout(() => {
+      document.getElementById('search-input')?.focus();
+    }, 100);
+  };
+
+  const closeSearch = () => {
+    setIsSearchOpen(false);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  const handleSearchResultClick = (slug) => {
+    closeSearch();
+    router.push(`/posts/${slug}`);
+  };
+
+  const loadHighlightJS = (isDark) => {
+    return new Promise((resolve) => {
+      const existingTheme = document.querySelector('#hljs-theme');
+      if (existingTheme) existingTheme.remove();
+
+      const theme = document.createElement('link');
+      theme.id = 'hljs-theme';
+      theme.rel = 'stylesheet';
+      theme.href = isDark
+        ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
+        : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
+      
+      theme.onload = () => {
+        if (window.hljs) {
+          window.hljs.highlightAll();
+        }
+        resolve();
+      };
+      document.head.appendChild(theme);
+    });
+  };
+
+  const initializeWaline = async () => {
+    if (walineInstance.current) {
+      walineInstance.current.destroy();
+      walineInstance.current = null;
+    }
+
+    if (!document.querySelector('#waline-css')) {
+      const link = document.createElement('link');
+      link.id = 'waline-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
+      document.head.appendChild(link);
+    }
+
+    if (typeof window.Waline === 'undefined') {
+      await new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
+        script.onload = resolve;
+        document.body.appendChild(script);
+      });
+    }
+
+    walineInstance.current = window.Waline.init({
+      el: '#waline-comment-container',
+      serverURL: 'https://comment.mrzxr.top/',
+      dark: 'html.dark',
+      path: router.asPath,
+      locale: { placeholder: '欢迎留言讨论...' },
+    });
+  };
+
+  const toggleDarkMode = async () => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    localStorage.setItem('darkMode', newDarkMode);
+    document.documentElement.classList.toggle('dark', newDarkMode);
+
+    await loadHighlightJS(newDarkMode);
+    initializeWaline();
+  };
+
+  const setupHeadingObserver = useCallback(() => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    const headings = contentRef.current?.querySelectorAll('h1, h2');
+    if (!headings || headings.length === 0) return;
+
+    const options = {
+      root: null,
+      rootMargin: '-100px 0px -50% 0px',
+      threshold: 0.5
+    };
+
+    observerRef.current = new IntersectionObserver((entries) => {
+      if (isScrolling) return;
+
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setActiveHeading(entry.target.id);
+          
+          const currentScroll = window.pageYOffset;
+          if (currentScroll < lastScrollPosition.current) {
+            const headingTop = entry.target.getBoundingClientRect().top;
+            if (headingTop < 100) {
+              const scrollTo = window.pageYOffset + headingTop - 100;
+              window.scrollTo({
+                top: scrollTo,
+                behavior: 'smooth'
+              });
+            }
+          }
+          lastScrollPosition.current = currentScroll;
+        }
+      });
+    }, options);
+
+    headings.forEach(heading => {
+      observerRef.current.observe(heading);
+    });
+  }, [isScrolling]);
+
+  const scrollToHeading = useCallback((id, smooth = true) => {
+    const targetElement = document.getElementById(id);
+    if (!targetElement) return;
+
+    const offset = 100;
+    const elementPosition = targetElement.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+    if (smooth) {
+      smoothScrollTo(offsetPosition, () => {
+        const finalPosition = targetElement.getBoundingClientRect().top;
+        if (finalPosition < offset) {
+          window.scrollBy({
+            top: finalPosition - offset,
+            behavior: 'auto'
+          });
+        }
+      });
+    } else {
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'auto'
+      });
+    }
+
+    window.history.replaceState(null, '', `#${id}`);
+    targetElement.setAttribute('tabindex', '-1');
+    targetElement.focus();
+    setActiveHeading(id);
+  }, [smoothScrollTo]);
+
+  const handleTocClick = (e, id) => {
+    e.preventDefault();
+    scrollToHeading(id);
+  };
+
+  const closePreview = () => {
+    setPreviewImage(null);
+  };
+
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -131,7 +366,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         transform: scale(1.02);
       }
       
-      /* Enhanced code block styles */
       .prose pre {
         position: relative;
         background-color: var(--color-code-bg);
@@ -150,7 +384,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         line-height: 1.6;
       }
 
-      /* Improved code block scrolling */
       .prose pre {
         overflow-x: auto;
       }
@@ -160,7 +393,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         padding-right: 1rem;
       }
 
-      /* Custom scrollbar for code blocks */
       .prose pre::-webkit-scrollbar {
         height: 6px;
         background-color: transparent;
@@ -241,13 +473,11 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         --color-code-btn-success: #28a745;
       }
 
-      /* Smart code block width handling */
       .prose pre {
         width: 100%;
         max-width: 100%;
       }
 
-      /* Table styles */
       .prose table {
         display: block;
         width: 100%;
@@ -512,7 +742,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         transform: translateY(0);
       }
 
-      /* Fixed layout styles */
       .main-content-container {
         max-width: 100%;
         width: 100%;
@@ -581,58 +810,83 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         background-color: #1e40af;
         color: #93c5fd;
       }
+
+      .loading-indicator {
+        display: flex;
+        justify-content: center;
+        padding: 2rem;
+      }
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(59, 130, 246, 0.2);
+        border-radius: 50%;
+        border-top-color: #3b82f6;
+        animation: spin 1s ease-in-out infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
     `;
     document.head.appendChild(style);
 
     setIsMounted(true);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
+    initializeLazyContent();
 
-    const handleScroll = () => {
-      clearTimeout(scrollTimeoutRef.current);
-      scrollTimeoutRef.current = setTimeout(() => {
-        setIsScrolling(false);
-      }, 100);
-      lastScrollPosition.current = window.scrollY;
-    };
+    if (typeof window !== 'undefined') {
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
 
-    window.addEventListener('scroll', handleScroll);
+      const handleScroll = () => {
+        clearTimeout(scrollTimeoutRef.current);
+        scrollTimeoutRef.current = setTimeout(() => {
+          setIsScrolling(false);
+        }, 100);
+        lastScrollPosition.current = window.scrollY;
+      };
 
-    const handleKeyDown = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        openSearch();
-      } else if (e.key === 'Escape') {
-        closeSearch();
-      }
-    };
+      window.addEventListener('scroll', handleScroll);
 
-    window.addEventListener('keydown', handleKeyDown);
+      const handleKeyDown = (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+          e.preventDefault();
+          openSearch();
+        } else if (e.key === 'Escape') {
+          closeSearch();
+        }
+      };
 
-    return () => {
-      document.head.removeChild(style);
-      window.removeEventListener('resize', checkMobile);
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('scroll', handleScroll);
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-      if (scrollTimeoutRef.current) {
-        cancelAnimationFrame(scrollTimeoutRef.current);
-      }
-    };
-  }, []);
+      window.addEventListener('keydown', handleKeyDown);
+
+      return () => {
+        document.head.removeChild(style);
+        window.removeEventListener('resize', checkMobile);
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('scroll', handleScroll);
+        if (observerRef.current) {
+          observerRef.current.disconnect();
+        }
+        if (scrollTimeoutRef.current) {
+          cancelAnimationFrame(scrollTimeoutRef.current);
+        }
+      };
+    }
+  }, [initializeLazyContent]);
 
   useEffect(() => {
-    if (!contentRef.current) return;
+    if (!contentRef.current || !loadedContent) return;
 
-    // Add copy buttons and handle code blocks
+    const tocItems = headings.map((heading, index) => ({
+      level: heading.level,
+      text: heading.text,
+      id: `${heading.level}-${index}`,
+    }));
+    setToc(tocItems);
+
     const codeBlocks = contentRef.current.querySelectorAll('pre');
     codeBlocks.forEach((pre) => {
-      // Skip if already processed
       if (pre.querySelector('.code-block-header')) return;
 
-      // Create copy button
       const button = document.createElement('button');
       button.className = 'copy-btn';
       button.innerHTML = `
@@ -642,11 +896,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         <span>复制</span>
       `;
 
-      // Create header div
       const header = document.createElement('div');
       header.className = 'code-block-header';
       
-      // Detect language (if specified in class)
       const language = pre.className.match(/language-(\w+)/)?.[1] || '代码';
       const languageSpan = document.createElement('span');
       languageSpan.textContent = language;
@@ -655,7 +907,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       header.appendChild(button);
       pre.insertBefore(header, pre.firstChild);
 
-      // Add copy functionality
       button.addEventListener('click', () => {
         const code = pre.querySelector('code')?.textContent || '';
         navigator.clipboard.writeText(code).then(() => {
@@ -679,13 +930,18 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       });
     });
 
-    // Handle window resize to re-check overflow
+    const articleImages = document.querySelectorAll('.prose img');
+    articleImages.forEach(img => {
+      img.addEventListener('click', () => {
+        setPreviewImage(img.src);
+      });
+    });
+
     const handleResize = () => {
       const codeBlocks = contentRef.current?.querySelectorAll('pre') || [];
       codeBlocks.forEach((pre) => {
         const codeElement = pre.querySelector('code');
         if (codeElement) {
-          // Force reflow to ensure proper width calculation
           void codeElement.offsetWidth;
         }
       });
@@ -693,31 +949,13 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [contentHtml]);
+  }, [loadedContent, headings]);
 
-  const highlightText = (text, query) => {
-    if (!query) return text;
-    const regex = new RegExp(`(${query})`, 'gi');
-    return text.replace(regex, '<span class="search-highlight">$1</span>');
-  };
-
-  const openSearch = () => {
-    setIsSearchOpen(true);
-    setTimeout(() => {
-      document.getElementById('search-input')?.focus();
-    }, 100);
-  };
-
-  const closeSearch = () => {
-    setIsSearchOpen(false);
-    setSearchQuery('');
-    setSearchResults([]);
-  };
-
-  const handleSearchResultClick = (slug) => {
-    closeSearch();
-    router.push(`/posts/${slug}`);
-  };
+  useEffect(() => {
+    if (isFullyLoaded && loadedContent === contentHtml) {
+      setupHeadingObserver();
+    }
+  }, [isFullyLoaded, loadedContent, contentHtml, setupHeadingObserver]);
 
   useEffect(() => {
     if (searchQuery.trim() === '') {
@@ -760,120 +998,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
   }, [router]);
 
-  const loadHighlightJS = (isDark) => {
-    return new Promise((resolve) => {
-      const existingTheme = document.querySelector('#hljs-theme');
-      if (existingTheme) existingTheme.remove();
-
-      const theme = document.createElement('link');
-      theme.id = 'hljs-theme';
-      theme.rel = 'stylesheet';
-      theme.href = isDark
-        ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
-        : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
-      
-      theme.onload = () => {
-        if (window.hljs) {
-          window.hljs.highlightAll();
-        }
-        resolve();
-      };
-      document.head.appendChild(theme);
-    });
-  };
-
-  const initializeWaline = async () => {
-    if (walineInstance.current) {
-      walineInstance.current.destroy();
-      walineInstance.current = null;
-    }
-
-    if (!document.querySelector('#waline-css')) {
-      const link = document.createElement('link');
-      link.id = 'waline-css';
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
-      document.head.appendChild(link);
-    }
-
-    if (typeof window.Waline === 'undefined') {
-      await new Promise((resolve) => {
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
-        script.onload = resolve;
-        document.body.appendChild(script);
-      });
-    }
-
-    walineInstance.current = window.Waline.init({
-      el: '#waline-comment-container',
-      serverURL: 'https://comment.mrzxr.top/',
-      dark: 'html.dark',
-      path: router.asPath,
-      locale: { placeholder: '欢迎留言讨论...' },
-    });
-  };
-
-  const toggleDarkMode = async () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    localStorage.setItem('darkMode', newDarkMode);
-    document.documentElement.classList.toggle('dark', newDarkMode);
-
-    await loadHighlightJS(newDarkMode);
-    initializeWaline();
-  };
-
-  useEffect(() => {
-    return () => {
-      if (walineInstance.current) {
-        walineInstance.current.destroy();
-      }
-    };
-  }, []);
-
-  const setupHeadingObserver = useCallback(() => {
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-    }
-
-    const headings = contentRef.current?.querySelectorAll('h1, h2');
-    if (!headings || headings.length === 0) return;
-
-    const options = {
-      root: null,
-      rootMargin: '-100px 0px -50% 0px',
-      threshold: 0.5
-    };
-
-    observerRef.current = new IntersectionObserver((entries) => {
-      if (isScrolling) return;
-
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          setActiveHeading(entry.target.id);
-          
-          const currentScroll = window.pageYOffset;
-          if (currentScroll < lastScrollPosition.current) {
-            const headingTop = entry.target.getBoundingClientRect().top;
-            if (headingTop < 100) {
-              const scrollTo = window.pageYOffset + headingTop - 100;
-              window.scrollTo({
-                top: scrollTo,
-                behavior: 'smooth'
-              });
-            }
-          }
-          lastScrollPosition.current = currentScroll;
-        }
-      });
-    }, options);
-
-    headings.forEach(heading => {
-      observerRef.current.observe(heading);
-    });
-  }, [isScrolling]);
-
   useEffect(() => {
     const initializePage = async () => {
       const savedDarkMode = localStorage.getItem('darkMode') === 'true';
@@ -885,19 +1009,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         initializeWaline(),
         loadHLJSBase()
       ]);
-
-      if (contentHtml) {
-        generateToc();
-        setupImagePreview();
-        setupHeadingAnchors();
-        setTimeout(() => {
-          setupHeadingObserver();
-          if (window.location.hash) {
-            const id = window.location.hash.substring(1);
-            scrollToHeading(id, false);
-          }
-        }, 500);
-      }
     };
 
     const loadHLJSBase = () => {
@@ -912,92 +1023,16 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       return Promise.resolve();
     };
 
-    const setupImagePreview = () => {
-      const articleImages = document.querySelectorAll('.prose img');
-      articleImages.forEach(img => {
-        img.addEventListener('click', () => {
-          setPreviewImage(img.src);
-        });
-      });
-    };
+    initializePage();
+  }, []);
 
-    const setupHeadingAnchors = () => {
-      if (contentRef.current) {
-        const headings = contentRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6');
-        
-        headings.forEach((heading) => {
-          if (!heading.id) {
-            const id = heading.textContent.toLowerCase().replace(/\s+/g, '-');
-            heading.id = id;
-          }
-        });
+  useEffect(() => {
+    return () => {
+      if (walineInstance.current) {
+        walineInstance.current.destroy();
       }
     };
-
-    initializePage();
-  }, [contentHtml, setupHeadingObserver]);
-
-  const generateToc = () => {
-    if (contentRef.current) {
-      const headings = contentRef.current.querySelectorAll('h1, h2');
-      const tocItems = [];
-
-      headings.forEach((heading) => {
-        const id = heading.id || heading.textContent.toLowerCase().replace(/\s+/g, '-');
-        if (!heading.id) {
-          heading.id = id;
-        }
-        
-        tocItems.push({
-          level: heading.tagName.toLowerCase(),
-          text: heading.textContent,
-          id,
-        });
-      });
-
-      setToc(tocItems);
-    }
-  };
-
-  const scrollToHeading = useCallback((id, smooth = true) => {
-    const targetElement = document.getElementById(id);
-    if (!targetElement) return;
-
-    const offset = 100;
-    const elementPosition = targetElement.getBoundingClientRect().top;
-    const offsetPosition = elementPosition + window.pageYOffset - offset;
-
-    if (smooth) {
-      smoothScrollTo(offsetPosition, () => {
-        const finalPosition = targetElement.getBoundingClientRect().top;
-        if (finalPosition < offset) {
-          window.scrollBy({
-            top: finalPosition - offset,
-            behavior: 'auto'
-          });
-        }
-      });
-    } else {
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'auto'
-      });
-    }
-
-    window.history.replaceState(null, '', `#${id}`);
-    targetElement.setAttribute('tabindex', '-1');
-    targetElement.focus();
-    setActiveHeading(id);
-  }, [smoothScrollTo]);
-
-  const handleTocClick = (e, id) => {
-    e.preventDefault();
-    scrollToHeading(id);
-  };
-
-  const closePreview = () => {
-    setPreviewImage(null);
-  };
+  }, []);
 
   return (
     <>
@@ -1216,8 +1251,13 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
                 )}
                 <div
                   className="text-gray-700 dark:text-gray-300 w-full"
-                  dangerouslySetInnerHTML={{ __html: contentHtml }}
+                  dangerouslySetInnerHTML={{ __html: loadedContent }}
                 />
+                {isLoading && (
+                  <div className="loading-indicator">
+                    <div className="loading-spinner"></div>
+                  </div>
+                )}
               </article>
             </div>
 
@@ -1285,8 +1325,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
               <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
               <ul className="space-y-2">
-                {toc.map((item) => (
-                  <li key={item.id}>
+                {toc.map((item, index) => (
+                  <li key={index}>
                     <a
                       href={`#${item.id}`}
                       onClick={(e) => handleTocClick(e, item.id)}
@@ -1307,22 +1347,3 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     </>
   );
 }
-
-const NavLink = ({ href, children }) => (
-  <Link href={href} passHref>
-    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
-      {children}
-    </a>
-  </Link>
-);
-
-const MobileNavLink = ({ href, children, onClick }) => (
-  <Link href={href} passHref>
-    <a 
-      onClick={onClick}
-      className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-    >
-      {children}
-    </a>
-  </Link>
-);
