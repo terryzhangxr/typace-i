@@ -367,44 +367,61 @@ const addDynamicStyles = () => {
       color: #fde68a;
     }
 
-    /* 新增文章卡片样式 */
+    /* 高级文章卡片样式 */
     .article-card {
       position: relative;
       border-radius: 1rem;
       overflow: hidden;
-      transition: all 0.3s ease;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-      background: linear-gradient(145deg, #f8fafc, #f1f5f9);
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      background: white;
       height: 100%;
       display: flex;
       flex-direction: column;
+      border: 1px solid rgba(0, 0, 0, 0.05);
     }
     .dark .article-card {
-      background: linear-gradient(145deg, #1f2937, #111827);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+      background: #1a202c;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      border-color: rgba(255, 255, 255, 0.05);
     }
     .article-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      transform: translateY(-8px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
     }
     .dark .article-card:hover {
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+    }
+    .article-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .article-card:hover::before {
+      opacity: 1;
     }
     .article-cover-container {
-      height: 180px;
+      height: 220px;
       overflow: hidden;
+      position: relative;
     }
     .article-cover {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 0.5s ease;
+      transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
     .article-card:hover .article-cover {
-      transform: scale(1.05);
+      transform: scale(1.08);
     }
     .article-content {
-      padding: 1.5rem;
+      padding: 1.75rem;
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -417,10 +434,11 @@ const addDynamicStyles = () => {
       background-color: #f3f4f6;
       padding: 0.25rem 0.75rem;
       border-radius: 9999px;
+      align-self: flex-start;
     }
     .dark .article-date {
       color: #d1d5db;
-      background-color: #374151;
+      background-color: #2d3748;
     }
     .article-title {
       font-size: 1.5rem;
@@ -428,6 +446,7 @@ const addDynamicStyles = () => {
       margin-bottom: 1rem;
       color: #111827;
       transition: color 0.2s ease;
+      line-height: 1.3;
     }
     .dark .article-title {
       color: #f3f4f6;
@@ -435,11 +454,11 @@ const addDynamicStyles = () => {
     .article-excerpt {
       color: #6b7280;
       margin-bottom: 1.5rem;
-      line-height: 1.625;
+      line-height: 1.7;
       flex: 1;
     }
     .dark .article-excerpt {
-      color: #9ca3af;
+      color: #a0aec0;
     }
     .article-footer {
       display: flex;
@@ -452,7 +471,9 @@ const addDynamicStyles = () => {
       align-items: center;
       color: #3b82f6;
       font-weight: 500;
-      transition: color 0.2s ease;
+      transition: all 0.2s ease;
+      position: relative;
+      padding-right: 1.5rem;
     }
     .dark .read-more {
       color: #60a5fa;
@@ -463,17 +484,99 @@ const addDynamicStyles = () => {
     .dark .read-more:hover {
       color: #3b82f6;
     }
-    .read-more svg {
-      margin-left: 0.5rem;
+    .read-more::after {
+      content: '→';
+      position: absolute;
+      right: 0;
       transition: transform 0.2s ease;
     }
-    .read-more:hover svg {
-      transform: translateX(2px);
+    .read-more:hover::after {
+      transform: translateX(4px);
     }
     .tag-container {
       display: flex;
       flex-wrap: wrap;
       gap: 0.5rem;
+    }
+
+    /* 高级导航栏样式 */
+    .navbar {
+      backdrop-filter: saturate(180%) blur(20px);
+      transition: all 0.3s ease;
+    }
+    .navbar-scrolled {
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }
+    .dark .navbar-scrolled {
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    }
+    .nav-link {
+      position: relative;
+      padding: 0.5rem 0;
+    }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: currentColor;
+      transition: width 0.3s ease;
+    }
+    .nav-link:hover::after {
+      width: 100%;
+    }
+
+    /* 高级英雄区域样式 */
+    .hero {
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -10%;
+      left: -10%;
+      width: 120%;
+      height: 120%;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+      z-index: -1;
+    }
+    .hero-title {
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 4px 20px rgba(59, 130, 246, 0.2);
+    }
+
+    /* 高级侧边栏样式 */
+    .sidebar-card {
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+    .dark .sidebar-card {
+      border-color: rgba(255, 255, 255, 0.05);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+    .sidebar-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    }
+    .dark .sidebar-card:hover {
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    /* 高级页脚样式 */
+    .footer {
+      backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .dark .footer {
+      border-top-color: rgba(255, 255, 255, 0.05);
     }
   `;
   document.head.appendChild(style);
@@ -494,6 +597,7 @@ export default function Home({ allPostsData }) {
   const [isMounted, setIsMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isNavbarScrolled, setIsNavbarScrolled] = useState(false);
 
   // 搜索相关状态
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -661,12 +765,19 @@ export default function Home({ allPostsData }) {
 
     window.addEventListener('keydown', handleKeyDown);
 
+    // 滚动监听
+    const handleScroll = () => {
+      setIsNavbarScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+
     return () => {
       router.events.off('routeChangeStart', handleRouteChangeStart);
       router.events.off('routeChangeComplete', handleRouteChangeComplete);
       router.events.off('beforeHistoryChange', handleHistoryChange);
       window.removeEventListener('resize', checkMobile);
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('scroll', handleScroll);
     };
   }, [router]);
 
@@ -796,9 +907,11 @@ export default function Home({ allPostsData }) {
 
   return (
     <>
-      {/* 导航栏 */}
-      <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-50">
-        <div className="container mx-auto px-8 py-4">
+      {/* 高级导航栏 */}
+      <nav className={`navbar fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md z-50 transition-all duration-300 ${
+        isNavbarScrolled ? 'navbar-scrolled py-3' : 'py-4'
+      }`}>
+        <div className="container mx-auto px-6">
           <div className="flex justify-between items-center">
             <Link href="/" passHref>
               <a className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
@@ -807,7 +920,7 @@ export default function Home({ allPostsData }) {
             </Link>
 
             {/* 桌面导航 */}
-            <div className="hidden md:flex space-x-6 items-center">
+            <div className="hidden md:flex space-x-8 items-center">
               <NavLink href="/">首页</NavLink>
               <NavLink href="/about">关于</NavLink>
               <NavLink href="/archive">归档</NavLink>
@@ -825,7 +938,15 @@ export default function Home({ allPostsData }) {
                 onClick={toggleDarkMode}
                 className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors p-2"
               >
-                {isDarkMode ? '🌙' : '☀️'}
+                {isDarkMode ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+                  </svg>
+                )}
               </button>
             </div>
 
@@ -954,32 +1075,35 @@ export default function Home({ allPostsData }) {
       </div>
 
       {/* 页面内容 */}
-      <div className={`min-h-screen p-8 pt-24 relative z-10 page-container ${
+      <div className={`min-h-screen p-6 pt-24 relative z-10 page-container ${
         isMounted ? 'mounted' : ''
       }`}>
         <Head>
           <title>首页 - Typace</title>
+          <meta name="description" content="Typace - 一个现代化的博客主题" />
+          <link rel="icon" href="/favicon.ico" />
         </Head>
 
-        <header className="text-center mb-8">
-          <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
+        {/* 英雄区域 */}
+        <header className="hero text-center mb-12">
+          <h1 className="hero-title text-6xl font-extrabold mb-6">
             Typace
           </h1>
-          <div className="hitokoto-container">
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 italic">
+          <div className="hitokoto-container max-w-2xl mx-auto">
+            <p className="text-lg text-gray-600 dark:text-gray-400 italic">
               <span className="typewriter">{displayText}</span>
             </p>
           </div>
         </header>
 
         {/* 主要内容区域 */}
-        <div className="flex">
+        <div className="flex flex-col lg:flex-row gap-8">
           {/* 左侧简介栏 */}
-          <aside className="w-1/4 pr-8 hidden lg:block">
+          <aside className="lg:w-1/4">
             {/* 简介板块和最新文章板块的容器 */}
-            <div className="sticky top-24 space-y-6">
+            <div className="sticky top-28 space-y-6">
               {/* 简介板块 */}
-              <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
+              <div className="sidebar-card p-6 rounded-xl">
                 <div className="flex flex-col items-center">
                   {/* 博主头像 */}
                   <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
@@ -1059,7 +1183,7 @@ export default function Home({ allPostsData }) {
               </div>
 
               {/* 最新文章板块 */}
-              <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-md">
+              <div className="sidebar-card p-6 rounded-xl">
                 <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
                   最新文章
                 </h2>
@@ -1121,9 +1245,6 @@ export default function Home({ allPostsData }) {
                       <Link href={`/posts/${slug}`} passHref>
                         <a className="read-more">
                           阅读更多
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
                         </a>
                       </Link>
                     </div>
@@ -1170,34 +1291,38 @@ export default function Home({ allPostsData }) {
           </main>
         </div>
 
-        {/* 页脚 */}
-        <footer className="text-center mt-12">
-          <a href="/api/sitemap" className="inline-block">
-            <img
-              src="https://cdn.us.mrche.top/sitemap.svg"
-              alt="Sitemap"
-              className="block mx-auto w-8 h-8 dark:invert"
-            />
-          </a>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">
-            由Terryzhang&mrche创建的
-            <a
-              href="https://bgithub.xyz/terryzhangxr/typace-i"
-              className="text-blue-600 hover:underline dark:text-blue-400"
-            >
-              Typace
-            </a>
-            强势驱动
-          </p>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">
-              联系我们
-            <a
-              href="mailto:zhang@mrzxr.com"
-              className="text-blue-600 hover:underline dark:text-blue-400"
-            >
-              zhang@mrzxr.com
-            </a>
-          </p>
+        {/* 高级页脚 */}
+        <footer className="footer mt-16 py-8 border-t border-gray-100 dark:border-gray-800">
+          <div className="container mx-auto px-6">
+            <div className="flex flex-col items-center">
+              <a href="/api/sitemap" className="inline-block">
+                <img
+                  src="https://cdn.us.mrche.top/sitemap.svg"
+                  alt="Sitemap"
+                  className="block mx-auto w-8 h-8 dark:invert"
+                />
+              </a>
+              <p className="mt-4 text-gray-600 dark:text-gray-400 text-center">
+                由Terryzhang&mrche创建的
+                <a
+                  href="https://bgithub.xyz/terryzhangxr/typace-i"
+                  className="text-blue-600 hover:underline dark:text-blue-400 ml-1"
+                >
+                  Typace
+                </a>
+                强势驱动
+              </p>
+              <p className="mt-2 text-gray-600 dark:text-gray-400 text-center">
+                联系我们
+                <a
+                  href="mailto:zhang@mrzxr.com"
+                  className="text-blue-600 hover:underline dark:text-blue-400 ml-1"
+                >
+                  zhang@mrzxr.com
+                </a>
+              </p>
+            </div>
+          </div>
         </footer>
       </div>
     </>
@@ -1207,7 +1332,7 @@ export default function Home({ allPostsData }) {
 // 桌面导航链接组件
 const NavLink = ({ href, children }) => (
   <Link href={href} passHref>
-    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+    <a className="nav-link text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
       {children}
     </a>
   </Link>
@@ -1218,7 +1343,7 @@ const MobileNavLink = ({ href, children, onClick }) => (
   <Link href={href} passHref>
     <a 
       onClick={onClick}
-      className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+      className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
     >
       {children}
     </a>
