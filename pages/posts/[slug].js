@@ -1306,7 +1306,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </div>
       </div>
     </>
-  );
+  ); 
 }
 
 const NavLink = ({ href, children }) => (
