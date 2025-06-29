@@ -22,31 +22,6 @@ export async function getStaticProps({ params }) {
   const fileContents = fs.readFileSync(filePath, 'utf8');
   const { data, content } = matter(fileContents);
 
-  // 提前解析目录结构
-  const headings = [];
-  const lines = content.split('\n');
-  lines.forEach((line) => {
-    if (line.startsWith('# ')) {
-      headings.push({
-        level: 'h1',
-        text: line.replace('# ', '').trim(),
-        id: line.replace('# ', '').trim().toLowerCase().replace(/\s+/g, '-')
-      });
-    } else if (line.startsWith('## ')) {
-      headings.push({
-        level: 'h2',
-        text: line.replace('## ', '').trim(),
-        id: line.replace('## ', '').trim().toLowerCase().replace(/\s+/g, '-')
-      });
-    }
-  });
-
-  // 只处理部分内容用于初始渲染
-  const halfContent = lines.slice(0, Math.floor(lines.length / 2)).join('\n');
-  const processedHalfContent = await remark().use(html).process(halfContent);
-  const halfContentHtml = processedHalfContent.toString();
-
-  // 处理完整内容
   const processedContent = await remark().use(html).process(content);
   const contentHtml = processedContent.toString();
 
@@ -60,81 +35,32 @@ export async function getStaticProps({ params }) {
     props: {
       frontmatter: data,
       contentHtml,
-      halfContentHtml,
-      headings,
       recommendedPosts,
       allPostsData,
-      totalLines: lines.length
     },
   };
 }
 
-export default function Post({ 
-  frontmatter, 
-  contentHtml, 
-  halfContentHtml, 
-  headings,
-  recommendedPosts, 
-  allPostsData,
-  totalLines
-}) {
+export default function Post({ frontmatter, contentHtml, recommendedPosts, allPostsData }) {
   const router = useRouter();
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [toc, setToc] = useState(headings); // 使用预先生成的目录
+  const [toc, setToc] = useState([]);
   const [isMounted, setIsMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [activeHeading, setActiveHeading] = useState(null);
   const [isScrolling, setIsScrolling] = useState(false);
-  const [hasLoadedFullContent, setHasLoadedFullContent] = useState(totalLines < 100); // 短文章直接加载全部
-  const [displayedContent, setDisplayedContent] = useState(totalLines < 100 ? contentHtml : halfContentHtml);
   const walineInstance = useRef(null);
   const contentRef = useRef(null);
   const observerRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
   const lastScrollPosition = useRef(0);
   const commentSectionRef = useRef(null);
-  const intersectionObserverRef = useRef(null);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-
-  // 检查是否需要加载剩余内容
-  useEffect(() => {
-    if (hasLoadedFullContent || totalLines < 100) return;
-
-    const handleIntersection = (entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          setDisplayedContent(contentHtml);
-          setHasLoadedFullContent(true);
-          if (intersectionObserverRef.current) {
-            intersectionObserverRef.current.disconnect();
-          }
-        }
-      });
-    };
-
-    intersectionObserverRef.current = new IntersectionObserver(handleIntersection, {
-      rootMargin: '200px',
-      threshold: 0.1
-    });
-
-    if (contentRef.current) {
-      const sentinel = document.createElement('div');
-      sentinel.id = 'content-sentinel';
-      contentRef.current.appendChild(sentinel);
-      intersectionObserverRef.current.observe(sentinel);
-    }
-
-    return () => {
-      if (intersectionObserverRef.current) {
-        intersectionObserverRef.current.disconnect();
-      }
-    };
-  }, [contentHtml, hasLoadedFullContent, totalLines]);
 
   const checkMobile = () => {
     setIsMobile(window.innerWidth < 768);
@@ -655,12 +581,6 @@ export default function Post({
         background-color: #1e40af;
         color: #93c5fd;
       }
-
-      .loading-sentinel {
-        height: 1px;
-        width: 100%;
-        visibility: hidden;
-      }
     `;
     document.head.appendChild(style);
 
@@ -699,9 +619,6 @@ export default function Post({
       }
       if (scrollTimeoutRef.current) {
         cancelAnimationFrame(scrollTimeoutRef.current);
-      }
-      if (intersectionObserverRef.current) {
-        intersectionObserverRef.current.disconnect();
       }
     };
   }, []);
@@ -776,7 +693,7 @@ export default function Post({
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [displayedContent]);
+  }, [contentHtml]);
 
   const highlightText = (text, query) => {
     if (!query) return text;
@@ -970,6 +887,7 @@ export default function Post({
       ]);
 
       if (contentHtml) {
+        generateToc();
         setupImagePreview();
         setupHeadingAnchors();
         setTimeout(() => {
@@ -1018,6 +936,28 @@ export default function Post({
 
     initializePage();
   }, [contentHtml, setupHeadingObserver]);
+
+  const generateToc = () => {
+    if (contentRef.current) {
+      const headings = contentRef.current.querySelectorAll('h1, h2');
+      const tocItems = [];
+
+      headings.forEach((heading) => {
+        const id = heading.id || heading.textContent.toLowerCase().replace(/\s+/g, '-');
+        if (!heading.id) {
+          heading.id = id;
+        }
+        
+        tocItems.push({
+          level: heading.tagName.toLowerCase(),
+          text: heading.textContent,
+          id,
+        });
+      });
+
+      setToc(tocItems);
+    }
+  };
 
   const scrollToHeading = useCallback((id, smooth = true) => {
     const targetElement = document.getElementById(id);
@@ -1276,9 +1216,8 @@ export default function Post({
                 )}
                 <div
                   className="text-gray-700 dark:text-gray-300 w-full"
-                  dangerouslySetInnerHTML={{ __html: displayedContent }}
+                  dangerouslySetInnerHTML={{ __html: contentHtml }}
                 />
-                {!hasLoadedFullContent && <div id="content-sentinel" className="loading-sentinel"></div>}
               </article>
             </div>
 
