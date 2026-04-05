@@ -35,7 +35,7 @@ export default function Home({ allPostsData }) {
     ).slice(0, 6);
   }, [searchQuery, allPostsData]);
 
-  // --- 矩阵浮动粒子系统 (逻辑优化) ---
+  // --- 矩阵浮动粒子系统 ---
   useEffect(() => {
     setIsMounted(true);
     const savedDark = localStorage.getItem('darkMode') === 'true';
@@ -71,24 +71,26 @@ export default function Home({ allPostsData }) {
     resize();
 
     const render = () => {
-      time += 0.015; 
+      time += 0.02; // 控制波动速度
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const color = isDarkMode ? '255, 255, 255' : '0, 0, 0';
-      ctx.fillStyle = `rgba(${color}, 0.3)`;
       
-      const gap = 64; 
+      const color = isDarkMode ? '255, 255, 255' : '0, 0, 0';
+      ctx.fillStyle = `rgba(${color}, 0.12)`;
+      
+      const gap = 60; // 粒子之间的间距
       const rows = Math.ceil(canvas.height / gap) + 1;
       const cols = Math.ceil(canvas.width / gap) + 1;
-      const amplitude = 12; 
+      const amplitude = 15; // 浮动幅度
 
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           const x = c * gap;
-          const yOffset = Math.sin(time + (c * 0.4) + (r * 0.3)) * amplitude;
+          // 基于行列和时间计算 y 轴偏移量，形成整齐的波动感
+          const yOffset = Math.sin(time + (c * 0.3) + (r * 0.2)) * amplitude;
           const y = r * gap + yOffset;
 
           ctx.beginPath();
-          ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+          ctx.arc(x, y, 1.2, 0, Math.PI * 2);
           ctx.fill();
         }
       }
@@ -113,21 +115,22 @@ export default function Home({ allPostsData }) {
   return (
     <div className={`min-h-screen selection:bg-blue-600 selection:text-white transition-colors duration-700 ${isDarkMode ? 'dark bg-black text-white' : 'bg-[#fafafa] text-black'}`}>
       <Head>
-        <title>TYPACE — Engineered Aesthetics</title>
+        <title>TYPACE — Order & Aesthetic</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
       </Head>
 
-      <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-100" />
+      {/* 矩阵粒子背景 */}
+      <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-80" />
 
-      {/* 极简导航 */}
+      {/* 导航 */}
       <nav className="fixed top-0 w-full z-50 border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="max-w-[1440px] mx-auto px-10 h-16 flex items-center justify-between">
-          <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity uppercase">TYPACE</a></Link>
-          <div className="flex items-center space-x-10 text-[10px] font-bold uppercase tracking-[0.25em]">
+          <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity">TYPACE</a></Link>
+          <div className="flex items-center space-x-8 text-[11px] font-bold uppercase tracking-[0.2em]">
             <NavLink href="/archive">Archive</NavLink>
             <NavLink href="/about">About</NavLink>
-            <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-40 hover:opacity-100 transition-opacity"><SearchIcon /></button>
-            <button onClick={toggleDarkMode} className="w-5 h-5 flex items-center justify-center rounded-full border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm">
+            <button onClick={() => setIsSearchOpen(true)} className="p-2 opacity-40 hover:opacity-100 transition-opacity"><SearchIcon /></button>
+            <button onClick={toggleDarkMode} className="text-lg w-8 h-8 flex items-center justify-center rounded-full border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all">
               {isDarkMode ? '☼' : '☾'}
             </button>
           </div>
@@ -135,14 +138,14 @@ export default function Home({ allPostsData }) {
       </nav>
 
       <main className="relative z-10 max-w-[1440px] mx-auto px-10 pt-48 pb-32">
-        {/* 开屏揭幕动画 Header */}
-        <header className="mb-44 overflow-hidden">
-          <div className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+        {/* 开屏动画 Header */}
+        <header className="mb-44 overflow-hidden text-center md:text-left">
+          <div className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-16 opacity-0'}`}>
             <h1 className="text-[clamp(3.5rem,11vw,9.5rem)] leading-[0.82] font-black tracking-tighter mb-12">
-              BUILDING <br />
+              MAKING <br />
               <div className="relative h-[1.1em] overflow-hidden">
                 <div 
-                  className="transition-transform duration-[1000ms] delay-300 ease-[cubic-bezier(0.85,0,0.15,1)]"
+                  className="transition-transform duration-[1000ms] delay-300 ease-[cubic-bezier(0.8,0,0.2,1)]"
                   style={{ transform: `translateY(-${wordIndex * 20}%)` }}
                 >
                   {SCROLL_WORDS.map((w) => (
@@ -153,26 +156,26 @@ export default function Home({ allPostsData }) {
             </h1>
           </div>
           
-          <div className={`transition-all duration-[1800ms] delay-700 ease-out ${showHero ? 'opacity-40 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className={`transition-all duration-[1800ms] delay-700 ease-out ${showHero ? 'opacity-40 translate-y-0' : 'opacity-0 translate-y-6'}`}>
             <p className="max-w-2xl text-base font-medium leading-relaxed italic font-mono">
               {displayText}<span className="inline-block w-2 h-4 bg-blue-600 ml-2 animate-pulse" />
             </p>
           </div>
         </header>
 
-        {/* Vercel Bento Grid (10篇/页) */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-px bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/10">
+        {/* Bento Grid (每页10篇布局) */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-px bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 shadow-2xl shadow-black/5">
           {paginatedPosts.map((post, idx) => {
             const gridClass = [0, 5, 8].includes(idx) ? 'md:col-span-8' : 'md:col-span-4';
             return (
-              <div key={post.slug} className={`${gridClass} bg-white dark:bg-black min-h-[440px] relative group overflow-hidden`}>
+              <div key={post.slug} className={`${gridClass} bg-white dark:bg-black min-h-[420px] relative group overflow-hidden`}>
                 <ArticleBox post={post} featured={[0, 5, 8].includes(idx)} />
               </div>
             );
           })}
         </div>
 
-        {/* 现代数字分页 */}
+        {/* 现代分页 */}
         {totalPages > 1 && (
           <div className="mt-24 flex items-center justify-between border-t border-black/5 dark:border-white/10 pt-10">
             <div className="flex gap-4">
@@ -180,35 +183,36 @@ export default function Home({ allPostsData }) {
                 <button
                   key={i}
                   onClick={() => { setCurrentPage(i + 1); window.scrollTo({top: 0, behavior: 'smooth'}); }}
-                  className={`text-[10px] font-black transition-all border-b-2 pb-1 ${currentPage === i + 1 ? 'border-blue-600 text-blue-600' : 'border-transparent opacity-20 hover:opacity-100'}`}
+                  className={`text-xs font-black transition-all border-b-2 ${currentPage === i + 1 ? 'border-blue-600 text-blue-600' : 'border-transparent opacity-30 hover:opacity-100'}`}
                 >
                   {(i + 1).toString().padStart(2, '0')}
                 </button>
               ))}
             </div>
-            <span className="text-[9px] font-black uppercase tracking-[0.5em] opacity-10">Index Phase — {currentPage}</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.4em] opacity-20">System Phase {currentPage}</span>
           </div>
         )}
       </main>
 
-      {/* 搜索系统 */}
+      {/* 搜索 */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-8">
-          <div className="absolute inset-0 bg-white/98 dark:bg-black/98 backdrop-blur-2xl" onClick={() => setIsSearchOpen(false)} />
-          <div className="relative w-full max-w-3xl animate-in fade-in slide-in-from-bottom-8 duration-700">
+          <div className="absolute inset-0 bg-white/98 dark:bg-black/98 backdrop-blur-xl" onClick={() => setIsSearchOpen(false)} />
+          <div className="relative w-full max-w-3xl animate-in fade-in slide-in-from-bottom-4 duration-500">
             <input 
               autoFocus
-              className="w-full bg-transparent border-b-2 border-black/10 dark:border-white/10 text-5xl font-black tracking-tighter outline-none pb-8 focus:border-blue-600 transition-all uppercase"
-              placeholder="SEARCH..."
+              className="w-full bg-transparent border-b-4 border-black/10 dark:border-white/10 text-5xl font-black tracking-tighter outline-none pb-8 focus:border-blue-600 transition-colors uppercase"
+              placeholder="Start Typing..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <div className="mt-16 space-y-12">
+            <div className="mt-16 space-y-10">
               {searchResults.map(result => (
                 <Link key={result.slug} href={`/posts/${result.slug}`}>
                   <a className="group block" onClick={() => setIsSearchOpen(false)}>
-                    <div className="flex items-center space-x-4 mb-2 opacity-30">
-                      <span className="text-[9px] font-mono tracking-widest">{result.date}</span>
+                    <div className="flex items-center space-x-4 mb-2">
+                      <div className="h-px w-6 bg-blue-600 opacity-0 group-hover:opacity-100 transition-all"></div>
+                      <span className="text-[10px] font-mono opacity-30 tracking-widest uppercase">{result.date}</span>
                     </div>
                     <h4 className="text-3xl font-black group-hover:text-blue-600 transition-colors tracking-tighter uppercase">{result.title}</h4>
                   </a>
@@ -219,9 +223,15 @@ export default function Home({ allPostsData }) {
         </div>
       )}
 
-      <footer className="max-w-[1440px] mx-auto px-10 py-24 flex justify-between items-center opacity-20 text-[9px] font-bold tracking-[0.5em] uppercase">
-        <span>© TYPACE CORE SYSTEM 2026</span>
-        <span>ENGINEERED FOR THE WEB</span>
+      <footer className="max-w-[1440px] mx-auto px-10 py-24 flex flex-col md:flex-row justify-between items-center border-t border-black/5 dark:border-white/10">
+        <div className="text-[9px] font-bold tracking-[0.5em] uppercase opacity-30 mb-8 md:mb-0">
+          © Typace System Core 2026 — Terminal Logic
+        </div>
+        <div className="flex space-x-8 text-[9px] font-black uppercase tracking-widest opacity-30">
+          <a href="#" className="hover:text-blue-600 transition-colors">Twitter</a>
+          <a href="#" className="hover:text-blue-600 transition-colors">Github</a>
+          <a href="#" className="hover:text-blue-600 transition-colors">Email</a>
+        </div>
       </footer>
 
       <style jsx global>{`
@@ -234,15 +244,15 @@ export default function Home({ allPostsData }) {
   );
 }
 
-// --- 现代 Bento 文章块组件 ---
+// --- 子组件：Bento 文章块 ---
 const ArticleBox = ({ post, featured }) => (
   <Link href={`/posts/${post.slug}`}>
-    <a className="block h-full relative p-12 flex flex-col justify-end group">
-      {/* 调整后的封面：灰度更浅 (0.1)，透明度更高 (0.25) */}
+    <a className="block h-full relative p-10 flex flex-col justify-end group">
+      {/* 极简灰度封面 (grayscale-30) */}
       <div className="absolute inset-0 z-0">
         <img 
-          src={post.cover || 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2070&auto=format&fit=crop'} 
-          className="w-full h-full object-cover grayscale-[0.1] opacity-25 group-hover:grayscale-0 group-hover:opacity-60 group-hover:scale-105 transition-all duration-[1500ms] ease-out"
+          src={post.cover || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop'} 
+          className="w-full h-full object-cover grayscale-[0.3] opacity-10 group-hover:grayscale-0 group-hover:opacity-60 group-hover:scale-105 transition-all duration-[1200ms] ease-out"
           alt=""
         />
       </div>
@@ -258,14 +268,13 @@ const ArticleBox = ({ post, featured }) => (
         </h3>
         {featured && (
           <p className="mt-10 text-sm opacity-0 group-hover:opacity-60 transition-all duration-700 translate-y-6 group-hover:translate-y-0 line-clamp-2 max-w-xl font-medium leading-relaxed">
-            {post.excerpt || "Exploring the convergence of high-performance architecture and minimalist design principles..."}
+            {post.excerpt || "Analyzing the intersection of functional programming and minimalist interface design in contemporary systems..."}
           </p>
         )}
       </div>
 
-      {/* 装饰性箭头 */}
-      <div className="absolute top-12 right-12 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="3">
+      <div className="absolute top-10 right-10 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.5">
           <path d="M7 17L17 7M17 7H7M17 7V17" />
         </svg>
       </div>
