@@ -1,20 +1,23 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../lib/posts';
 import Head from 'next/head';
 import Link from 'next/link';
 
-const POSTS_PER_PAGE = 6; // 现代布局通常使用偶数网格
+const POSTS_PER_PAGE = 6;
+// PayloadCMS 风格关键词
+const SCROLL_WORDS = ["Modern", "Scalable", "Performant", "Minimalist", "Elegant"];
 
 export default function Home({ allPostsData }) {
   const router = useRouter();
-  
+  const canvasRef = useRef(null);
+
   // --- 状态管理 ---
   const [currentPage, setCurrentPage] = useState(1);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [displayText, setDisplayText] = useState('');
+  const [displayText, setDisplayText] = useState(''); // Hitokoto
+  const [wordIndex, setWordIndex] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -25,55 +28,82 @@ export default function Home({ allPostsData }) {
     return allPostsData.slice(start, start + POSTS_PER_PAGE);
   }, [currentPage, allPostsData]);
 
-  const allTags = useMemo(() => {
-    const tags = new Set();
-    allPostsData.forEach(p => p.tags?.forEach(t => tags.add(t)));
-    return Array.from(tags);
-  }, [allPostsData]);
-
-  // 搜索过滤
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
     return allPostsData.filter(post => 
       post.title.toLowerCase().includes(q) || 
-      post.excerpt?.toLowerCase().includes(q) ||
-      post.tags?.some(t => t.toLowerCase().includes(q))
-    ).slice(0, 8);
+      post.excerpt?.toLowerCase().includes(q)
+    ).slice(0, 6);
   }, [searchQuery, allPostsData]);
 
-  // --- 副作用 ---
+  // --- 副作用：粒子与动画 ---
   useEffect(() => {
     setIsMounted(true);
     const savedDark = localStorage.getItem('darkMode') === 'true';
     setIsDarkMode(savedDark);
     document.documentElement.classList.toggle('dark', savedDark);
 
-    // 获取并触发打字机
-    fetch('https://v1.hitokoto.cn')
-      .then(res => res.json())
-      .then(data => startTypewriter(data.hitokoto));
+    // 1. Hitokoto 打字机
+    fetch('https://v1.hitokoto.cn').then(res => res.json()).then(data => {
+      let i = 0;
+      const timer = setInterval(() => {
+        setDisplayText(data.hitokoto.slice(0, i + 1));
+        i++;
+        if (i >= data.hitokoto.length) clearInterval(timer);
+      }, 50);
+    });
+
+    // 2. Payload 文字滚动计时器
+    const wordTimer = setInterval(() => {
+      setWordIndex(prev => (prev + 1) % SCROLL_WORDS.length);
+    }, 2500);
+
+    // 3. Canvas 粒子系统
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', resize);
+    resize();
+
+    for (let i = 0; i < 40; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 2,
+        speedX: (Math.random() - 0.5) * 0.3,
+        speedY: (Math.random() - 0.5) * 0.3,
+      });
+    }
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)';
+      particles.forEach(p => {
+        p.x += p.speedX; p.y += p.speedY;
+        if(p.x > canvas.width) p.x = 0; if(p.y > canvas.height) p.y = 0;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+      });
+      requestAnimationFrame(animate);
+    };
+    animate();
 
     const handleKeyDown = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setIsSearchOpen(true);
-      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setIsSearchOpen(true); }
       if (e.key === 'Escape') setIsSearchOpen(false);
     };
-
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
-  const startTypewriter = (text) => {
-    let i = 0;
-    const timer = setInterval(() => {
-      setDisplayText(text.slice(0, i + 1));
-      i++;
-      if (i >= text.length) clearInterval(timer);
-    }, 80);
-  };
+    return () => {
+      clearInterval(wordTimer);
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isDarkMode]);
 
   const toggleDarkMode = () => {
     const next = !isDarkMode;
@@ -83,255 +113,151 @@ export default function Home({ allPostsData }) {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-500 ${isDarkMode ? 'dark bg-slate-950 text-slate-200' : 'bg-slate-50 text-slate-900'}`}>
+    <div className={`min-h-screen selection:bg-blue-500 selection:text-white transition-colors duration-700 ${isDarkMode ? 'dark bg-black text-white' : 'bg-white text-black'}`}>
       <Head>
-        <title>Typace | 探索数字生活的节奏</title>
+        <title>TYPACE — Digital Rhythm</title>
       </Head>
 
-      {/* 现代动态背景 - Aurora Effect */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-blue-400/10 blur-[120px] dark:bg-blue-600/5 animate-pulse" />
-        <div className="absolute top-[40%] -right-[10%] w-[30%] h-[30%] rounded-full bg-indigo-400/10 blur-[100px] dark:bg-purple-600/5" />
-      </div>
+      {/* 粒子背景 */}
+      <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-60" />
 
-      {/* 极简导航栏 */}
-      <nav className="fixed top-0 w-full z-50 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/">
-            <a className="text-2xl font-black tracking-tighter hover:opacity-70 transition-opacity">
-              TYPACE<span className="text-blue-500">.</span>
-            </a>
-          </Link>
-          
-          <div className="hidden md:flex items-center space-x-8 text-sm font-medium">
-            <NavLink href="/about">关于</NavLink>
-            <NavLink href="/archive">归档</NavLink>
-            <NavLink href="/tags">标签</NavLink>
-            <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
-            <button onClick={() => setIsSearchOpen(true)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
-               <SearchIcon />
-            </button>
-            <button onClick={toggleDarkMode} className="text-xl">{isDarkMode ? '🌙' : '☀️'}</button>
+      {/* Vercel Style Header */}
+      <nav className="fixed top-0 w-full z-50 border-b border-black/5 dark:border-white/10 bg-white/70 dark:bg-black/70 backdrop-blur-md">
+        <div className="max-w-[1400px] mx-auto px-8 h-14 flex items-center justify-between">
+          <Link href="/"><a className="text-sm font-black tracking-widest">TYPACE</a></Link>
+          <div className="flex items-center space-x-8 text-[12px] font-medium uppercase tracking-wider">
+            <NavLink href="/archive">Archive</NavLink>
+            <NavLink href="/about">About</NavLink>
+            <button onClick={() => setIsSearchOpen(true)} className="opacity-50 hover:opacity-100 transition-opacity"><SearchIcon /></button>
+            <button onClick={toggleDarkMode} className="text-base">{isDarkMode ? '○' : '●'}</button>
           </div>
-
-          <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            <MenuIcon />
-          </button>
         </div>
       </nav>
 
-      <main className="relative z-10 max-w-7xl mx-auto px-6 pt-32 pb-20">
-        {/* Hero Section */}
-        <header className="mb-20 text-center md:text-left">
-          <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-slate-900 to-slate-500 dark:from-white dark:to-slate-500">
-            Keep moving,<br />Keep writing.
+      <main className="relative z-10 max-w-[1400px] mx-auto px-8 pt-40 pb-20">
+        {/* PayloadCMS 风格文字动画 */}
+        <header className="mb-32">
+          <h1 className="text-[clamp(3.5rem,10vw,9rem)] leading-[0.85] font-black tracking-tighter mb-10">
+            CRAFTING <br />
+            <div className="relative h-[1.1em] overflow-hidden">
+              <div 
+                className="transition-transform duration-[800ms] ease-[cubic-bezier(0.76,0,0.24,1)]"
+                style={{ transform: `translateY(-${wordIndex * 20}%)` }}
+              >
+                {SCROLL_WORDS.map((w) => (
+                  <div key={w} className="h-[1.1em] text-blue-600 dark:text-blue-500 uppercase">{w}</div>
+                ))}
+              </div>
+            </div>
           </h1>
-          <p className="text-lg text-slate-500 dark:text-slate-400 font-mono h-8">
-            {displayText}<span className="animate-pulse">_</span>
+          <p className="max-w-xl text-lg opacity-50 font-medium font-mono">
+            {displayText}<span className="animate-pulse">|</span>
           </p>
         </header>
 
-        <div className="flex flex-col lg:flex-row gap-12">
-          {/* 左侧侧边栏 - 卡片化 */}
-          <aside className="lg:w-80 space-y-8">
-            <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800">
-              <div className="relative w-24 h-24 mx-auto mb-6">
-                <img 
-                  src="https://ik.imagekit.io/terryzhang/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-04-17%20204625.png" 
-                  className="rounded-2xl object-cover ring-4 ring-blue-500/10 shadow-lg"
-                />
-              </div>
-              <h2 className="text-center text-xl font-bold mb-1">Typace Team</h2>
-              <p className="text-center text-sm text-slate-500 mb-6">探索技术与艺术的边界</p>
-              
-              <div className="grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-800 pt-6">
-                <div className="text-center">
-                  <p className="text-2xl font-black text-blue-600">{allPostsData.length}</p>
-                  <p className="text-xs text-slate-400 uppercase tracking-widest">Articles</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-black text-blue-600">{allTags.length}</p>
-                  <p className="text-xs text-slate-400 uppercase tracking-widest">Tags</p>
-                </div>
-              </div>
+        {/* Bento Grid 文章布局 */}
+        <div className="grid grid-cols-12 gap-px bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/10">
+          {paginatedPosts.map((post, idx) => (
+            <div key={post.slug} className={`${idx === 0 ? 'col-span-12 md:col-span-8' : 'col-span-12 md:col-span-4'} bg-white dark:bg-black overflow-hidden group relative`}>
+              <ArticleBox post={post} featured={idx === 0} />
             </div>
-
-            {/* 最新文章微组件 */}
-            <div className="hidden lg:block">
-               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-4 ml-2">Latest</h3>
-               <div className="space-y-3">
-                 {allPostsData.slice(0, 3).map(post => (
-                   <Link key={post.slug} href={`/posts/${post.slug}`}>
-                     <a className="group block p-4 rounded-2xl bg-white/50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-900 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-800">
-                       <h4 className="text-sm font-bold group-hover:text-blue-500 transition-colors line-clamp-1">{post.title}</h4>
-                       <p className="text-xs text-slate-400 mt-1">{post.date}</p>
-                     </a>
-                   </Link>
-                 ))}
-               </div>
-            </div>
-          </aside>
-
-          {/* 文章列表 - 现代瀑布流网格 */}
-          <section className="flex-1">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {paginatedPosts.map((post) => (
-                <ArticleCard key={post.slug} post={post} />
-              ))}
-            </div>
-
-            {/* 现代分页 */}
-            {totalPages > 1 && (
-              <div className="mt-16 flex justify-center items-center space-x-2">
-                <PaginationButton 
-                  disabled={currentPage === 1} 
-                  onClick={() => setCurrentPage(c => c - 1)}
-                  label="←"
-                />
-                {Array.from({ length: totalPages }).map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
-                      currentPage === i + 1 
-                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' 
-                        : 'bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-                <PaginationButton 
-                  disabled={currentPage === totalPages} 
-                  onClick={() => setCurrentPage(c => c + 1)}
-                  label="→"
-                />
-              </div>
-            )}
-          </section>
+          ))}
         </div>
+
+        {/* 极简分页 */}
+        {totalPages > 1 && (
+          <div className="mt-20 flex justify-start items-center space-x-4">
+            <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} className="text-xs font-bold uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity disabled:hidden" disabled={currentPage === 1}>PREV</button>
+            <span className="text-xs font-mono opacity-30">{currentPage} / {totalPages}</span>
+            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} className="text-xs font-bold uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity disabled:hidden" disabled={currentPage === totalPages}>NEXT</button>
+          </div>
+        )}
       </main>
 
-      {/* 现代化搜索模态框 */}
+      {/* 极简搜索框 */}
       {isSearchOpen && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[10vh] px-4">
-          <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm" onClick={() => setIsSearchOpen(false)} />
-          <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in duration-200">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center">
-              <SearchIcon className="w-5 h-5 text-slate-400 mr-4" />
-              <input 
-                autoFocus
-                className="w-full bg-transparent outline-none text-lg"
-                placeholder="搜索文章、标签、内容... (Esc 关闭)"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="max-h-[60vh] overflow-y-auto p-4">
-              {searchResults.length > 0 ? (
-                searchResults.map(result => (
-                  <Link key={result.slug} href={`/posts/${result.slug}`}>
-                    <a className="block p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" onClick={() => setIsSearchOpen(false)}>
-                      <h4 className="font-bold">{result.title}</h4>
-                      <p className="text-sm text-slate-500 mt-1 line-clamp-1">{result.excerpt}</p>
-                    </a>
-                  </Link>
-                ))
-              ) : (
-                <div className="py-12 text-center text-slate-400">
-                  {searchQuery ? "未找到相关结果" : "输入关键词开始搜索..."}
-                </div>
-              )}
+        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4">
+          <div className="absolute inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-sm" onClick={() => setIsSearchOpen(false)} />
+          <div className="relative w-full max-w-xl animate-in fade-in slide-in-from-top-4 duration-300">
+            <input 
+              autoFocus
+              className="w-full bg-transparent border-b-2 border-black dark:border-white text-3xl font-black tracking-tighter outline-none pb-4"
+              placeholder="SEARCH..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <div className="mt-8 space-y-6">
+              {searchResults.map(result => (
+                <Link key={result.slug} href={`/posts/${result.slug}`}>
+                  <a className="block group" onClick={() => setIsSearchOpen(false)}>
+                    <span className="text-xs opacity-40 font-mono mb-1 block">{result.date}</span>
+                    <h4 className="text-xl font-bold group-hover:text-blue-500 transition-colors uppercase">{result.title}</h4>
+                  </a>
+                </Link>
+              ))}
             </div>
           </div>
         </div>
       )}
 
-      {/* 极简页脚 */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 py-12 text-center">
-        <p className="text-sm text-slate-500">
-          © {new Date().getFullYear()} Typace. Built with Passion by Terryzhang & mrche.
-        </p>
+      <footer className="max-w-[1400px] mx-auto px-8 py-20 border-t border-black/5 dark:border-white/10 flex flex-col md:flex-row justify-between items-center opacity-40 text-[10px] tracking-[0.3em] uppercase">
+        <p>© {new Date().getFullYear()} TYPACE SYSTEM</p>
+        <p>Built for the next generation</p>
       </footer>
 
-      {/* 全局动画样式 */}
       <style jsx global>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .page-enter {
-          animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .grid > div { border: 0.5px solid transparent; transition: border-color 0.3s; }
       `}</style>
     </div>
   );
 }
 
-// --- 抽离的子组件 ---
-
-const ArticleCard = ({ post }) => (
-  <article className="group relative bg-white dark:bg-slate-900 rounded-[2rem] overflow-hidden border border-slate-100 dark:border-slate-800 hover:shadow-2xl hover:shadow-blue-500/5 transition-all duration-500 hover:-translate-y-2">
-    <div className="aspect-[16/9] overflow-hidden">
-      <img 
-        src={post.cover || 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=800'} 
-        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-        alt={post.title}
-      />
-    </div>
-    <div className="p-8">
-      <div className="flex items-center space-x-3 mb-4">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-blue-500 bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full">
-          {post.date}
-        </span>
+// --- 现代 Bento 文章块组件 ---
+const ArticleBox = ({ post, featured }) => (
+  <Link href={`/posts/${post.slug}`}>
+    <a className="block h-full min-h-[450px] relative p-10 flex flex-col justify-end overflow-hidden group">
+      {/* 背景图：默认灰度，悬停变色 */}
+      <div className="absolute inset-0 z-0">
+        <img 
+          src={post.cover || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop'} 
+          className="w-full h-full object-cover grayscale opacity-20 group-hover:grayscale-0 group-hover:opacity-40 group-hover:scale-105 transition-all duration-1000"
+          alt=""
+        />
       </div>
-      <Link href={`/posts/${post.slug}`}>
-        <a>
-          <h3 className="text-xl font-bold mb-3 group-hover:text-blue-500 transition-colors leading-tight">
-            {post.title}
-          </h3>
-        </a>
-      </Link>
-      <p className="text-slate-500 dark:text-slate-400 text-sm line-clamp-3 mb-6 leading-relaxed">
-        {post.excerpt || post.content.replace(/<[^>]*>/g, '').slice(0, 150)}
-      </p>
-      <div className="flex flex-wrap gap-2">
-        {post.tags?.slice(0, 3).map(tag => (
-          <span key={tag} className="text-[11px] font-medium text-slate-400">#{tag}</span>
-        ))}
-      </div>
-    </div>
-  </article>
-);
 
-const NavLink = ({ href, children }) => (
-  <Link href={href}>
-    <a className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors">
-      {children}
+      <div className="relative z-10">
+        <div className="mb-4 flex items-center space-x-3">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 group-hover:opacity-100 transition-opacity">
+            {post.date}
+          </span>
+          <div className="h-px w-0 group-hover:w-8 bg-blue-500 transition-all duration-500" />
+        </div>
+        <h3 className={`font-black tracking-tighter leading-[0.9] uppercase transition-transform duration-500 group-hover:-translate-y-2 
+          ${featured ? 'text-4xl md:text-6xl' : 'text-3xl'}`}>
+          {post.title}
+        </h3>
+        <p className="mt-6 text-sm opacity-0 group-hover:opacity-60 transition-all duration-500 translate-y-4 group-hover:translate-y-0 line-clamp-2 max-w-md">
+          {post.excerpt || "Explore the depth of this digital narrative..."}
+        </p>
+      </div>
+
+      {/* 装饰性外边框线 */}
+      <div className="absolute inset-0 border-[0px] group-hover:border-[1px] border-blue-500/30 transition-all pointer-events-none" />
     </a>
   </Link>
 );
 
-const PaginationButton = ({ disabled, onClick, label }) => (
-  <button 
-    disabled={disabled}
-    onClick={onClick}
-    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-900 disabled:opacity-30 border border-slate-100 dark:border-slate-800"
-  >
-    {label}
-  </button>
+const NavLink = ({ href, children }) => (
+  <Link href={href}>
+    <a className="opacity-50 hover:opacity-100 transition-opacity">{children}</a>
+  </Link>
 );
 
-// --- 图标组件 ---
-const SearchIcon = ({ className }) => (
-  <svg className={className || "w-5 h-5"} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-  </svg>
-);
-
-const MenuIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
+const SearchIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
   </svg>
 );
 
