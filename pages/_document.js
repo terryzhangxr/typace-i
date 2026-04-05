@@ -1,40 +1,4 @@
 import Document, { Html, Head, Main, NextScript } from 'next/document';
-// pages/_document.js
-import { Html, Head, Main, NextScript } from 'next/document';
-
-export default function Document() {
-  return (
-    <Html lang="zh">
-      <Head>
-        {/* 关键：注入阻塞式脚本 */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var dark = localStorage.getItem('darkMode');
-                  var supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
-                  if (dark === 'true' || (dark === null && supportDarkMode)) {
-                    document.documentElement.classList.add('dark');
-                    document.documentElement.style.backgroundColor = '#000000';
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                    document.documentElement.style.backgroundColor = '#fafafa';
-                  }
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
-      </Head>
-      <body className="bg-[#fafafa] dark:bg-black transition-colors duration-0">
-        <Main />
-        <NextScript />
-      </body>
-    </Html>
-  );
-}
-
 
 class MyDocument extends Document {
   render() {
