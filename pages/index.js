@@ -75,7 +75,7 @@ export default function Home({ allPostsData }) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       const color = isDarkMode ? '255, 255, 255' : '0, 0, 0';
-      ctx.fillStyle = `rgba(${color}, 0.12)`;
+      ctx.fillStyle = `rgba(${color}, 0.3)`;
       
       const gap = 60; // 粒子之间的间距
       const rows = Math.ceil(canvas.height / gap) + 1;
@@ -90,7 +90,7 @@ export default function Home({ allPostsData }) {
           const y = r * gap + yOffset;
 
           ctx.beginPath();
-          ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+          ctx.arc(x, y, 1.5, 0, Math.PI * 2);
           ctx.fill();
         }
       }
