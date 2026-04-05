@@ -2,7 +2,7 @@
 
 注：中文版介绍及教程正在typace官网编写中，敬请期待
 
-   本仓库为typace项目的正式版，目前由Terryzhang负责开发，有最新的功能，目前开放fork，同时mrche的仓库也开放，欢迎clone和star
+   本仓库为typace项目的正式版，目前由Terryzhang负责开发，有最新的功能，目前开放fork，欢迎clone和star
 
 Welcome to **Typace**, an under-construction blog platform which based on Next.js focused on sharing technology, life, and thoughts.
 
@@ -40,14 +40,16 @@ V1.2.1  Navigation bar optimization  2025.3
 
 V1.2.2  Add more new pages and fix bugs  
 
-V2.0.1 The page has been redesigned, the animation has been optimized, and the article page table of contents has been added to the scrolling and positioning function and the direct button in the comment area(current)
+V2.0.1 The page has been redesigned, the animation has been optimized, and the article page table of contents has been added to the scrolling and positioning function and the direct button in the comment area
+
+V3.0.1 We redesigned all the pages,give up the ordinary mindset and fixed bugs.Now the website is much more elegant and advanced
 
 For more details, check the [commit history](https://github.com/terryzhangxr/typace-i/commits).
 
 ## Contact
 
 - Email: [zhang@mrzxr.com](mailto:zhang@mrzxr.com)
-- GitHub: [@che-ui](https://github.com/che-ui)
+- GitHub: [@terryzhangxr](https://github.com/terryzhangxr)
 
 ## License
 
