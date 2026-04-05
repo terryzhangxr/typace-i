@@ -70,15 +70,7 @@ export default function TagsPage({ tagsWithPosts, allPostsData }) {
     // 1. 滚动锁定
     document.body.style.overflow = (isMobileMenuOpen || isSearchOpen) ? 'hidden' : 'unset';
 
-    // 2. 一言打字机 (标签页专属)
-    fetch('https://v1.hitokoto.cn').then(res => res.json()).then(data => {
-      let i = 0;
-      const timer = setInterval(() => {
-        setDisplayText(data.hitokoto.slice(0, i + 1));
-        i++;
-        if (i >= data.hitokoto.length) clearInterval(timer);
-      }, 45);
-    });
+    
 
     // 3. 矩阵粒子系统
     const canvas = canvasRef.current;
@@ -118,7 +110,7 @@ export default function TagsPage({ tagsWithPosts, allPostsData }) {
   return (
     <div className={`min-h-screen selection:bg-blue-600 selection:text-white transition-colors duration-700 ${isDarkMode ? 'dark bg-black text-white' : 'bg-[#fafafa] text-black'}`}>
       <Head>
-        <title>Tags — TYPACE SYSTEM</title>
+        <title>Tags — TYPACE</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
       </Head>
 
@@ -173,7 +165,7 @@ export default function TagsPage({ tagsWithPosts, allPostsData }) {
         <header className="mb-24">
           <div className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
             <h1 className="text-[clamp(3.5rem,10vw,8rem)] leading-[0.85] font-black tracking-tighter uppercase mb-8">
-              TAGS <br /> SYSTEM.
+              TAGS.
             </h1>
           </div>
           <div className={`transition-all duration-[1800ms] delay-500 ease-out ${showHero ? 'opacity-40 translate-y-0' : 'opacity-0 translate-y-6'}`}>
