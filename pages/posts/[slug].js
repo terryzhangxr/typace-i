@@ -9,7 +9,7 @@ import html from 'remark-html';
 import Head from 'next/head';
 import Link from 'next/link';
 
-// --- 静态数据获取 ---
+// --- 1. 服务端数据处理 ---
 export async function getStaticPaths() {
   const posts = getSortedPostsData();
   const paths = posts.map((post) => ({ params: { slug: post.slug } }));
@@ -30,15 +30,15 @@ export async function getStaticProps({ params }) {
   return { props: { frontmatter: data, contentHtml, recommendedPosts, allPostsData } };
 }
 
+// --- 2. 页面组件 ---
 export default function Post({ frontmatter, contentHtml, recommendedPosts, allPostsData }) {
   const router = useRouter();
   const canvasRef = useRef(null);
   const contentRef = useRef(null);
   const walineInstance = useRef(null);
   
-  // --- 状态管理 (同步主页) ---
+  // 状态管理
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,7 +47,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const [toc, setToc] = useState([]);
   const [activeHeading, setActiveHeading] = useState(null);
 
-  // --- 搜索逻辑 (同步主页) ---
+  // 搜索逻辑
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
@@ -56,72 +56,12 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     ).slice(0, 6);
   }, [searchQuery, allPostsData]);
 
-  // --- 核心副作用 (包含主页逻辑与文章特有逻辑) ---
-  useEffect(() => {
-    setIsMounted(true);
-    const savedDark = localStorage.getItem('darkMode') === 'true';
-    setIsDarkMode(savedDark);
-    document.documentElement.classList.toggle('dark', savedDark);
-    setTimeout(() => setShowContent(true), 150);
+  // --- 3. 核心功能逻辑 ---
 
-    // 1. 移动端菜单开启时锁定滚动 (同步主页)
-    if (isMobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
-    } else {
-      document.body.style.overflow = 'unset';
-      document.body.style.touchAction = 'auto';
-    }
-
-    // 2. 加载脚本 (Highlight.js & Waline)
-    const loadScripts = async () => {
-      if (!window.hljs) {
-        const s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
-        s.onload = applyHighlighting;
-        document.body.appendChild(s);
-      } else { applyHighlighting(); }
-
-      if (!window.Waline) {
-        const s = document.createElement('script');
-        s.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
-        s.onload = initWaline;
-        document.body.appendChild(s);
-      } else { initWaline(); }
-    };
-    loadScripts();
-
-    // 3. 矩阵粒子系统 (同步主页)
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    let time = 0;
-    const render = () => {
-      time += 0.015;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const colorRGB = isDarkMode ? '255, 255, 255' : '0, 0, 0';
-      ctx.fillStyle = `rgba(${colorRGB}, ${isDarkMode ? 0.35 : 0.25})`;
-      for (let r = 0; r < Math.ceil(canvas.height / 64) + 1; r++) {
-        for (let c = 0; c < Math.ceil(canvas.width / 64) + 1; c++) {
-          const yOffset = Math.sin(time + (c * 0.4) + (r * 0.3)) * 12;
-          ctx.beginPath(); ctx.arc(c * 64, r * 64 + yOffset, 1.5, 0, Math.PI * 2); ctx.fill();
-        }
-      }
-      requestAnimationFrame(render);
-    };
-    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
-    window.addEventListener('resize', resize); resize(); render();
-
-    return () => {
-      window.removeEventListener('resize', resize);
-      if (walineInstance.current) walineInstance.current.destroy();
-    };
-  }, [isDarkMode, isMobileMenuOpen]);
-
-  // --- 逻辑函数 ---
-  const applyHighlighting = () => {
-    if (contentRef.current && window.hljs) {
+  // 代码高亮加载与应用
+  const applyHighlighting = useCallback(() => {
+    if (typeof window !== 'undefined' && window.hljs && contentRef.current) {
       contentRef.current.querySelectorAll('pre code').forEach(el => window.hljs.highlightElement(el));
-      // 增加 Header
       contentRef.current.querySelectorAll('pre').forEach(pre => {
         if (pre.querySelector('.code-header')) return;
         const header = document.createElement('div');
@@ -135,19 +75,92 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         };
       });
     }
-  };
+  }, []);
 
-  const initWaline = () => {
-    if (window.Waline) {
-      walineInstance.current = window.Waline.init({
-        el: '#waline-comment-container',
-        serverURL: 'https://comment.mrzxr.top/',
-        path: router.asPath,
-        dark: 'html.dark',
+  // 动态绑定图片点击事件 (修复无法点击的问题)
+  useEffect(() => {
+    if (!contentRef.current) return;
+    // 确保 DOM 注入后的宏任务中执行
+    const timer = setTimeout(() => {
+      const images = contentRef.current.querySelectorAll('img');
+      images.forEach(img => {
+        img.style.cursor = 'zoom-in';
+        img.onclick = (e) => {
+          e.preventDefault();
+          setPreviewImage(img.src);
+        };
       });
-    }
-  };
+      applyHighlighting();
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [contentHtml, applyHighlighting]);
 
+  // Waline 评论
+  const initWaline = useCallback(() => {
+    if (typeof window === 'undefined' || !window.Waline) return;
+    if (walineInstance.current) walineInstance.current.destroy();
+    walineInstance.current = window.Waline.init({
+      el: '#waline-comment-container',
+      serverURL: 'https://comment.mrzxr.top/',
+      path: router.asPath,
+      dark: 'html.dark',
+    });
+  }, [router.asPath]);
+
+  // 矩阵粒子背景
+  useEffect(() => {
+    const savedDark = localStorage.getItem('darkMode') === 'true';
+    setIsDarkMode(savedDark);
+    document.documentElement.classList.toggle('dark', savedDark);
+    setTimeout(() => setShowContent(true), 150);
+
+    // 滚动锁定逻辑
+    document.body.style.overflow = isMobileMenuOpen ? 'hidden' : 'unset';
+
+    // 加载脚本
+    const loadScripts = () => {
+      if (!window.hljs) {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
+        s.onload = applyHighlighting;
+        document.body.appendChild(s);
+      }
+      if (!window.Waline) {
+        const s = document.createElement('script');
+        s.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
+        s.onload = initWaline;
+        document.body.appendChild(s);
+      } else { initWaline(); }
+    };
+    loadScripts();
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    let time = 0, animationFrameId;
+    const render = () => {
+      time += 0.015;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const colorRGB = isDarkMode ? '255, 255, 255' : '0, 0, 0';
+      ctx.fillStyle = `rgba(${colorRGB}, ${isDarkMode ? 0.35 : 0.25})`;
+      for (let r = 0; r < Math.ceil(canvas.height / 64) + 1; r++) {
+        for (let c = 0; c < Math.ceil(canvas.width / 64) + 1; c++) {
+          const yOffset = Math.sin(time + (c * 0.4) + (r * 0.3)) * 12;
+          ctx.beginPath(); ctx.arc(c * 64, r * 64 + yOffset, 1.5, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+      animationFrameId = requestAnimationFrame(render);
+    };
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+    window.addEventListener('resize', resize); resize(); render();
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animationFrameId);
+      if (walineInstance.current) walineInstance.current.destroy();
+    };
+  }, [isDarkMode, isMobileMenuOpen, applyHighlighting, initWaline]);
+
+  // TOC 生成与滚动监听
   useEffect(() => {
     if (contentRef.current) {
       const headings = Array.from(contentRef.current.querySelectorAll('h1, h2, h3'));
@@ -176,7 +189,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-100" />
 
-      {/* --- 统一导航栏 (同步主页) --- */}
+      {/* --- 统一导航栏 --- */}
       <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
           <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity uppercase z-50">TYPACE</a></Link>
@@ -199,8 +212,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           </div>
         </div>
 
-        {/* 移动端菜单 Overlay (同步主页) */}
-        <div className={`fixed inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-3xl transition-all duration-500 md:hidden z-40 ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
+        {/* 移动端菜单 */}
+        <div className={`fixed inset-0 bg-white/95 dark:bg-black/95 backdrop-blur-3xl transition-all duration-500 md:hidden z-40 ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
           <div className="flex flex-col px-10 pt-32 h-full">
             <div className="flex flex-col space-y-6">
               <MobileNavLink href="/" onClick={() => setIsMobileMenuOpen(false)} index={1}>Home</MobileNavLink>
@@ -210,7 +223,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             </div>
             <div className="mt-auto pb-16 border-t border-black/5 dark:border-white/10 pt-8 flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest opacity-40">System Theme</span>
-              <button onClick={toggleDarkMode} className="text-xs font-bold uppercase tracking-widest border border-black/10 dark:border-white/10 px-6 py-2 rounded-full active:scale-95 transition-all">
+              <button onClick={toggleDarkMode} className="text-xs font-bold uppercase tracking-widest border border-black/10 dark:border-white/10 px-6 py-2 rounded-full">
                 {isDarkMode ? 'Light' : 'Dark'}
               </button>
             </div>
@@ -218,7 +231,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </div>
       </nav>
 
-      {/* --- 主内容 (包含模糊逻辑) --- */}
+      {/* --- 主内容 (包含模糊与放大逻辑) --- */}
       <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-40 pb-32 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
         
         <header className={`max-w-4xl mx-auto mb-20 transition-all duration-[1500ms] ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
@@ -227,22 +240,23 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             <div className="h-px w-8 bg-current"></div>
             <span>{frontmatter.tags?.[0] || 'Article'}</span>
           </div>
-          <h1 className="text-[clamp(2.2rem,6vw,4.5rem)] leading-[1.05] font-black tracking-tighter uppercase mb-12">{frontmatter.title}</h1>
+          <h1 className="text-[clamp(2rem,6vw,4rem)] leading-[1.1] font-black tracking-tighter uppercase mb-12">{frontmatter.title}</h1>
           {frontmatter.cover && (
-            <div className="w-full max-w-2xl aspect-video overflow-hidden border border-black/5 dark:border-white/10 rounded-2xl group cursor-zoom-in" onClick={() => setPreviewImage(frontmatter.cover)}>
-                <img src={frontmatter.cover} className="w-full h-full object-cover transition-all duration-[1.5s] group-hover:scale-105" alt="cover" />
+            <div className="w-full max-w-2xl mx-auto aspect-video overflow-hidden border border-black/5 dark:border-white/10 rounded-2xl group cursor-zoom-in" onClick={() => setPreviewImage(frontmatter.cover)}>
+                <img src={frontmatter.cover} className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-105" alt="cover" />
             </div>
           )}
         </header>
 
         <div className="flex flex-col lg:flex-row gap-20 max-w-6xl mx-auto">
+          {/* 目录侧边栏 */}
           <aside className="lg:w-64 flex-shrink-0 hidden lg:block">
             <div className="sticky top-32">
               <h4 className="text-[11px] font-black uppercase tracking-[0.4em] opacity-40 mb-8">Catalogue</h4>
               <ul className="space-y-6 border-l border-black/5 dark:border-white/10">
                 {toc.map(item => (
                   <li key={item.id} className={`${item.level === 'h3' ? 'pl-8' : 'pl-6'} relative`}>
-                    <a href={`#${item.id}`} className={`block text-[13px] uppercase font-bold tracking-wider transition-all duration-300 ${activeHeading === item.id ? 'text-blue-500 translate-x-2' : 'text-current opacity-30 hover:opacity-60 hover:translate-x-1'}`}>
+                    <a href={`#${item.id}`} className={`block text-[13px] uppercase font-bold tracking-wider transition-all duration-300 ${activeHeading === item.id ? 'text-blue-500 translate-x-2' : 'opacity-30 hover:opacity-60 hover:translate-x-1'}`}>
                       {item.text}
                     </a>
                     {activeHeading === item.id && <div className="absolute left-[-1px] top-0 bottom-0 w-[2px] bg-blue-500 shadow-[0_0_10px_rgba(37,99,235,0.4)]" />}
@@ -252,15 +266,16 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             </div>
           </aside>
 
+          {/* 文章正文 */}
           <article className={`flex-1 max-w-3xl transition-all duration-[1800ms] delay-200 ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
-            <div ref={contentRef} className="prose-terminal dark:prose-invert" dangerouslySetInnerHTML={{ __html: contentHtml }} />
+            <div ref={contentRef} className="prose-terminal dark:prose-invert pointer-events-auto" dangerouslySetInnerHTML={{ __html: contentHtml }} />
             <section id="comments" className="mt-32 pt-16 border-t border-black/5 dark:border-white/10">
                 <div id="waline-comment-container" />
             </section>
           </article>
         </div>
 
-        {/* 推荐文章 */}
+        {/* 推荐文章 - Bento 风格 */}
         <section className="mt-48 max-w-6xl mx-auto">
           <div className="flex items-center space-x-6 mb-12 opacity-20">
             <h2 className="text-xs font-black uppercase tracking-[0.5em]">Next Phase</h2>
@@ -291,24 +306,24 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           <div className="relative w-full max-w-3xl animate-in fade-in slide-in-from-bottom-8 duration-700">
             <input autoFocus className="w-full bg-transparent border-b-2 border-black/10 dark:border-white/10 text-3xl md:text-5xl font-black tracking-tighter outline-none pb-8 focus:border-blue-600 transition-all uppercase" placeholder="SEARCH..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             <div className="mt-16 space-y-12 overflow-y-auto max-h-[60vh] pr-4 text-left">
-              {searchResults.length > 0 ? searchResults.map(result => (
+              {searchResults.map(result => (
                 <Link key={result.slug} href={`/posts/${result.slug}`}>
                   <a className="group block" onClick={() => setIsSearchOpen(false)}>
                     <div className="flex items-center space-x-4 mb-2 opacity-30"><span className="text-[9px] font-mono tracking-widest">{result.date}</span></div>
                     <h4 className="text-2xl md:text-3xl font-black group-hover:text-blue-600 transition-colors tracking-tighter uppercase">{result.title}</h4>
                   </a>
                 </Link>
-              )) : searchQuery && <p className="opacity-40 uppercase text-xs tracking-widest text-left">No results found.</p>}
+              ))}
             </div>
           </div>
         </div>
       )}
 
-      {/* 图片预览 */}
+      {/* --- 图片预览 (修复放大) --- */}
       {previewImage && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-white/80 dark:bg-black/90 backdrop-blur-3xl p-4 md:p-20 cursor-zoom-out animate-in fade-in duration-300" onClick={() => setPreviewImage(null)}>
-          <div className="relative max-w-full max-h-full animate-in zoom-in-95 duration-500 ease-out">
-            <img src={previewImage} className="max-w-full max-h-[90vh] object-contain shadow-2xl rounded-sm" alt="Preview" />
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/80 dark:bg-black/90 backdrop-blur-3xl p-4 md:p-20 cursor-zoom-out animate-in fade-in duration-300" onClick={() => setPreviewImage(null)}>
+          <div className="relative animate-in zoom-in-95 duration-300 ease-out">
+            <img src={previewImage} className="max-w-full max-h-[90vh] object-contain shadow-2xl rounded-sm border border-black/5 dark:border-white/10" alt="Preview" />
             <div className="absolute -top-10 left-0 right-0 text-center uppercase text-[10px] font-black tracking-widest opacity-40">Click anywhere to close</div>
           </div>
         </div>
@@ -316,7 +331,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
       <footer className={`max-w-[1440px] mx-auto px-10 py-24 border-t border-black/5 dark:border-white/10 opacity-20 text-[9px] font-black uppercase tracking-[0.4em] flex justify-between transition-all ${isMobileMenuOpen ? 'blur-2xl' : 'blur-0'}`}>
         <span>© Typace 2026</span>
-        <span>Minimalist System</span>
+        <span className="hidden sm:inline">Minimalist System</span>
       </footer>
 
       <style jsx global>{`
