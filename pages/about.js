@@ -3,7 +3,7 @@ import path from 'path';
 import matter from 'gray-matter';
 import { remark } from 'remark';
 import html from 'remark-html';
-import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -31,16 +31,16 @@ export default function About({ frontmatter, contentHtml, allPostsData }) {
   const canvasRef = useRef(null);
   const router = useRouter();
 
-  // --- 状态管理 ---
+  // --- 状态管理 (与主页完全统一) ---
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-  const [showContent, setShowContent] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isMounted, setIsMounted] = useState(false);
+  const [showHero, setShowHero] = useState(false);
   const [displayText, setDisplayText] = useState('');
 
-  // --- 搜索逻辑 ---
+  // --- 搜索逻辑 (与主页完全统一) ---
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
@@ -49,16 +49,16 @@ export default function About({ frontmatter, contentHtml, allPostsData }) {
     ).slice(0, 6);
   }, [searchQuery, allPostsData]);
 
-  // --- 副作用控制 ---
+  // --- 核心副作用 ---
   useEffect(() => {
     setIsMounted(true);
     const savedDark = localStorage.getItem('darkMode') === 'true';
     setIsDarkMode(savedDark);
     document.documentElement.classList.toggle('dark', savedDark);
-    setTimeout(() => setShowContent(true), 150);
+    setTimeout(() => setShowHero(true), 150);
 
     // 1. 滚动锁定
-    document.body.style.overflow = isMobileMenuOpen ? 'hidden' : 'unset';
+    document.body.style.overflow = (isMobileMenuOpen || isSearchOpen) ? 'hidden' : 'unset';
 
     // 2. 一言打字机
     fetch('https://v1.hitokoto.cn').then(res => res.json()).then(data => {
@@ -67,10 +67,10 @@ export default function About({ frontmatter, contentHtml, allPostsData }) {
         setDisplayText(data.hitokoto.slice(0, i + 1));
         i++;
         if (i >= data.hitokoto.length) clearInterval(timer);
-      }, 50);
+      }, 45);
     });
 
-    // 3. 矩阵粒子系统
+    // 3. 矩阵粒子系统 (主页同款)
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     let time = 0, animationFrameId;
@@ -79,11 +79,10 @@ export default function About({ frontmatter, contentHtml, allPostsData }) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const colorRGB = isDarkMode ? '255, 255, 255' : '0, 0, 0';
       ctx.fillStyle = `rgba(${colorRGB}, ${isDarkMode ? 0.35 : 0.25})`;
-      const gap = 64;
-      for (let r = 0; r < Math.ceil(canvas.height / gap) + 1; r++) {
-        for (let c = 0; c < Math.ceil(canvas.width / gap) + 1; c++) {
+      for (let r = 0; r < Math.ceil(canvas.height / 64) + 1; r++) {
+        for (let c = 0; c < Math.ceil(canvas.width / 64) + 1; c++) {
           const yOffset = Math.sin(time + (c * 0.4) + (r * 0.3)) * 12;
-          ctx.beginPath(); ctx.arc(c * gap, r * gap + yOffset, 1.5, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(c * 64, r * 64 + yOffset, 1.5, 0, Math.PI * 2); ctx.fill();
         }
       }
       animationFrameId = requestAnimationFrame(render);
@@ -95,7 +94,7 @@ export default function About({ frontmatter, contentHtml, allPostsData }) {
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isDarkMode, isMobileMenuOpen]);
+  }, [isDarkMode, isMobileMenuOpen, isSearchOpen]);
 
   const toggleDarkMode = () => {
     const next = !isDarkMode;
@@ -107,14 +106,13 @@ export default function About({ frontmatter, contentHtml, allPostsData }) {
   return (
     <div className={`min-h-screen selection:bg-blue-600 selection:text-white transition-colors duration-700 ${isDarkMode ? 'dark bg-black text-white' : 'bg-[#fafafa] text-black'}`}>
       <Head>
-        <title>About — {frontmatter.title || 'Typace'}</title>
+        <title>About — Typace System</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
       </Head>
 
-      {/* 粒子背景 */}
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-100" />
 
-      {/* 统一导航栏 */}
+      {/* --- 统一导航栏 --- */}
       <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
           <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity uppercase z-50">TYPACE</a></Link>
@@ -123,91 +121,92 @@ export default function About({ frontmatter, contentHtml, allPostsData }) {
             <NavLink href="/archive">Archive</NavLink>
             <NavLink href="/tags">Tags</NavLink>
             <NavLink href="/about">About</NavLink>
-            <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-40 hover:opacity-100 transition-opacity"><SearchIcon /></button>
-            <button onClick={toggleDarkMode} className="w-5 h-5 flex items-center justify-center rounded-full border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm">
+            <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-40 hover:opacity-100 transition-opacity focus:outline-none"><SearchIcon /></button>
+            <button onClick={toggleDarkMode} className="w-5 h-5 flex items-center justify-center rounded-full border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm focus:outline-none">
               {isDarkMode ? '☼' : '☾'}
             </button>
           </div>
 
           <div className="flex md:hidden items-center space-x-4 z-50">
-            <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-60"><SearchIcon /></button>
-            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1">{isMobileMenuOpen ? <CloseIcon /> : <MenuIcon />}</button>
+            <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-60 focus:outline-none"><SearchIcon /></button>
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1 focus:outline-none">
+              {isMobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
+            </button>
           </div>
         </div>
 
         {/* 移动端菜单 */}
         <div className={`fixed inset-0 bg-white/95 dark:bg-black/95 backdrop-blur-3xl transition-all duration-500 md:hidden z-40 ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
-          <div className="flex flex-col px-10 pt-32 h-full space-y-8 text-4xl font-black tracking-tighter uppercase">
-              <Link href="/"><a onClick={() => setIsMobileMenuOpen(false)}>Home</a></Link>
-              <Link href="/archive"><a onClick={() => setIsMobileMenuOpen(false)}>Archive</a></Link>
-              <Link href="/tags"><a onClick={() => setIsMobileMenuOpen(false)}>Tags</a></Link>
-              <Link href="/about"><a onClick={() => setIsMobileMenuOpen(false)}>About</a></Link>
-              <div className="mt-auto pb-16 border-t border-black/5 dark:border-white/10 pt-8 flex items-center justify-between">
-                <button onClick={() => { toggleDarkMode(); setIsMobileMenuOpen(false); }} className="text-xs font-bold uppercase tracking-widest border border-black/10 dark:border-white/10 px-8 py-3 rounded-full">
-                  {isDarkMode ? 'Light Mode' : 'Dark Mode'}
-                </button>
-              </div>
+          <div className="flex flex-col px-10 pt-32 h-full">
+            <div className="flex flex-col space-y-6">
+              <MobileNavLink href="/" onClick={() => setIsMobileMenuOpen(false)} index={1}>Home</MobileNavLink>
+              <MobileNavLink href="/archive" onClick={() => setIsMobileMenuOpen(false)} index={2}>Archive</MobileNavLink>
+              <MobileNavLink href="/tags" onClick={() => setIsMobileMenuOpen(false)} index={3}>Tags</MobileNavLink>
+              <MobileNavLink href="/about" onClick={() => setIsMobileMenuOpen(false)} index={4}>About</MobileNavLink>
+            </div>
+            <div className="mt-auto pb-16 border-t border-black/5 dark:border-white/10 pt-8 flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-widest opacity-40">System Theme</span>
+              <button onClick={toggleDarkMode} className="text-xs font-bold uppercase tracking-widest border border-black/10 dark:border-white/10 px-6 py-2 rounded-full active:scale-95 transition-all">
+                {isDarkMode ? 'Light' : 'Dark'}
+              </button>
+            </div>
           </div>
         </div>
       </nav>
 
-      {/* 主体内容 */}
-      <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-40 pb-32 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
+      {/* --- 主内容区 --- */}
+      <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-40 pb-32 transition-all duration-700 ease-in-out flex flex-col lg:flex-row gap-16 lg:gap-24 ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
         
-        <div className="flex flex-col lg:flex-row gap-16 lg:gap-24">
-          
-          {/* 左侧：个人资料框 */}
-          <aside className={`lg:w-80 flex-shrink-0 transition-all duration-[1500ms] ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
-            <div className="sticky top-32 p-8 border border-black/5 dark:border-white/10 bg-white/50 dark:bg-black/50 backdrop-blur-md rounded-2xl">
-              {/* 头像容器 */}
-              <div className="relative w-32 h-32 mx-auto mb-8 group">
-                <div className="absolute inset-0 bg-blue-500 rounded-full blur-2xl opacity-0 group-hover:opacity-20 transition-opacity animate-pulse" />
-                <img 
-                  src="https://ik.imagekit.io/terryzhang/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-04-17%20204625.png" 
-                  className="relative w-full h-full object-cover rounded-full ring-2 ring-black/5 dark:ring-white/20 brightness-110 contrast-[1.05]" 
-                  alt="Avatar"
-                />
-              </div>
-              
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-black uppercase tracking-tighter">Typace Team</h2>
-                <p className="text-[10px] uppercase tracking-[0.3em] opacity-40 mt-2">Digital Architect</p>
-              </div>
-
-              {/* 社交链接 */}
-              <div className="flex justify-center items-center space-x-5 pt-6 border-t border-black/5 dark:border-white/10">
-                <SocialLink href="https://github.com/terryzhangxr"><GithubIcon /></SocialLink>
-                <SocialLink href="https://twitter.com"><TwitterIcon /></SocialLink>
-                <SocialLink href="mailto:zhang@mrzxr.com"><MailIcon /></SocialLink>
-                <SocialLink href="#"><RSSIcon /></SocialLink>
-              </div>
+        {/* 左侧：个人品牌栏 */}
+        <aside className={`lg:w-80 flex-shrink-0 transition-all duration-[1500ms] ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+          <div className="sticky top-32 p-8 border border-black/5 dark:border-white/10 bg-white/50 dark:bg-black/50 backdrop-blur-md rounded-2xl">
+            {/* 头像 */}
+            <div className="relative w-32 h-32 mx-auto mb-8 group">
+              <div className="absolute inset-0 bg-blue-500 rounded-full blur-2xl opacity-0 group-hover:opacity-20 transition-opacity animate-pulse" />
+              <img 
+                src="https://ik.imagekit.io/terryzhang/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202025-04-17%20204625.png" 
+                className="relative w-full h-full object-cover rounded-full ring-2 ring-black/5 dark:ring-white/20 brightness-110 contrast-[1.05]" 
+                alt="Avatar"
+              />
             </div>
-          </aside>
+            
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-black uppercase tracking-tighter">Typace Team</h2>
+              <p className="text-[10px] uppercase tracking-[0.3em] opacity-40 mt-2">Digital Architect</p>
+            </div>
 
-          {/* 右侧：Markdown 内容 */}
-          <section className={`flex-1 transition-all duration-[1800ms] delay-200 ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
-            <header className="mb-16">
-              <h1 className="text-[clamp(3rem,8vw,6rem)] leading-[0.9] font-black tracking-tighter uppercase mb-8">
-                The <br /> System.
-              </h1>
-              <p className="max-w-xl text-base font-medium leading-relaxed italic font-mono opacity-40">
-                {displayText}<span className="inline-block w-2 h-4 bg-blue-600 ml-2 animate-pulse" />
-              </p>
-            </header>
+            {/* 社交按钮 */}
+            <div className="flex justify-center items-center space-x-5 pt-6 border-t border-black/5 dark:border-white/10">
+              <SocialLink href="https://github.com/terryzhangxr"><GithubIcon /></SocialLink>
+              <SocialLink href="https://twitter.com"><TwitterIcon /></SocialLink>
+              <SocialLink href="mailto:zhang@mrzxr.com"><MailIcon /></SocialLink>
+              <SocialLink href="#"><RSSIcon /></SocialLink>
+            </div>
+          </div>
+        </aside>
 
-            <article className="prose-terminal dark:prose-invert max-w-3xl">
-              <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
-            </article>
+        {/* 右侧：关于内容 */}
+        <section className={`flex-1 transition-all duration-[1800ms] delay-200 ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+          <header className="mb-20">
+            <h1 className="text-[clamp(3rem,8vw,6.5rem)] leading-[0.9] font-black tracking-tighter uppercase mb-8">
+              THE <br /> SYSTEM.
+            </h1>
+            <p className="max-w-2xl text-base font-medium leading-relaxed italic font-mono opacity-40">
+              {displayText}<span className="inline-block w-2 h-4 bg-blue-600 ml-2 animate-pulse" />
+            </p>
+          </header>
 
-            {/* 自定义页脚 */}
-            <footer className="mt-24 pt-12 border-t border-black/5 dark:border-white/10 opacity-20 text-[10px] font-bold tracking-[0.4em] uppercase">
-              Established 2026 — Built for the next phase
-            </footer>
-          </section>
-        </div>
+          <article className="prose-terminal dark:prose-invert max-w-3xl">
+            <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
+          </article>
+
+          <footer className="mt-24 pt-12 border-t border-black/5 dark:border-white/10 opacity-20 text-[9px] font-bold tracking-[0.5em] uppercase">
+            ESTABLISHED 2026 — TERMINAL LOGIC
+          </footer>
+        </section>
       </main>
 
-      {/* 搜索系统 */}
+      {/* 统一搜索系统 */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[150] flex items-start justify-center pt-[10vh] px-8">
           <div className="absolute inset-0 bg-white/98 dark:bg-black/98 backdrop-blur-2xl" onClick={() => setIsSearchOpen(false)} />
@@ -221,7 +220,7 @@ export default function About({ frontmatter, contentHtml, allPostsData }) {
                     <h4 className="text-2xl md:text-3xl font-black group-hover:text-blue-600 transition-colors tracking-tighter uppercase">{result.title}</h4>
                   </a>
                 </Link>
-              )) : searchQuery && <p className="opacity-40 uppercase text-xs tracking-widest">No results found.</p>}
+              )) : searchQuery && <p className="opacity-40 uppercase text-xs tracking-widest text-left">No results found.</p>}
             </div>
           </div>
         </div>
@@ -230,8 +229,8 @@ export default function About({ frontmatter, contentHtml, allPostsData }) {
       <style jsx global>{`
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
         .prose-terminal { line-height: 1.9; font-size: 1.05rem; }
-        .prose-terminal h2 { font-size: 1.8rem; font-weight: 900; letter-spacing: -0.05em; text-transform: uppercase; margin: 3rem 0 1.2rem; }
-        .prose-terminal p { margin-bottom: 1.8rem; opacity: 0.8; }
+        .prose-terminal h2 { font-size: 1.8rem; font-weight: 900; letter-spacing: -0.05em; text-transform: uppercase; margin: 3.5rem 0 1.2rem; }
+        .prose-terminal p { margin-bottom: 2rem; opacity: 0.8; }
         .prose-terminal ul { list-style: square; padding-left: 1.5rem; margin-bottom: 1.8rem; opacity: 0.8; }
         .prose-terminal a { color: #2563eb; text-decoration: underline; text-underline-offset: 4px; }
         .dark .prose-terminal a { color: #60a5fa; }
@@ -242,7 +241,7 @@ export default function About({ frontmatter, contentHtml, allPostsData }) {
   );
 }
 
-// --- 辅助小组件 ---
+// --- 辅助组件 ---
 const NavLink = ({ href, children }) => (
   <Link href={href}><a className="opacity-40 hover:opacity-100 transition-opacity tracking-widest">{children}</a></Link>
 );
