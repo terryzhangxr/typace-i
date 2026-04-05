@@ -1,5 +1,4 @@
-  
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../../lib/posts';
 import fs from 'fs'; 
@@ -10,11 +9,10 @@ import html from 'remark-html';
 import Head from 'next/head';
 import Link from 'next/link';
 
+// --- 静态属性配置 ---
 export async function getStaticPaths() {
   const posts = getSortedPostsData();
-  const paths = posts.map((post) => ({
-    params: { slug: post.slug },
-  }));
+  const paths = posts.map((post) => ({ params: { slug: post.slug } }));
   return { paths, fallback: false };
 }
 
@@ -22,1308 +20,293 @@ export async function getStaticProps({ params }) {
   const filePath = path.join(process.cwd(), 'source', `${params.slug}.md`);
   const fileContents = fs.readFileSync(filePath, 'utf8');
   const { data, content } = matter(fileContents);
-
   const processedContent = await remark().use(html).process(content);
   const contentHtml = processedContent.toString();
-
   const allPostsData = getSortedPostsData();
-  const filteredPosts = allPostsData.filter((post) => post.slug !== params.slug);
-  const recommendedPosts = filteredPosts
-    .sort(() => 0.5 - Math.random())
-    .slice(0, 3);
+  const recommendedPosts = allPostsData
+    .filter((post) => post.slug !== params.slug)
+    .sort(() => 0.5 - Math.random()).slice(0, 3);
 
-  return {
-    props: {
-      frontmatter: data,
-      contentHtml,
-      recommendedPosts,
-      allPostsData,
-    },
-  };
+  return { props: { frontmatter: data, contentHtml, recommendedPosts, allPostsData } };
 }
 
 export default function Post({ frontmatter, contentHtml, recommendedPosts, allPostsData }) {
   const router = useRouter();
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [toc, setToc] = useState([]);
-  const [isMounted, setIsMounted] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [previewImage, setPreviewImage] = useState(null);
-  const [activeHeading, setActiveHeading] = useState(null);
-  const [isScrolling, setIsScrolling] = useState(false);
-  const walineInstance = useRef(null);
+  const canvasRef = useRef(null);
   const contentRef = useRef(null);
   const observerRef = useRef(null);
-  const scrollTimeoutRef = useRef(null);
-  const lastScrollPosition = useRef(0);
-  const commentSectionRef = useRef(null);
-
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [toc, setToc] = useState([]);
+  const [activeHeading, setActiveHeading] = useState(null);
+  const [showContent, setShowContent] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
+  const [previewImage, setPreviewImage] = useState(null);
 
-  const checkMobile = () => {
-    setIsMobile(window.innerWidth < 768);
-  };
+  // --- 矩阵粒子逻辑 ---
+  useEffect(() => {
+    const savedDark = localStorage.getItem('darkMode') === 'true';
+    setIsDarkMode(savedDark);
+    document.documentElement.classList.toggle('dark', savedDark);
+    setTimeout(() => setShowContent(true), 150);
 
-  const smoothScrollTo = useCallback((position, callback) => {
-    if (scrollTimeoutRef.current) {
-      cancelAnimationFrame(scrollTimeoutRef.current);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    let time = 0;
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+    window.addEventListener('resize', resize);
+    resize();
+
+    const render = () => {
+      time += 0.015;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const color = isDarkMode ? '255, 255, 255' : '0, 0, 0';
+      ctx.fillStyle = `rgba(${color}, ${isDarkMode ? 0.3 : 0.15})`;
+      const gap = 64;
+      for (let r = 0; r < Math.ceil(canvas.height / gap) + 1; r++) {
+        for (let c = 0; c < Math.ceil(canvas.width / gap) + 1; c++) {
+          const yOffset = Math.sin(time + (c * 0.4) + (r * 0.3)) * 12;
+          ctx.beginPath();
+          ctx.arc(c * gap, r * gap + yOffset, 1.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      requestAnimationFrame(render);
+    };
+    render();
+    return () => window.removeEventListener('resize', resize);
+  }, [isDarkMode]);
+
+  // --- TOC 目录生成与高亮 ---
+  useEffect(() => {
+    if (contentRef.current) {
+      const headings = contentRef.current.querySelectorAll('h1, h2, h3');
+      const items = Array.from(headings).map(h => {
+        if (!h.id) h.id = h.textContent.toLowerCase().replace(/\s+/g, '-');
+        return { id: h.id, text: h.textContent, level: h.tagName.toLowerCase() };
+      });
+      setToc(items);
+
+      const observer = new IntersectionObserver(
+        (entries) => entries.forEach(e => { if (e.isIntersecting) setActiveHeading(e.target.id); }),
+        { rootMargin: '-100px 0px -70% 0px' }
+      );
+      headings.forEach(h => observer.observe(h));
+      return () => observer.disconnect();
     }
-
-    const startPosition = window.pageYOffset;
-    const distance = position - startPosition;
-    const duration = 500;
-    let startTime = null;
-
-    const animateScroll = (currentTime) => {
-      if (!startTime) startTime = currentTime;
-      const timeElapsed = currentTime - startTime;
-      const progress = Math.min(timeElapsed / duration, 1);
-      const easeProgress = easeInOutCubic(progress);
-      
-      window.scrollTo(0, startPosition + (distance * easeProgress));
-      
-      if (timeElapsed < duration) {
-        scrollTimeoutRef.current = requestAnimationFrame(animateScroll);
-      } else {
-        if (callback) callback();
-      }
-    };
-
-    const easeInOutCubic = (t) => {
-      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-    };
-
-    setIsScrolling(true);
-    scrollTimeoutRef.current = requestAnimationFrame(animateScroll);
-  }, []);
-
-  const scrollToComments = useCallback(() => {
-    if (!commentSectionRef.current) return;
-    const commentPosition = commentSectionRef.current.offsetTop;
-    const offset = 100;
-    const targetPosition = commentPosition - offset;
-    smoothScrollTo(targetPosition);
-  }, [smoothScrollTo]);
-
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      .prose {
-        max-width: 100%;
-        width: 100%;
-        overflow-x: hidden;
-      }
-      
-      .prose img {
-        max-width: 100%;
-        height: auto;
-        display: block;
-        margin-left: auto;
-        margin-right: auto;
-        border-radius: 0.5rem;
-        cursor: zoom-in;
-        transition: transform 0.2s ease;
-      }
-      
-      .prose img:hover {
-        transform: scale(1.02);
-      }
-      
-      /* Enhanced code block styles */
-      .prose pre {
-        position: relative;
-        background-color: var(--color-code-bg);
-        border-radius: 0.5rem;
-        padding: 1.5rem 1rem 1rem;
-        margin: 1.5rem 0;
-        overflow: hidden;
-      }
-
-      .prose pre code {
-        display: block;
-        padding: 0;
-        background: transparent;
-        font-family: 'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', monospace;
-        font-size: 0.9em;
-        line-height: 1.6;
-      }
-
-      /* Improved code block scrolling */
-      .prose pre {
-        overflow-x: auto;
-      }
-
-      .prose pre code {
-        display: block;
-        padding-right: 1rem;
-      }
-
-      /* Custom scrollbar for code blocks */
-      .prose pre::-webkit-scrollbar {
-        height: 6px;
-        background-color: transparent;
-      }
-
-      .prose pre::-webkit-scrollbar-thumb {
-        background-color: rgba(0, 0, 0, 0.2);
-        border-radius: 3px;
-      }
-
-      .dark .prose pre::-webkit-scrollbar-thumb {
-        background-color: rgba(255, 255, 255, 0.2);
-      }
-
-      .code-block-header {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.25rem 0.75rem;
-        background-color: var(--color-code-header);
-        color: var(--color-code-text);
-        font-size: 0.75rem;
-        border-top-left-radius: 0.5rem;
-        border-top-right-radius: 0.5rem;
-        z-index: 1;
-      }
-
-      .copy-btn {
-        background: var(--color-code-btn-bg);
-        color: var(--color-code-btn-text);
-        border: none;
-        border-radius: 0.25rem;
-        padding: 0.25rem 0.5rem;
-        font-size: 0.7rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-        position: relative;
-        z-index: 2;
-      }
-
-      .copy-btn:hover {
-        background: var(--color-code-btn-hover);
-      }
-
-      .copy-btn.copied {
-        background: var(--color-code-btn-success);
-      }
-
-      .copy-btn svg {
-        width: 0.9rem;
-        height: 0.9rem;
-      }
-
-      :root {
-        --color-code-bg: #f6f8fa;
-        --color-code-header: #e1e4e8;
-        --color-code-text: #24292e;
-        --color-code-btn-bg: #e1e4e8;
-        --color-code-btn-text: #24292e;
-        --color-code-btn-hover: #d1d5da;
-        --color-code-btn-success: #28a745;
-      }
-
-      .dark {
-        --color-code-bg: #2d2d2d;
-        --color-code-header: #1e1e1e;
-        --color-code-text: #f8f8f2;
-        --color-code-btn-bg: #1e1e1e;
-        --color-code-btn-text: #f8f8f2;
-        --color-code-btn-hover: #333;
-        --color-code-btn-success: #28a745;
-      }
-
-      /* Smart code block width handling */
-      .prose pre {
-        width: 100%;
-        max-width: 100%;
-      }
-
-      /* Table styles */
-      .prose table {
-        display: block;
-        width: 100%;
-        overflow-x: auto;
-        white-space: nowrap;
-        margin: 1.5rem 0;
-      }
-      
-      .prose table th,
-      .prose table td {
-        padding: 0.5rem 1rem;
-        border: 1px solid #e5e7eb;
-      }
-      
-      .dark .prose table th,
-      .dark .prose table td {
-        border-color: #374151;
-      }
-      
-      @media (min-width: 1024px) {
-        .prose table {
-          display: table;
-          white-space: normal;
-        }
-      }
-      
-      .image-preview-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(0, 0, 0, 0.8);
-        z-index: 1000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        backdrop-filter: blur(8px);
-      }
-      
-      .image-preview-container {
-        max-width: 90%;
-        max-height: 90%;
-        position: relative;
-      }
-      
-      .image-preview-container img {
-        max-width: 100%;
-        max-height: 90vh;
-        border-radius: 0.5rem;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-      }
-      
-      .image-preview-close {
-        position: absolute;
-        top: -40px;
-        right: 0;
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        color: white;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: background 0.2s ease;
-      }
-      
-      .image-preview-close:hover {
-        background: rgba(255, 255, 255, 0.3);
-      }
-
-      .search-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        padding-top: 20vh;
-        z-index: 1000;
-        backdrop-filter: blur(5px);
-      }
-      .search-container {
-        width: 90%;
-        max-width: 600px;
-        background-color: white;
-        border-radius: 0.5rem;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
-      }
-      .dark .search-container {
-        background-color: #1f2937;
-      }
-      .search-header {
-        padding: 1rem;
-        border-bottom: 1px solid #e5e7eb;
-        display: flex;
-        align-items: center;
-      }
-      .dark .search-header {
-        border-bottom-color: #374151;
-      }
-      .search-input {
-        flex: 1;
-        padding: 0.75rem;
-        border: none;
-        outline: none;
-        font-size: 1rem;
-        background-color: transparent;
-      }
-      .dark .search-input {
-        color: white;
-      }
-      .search-close {
-        padding: 0.5rem;
-        cursor: pointer;
-        color: #6b7280;
-      }
-      .dark .search-close {
-        color: #9ca3af;
-      }
-      .search-results {
-        max-height: 60vh;
-        overflow-y: auto;
-      }
-      .search-result-item {
-        padding: 1rem;
-        border-bottom: 1px solid #e5e7eb;
-        cursor: pointer;
-        transition: background-color 0.2s;
-      }
-      .dark .search-result-item {
-        border-bottom-color: #374151;
-      }
-      .search-result-item:hover {
-        background-color: #f9fafb;
-      }
-      .dark .search-result-item:hover {
-        background-color: #374151;
-      }
-      .search-result-title {
-        font-weight: 600;
-        margin-bottom: 0.25rem;
-        color: #111827;
-      }
-      .dark .search-result-title {
-        color: #f3f4f6;
-      }
-      .search-result-excerpt {
-        color: #6b7280;
-        font-size: 0.875rem;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-      }
-      .dark .search-result-excerpt {
-        color: #9ca3af;
-      }
-      .no-results {
-        padding: 2rem;
-        text-align: center;
-        color: #6b7280;
-      }
-      .dark .no-results {
-        color: #9ca3af;
-      }
-      .search-highlight {
-        background-color: #fde68a;
-        color: #92400e;
-        padding: 0.1rem 0.2rem;
-        border-radius: 0.25rem;
-      }
-      .dark .search-highlight {
-        background-color: #92400e;
-        color: #fde68a;
-      }
-
-      .toc-item {
-        display: block;
-        transition: all 0.2s ease;
-        border-left: 2px solid transparent;
-        padding: 0.25rem 0.5rem;
-        color: #4b5563;
-      }
-      .dark .toc-item {
-        color: #9ca3af;
-      }
-      .toc-item:hover {
-        color: #3b82f6;
-        border-left-color: #3b82f6;
-      }
-      .dark .toc-item:hover {
-        color: #60a5fa;
-        border-left-color: #60a5fa;
-      }
-      .toc-item.active {
-        color: #3b82f6;
-        font-weight: 600;
-        border-left-color: #3b82f6;
-        transform: translateX(4px);
-      }
-      .dark .toc-item.active {
-        color: #60a5fa;
-        border-left-color: #60a5fa;
-      }
-      .toc-item.h2 {
-        padding-left: 1rem;
-        font-size: 0.875rem;
-      }
-      .toc-item.h1 {
-        padding-left: 0.5rem;
-        font-size: 1rem;
-      }
-
-      html {
-        scroll-padding-top: 100px;
-      }
-
-      .scroll-to-comment-btn {
-        position: fixed;
-        right: 2rem;
-        bottom: 2rem;
-        background-color: #3b82f6;
-        color: white;
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: all 0.2s ease;
-        z-index: 40;
-      }
-      .dark .scroll-to-comment-btn {
-        background-color: #2563eb;
-      }
-      .scroll-to-comment-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-      }
-      .scroll-to-comment-btn svg {
-        width: 24px;
-        height: 24px;
-      }
-
-      .page-container {
-        opacity: 0;
-        transform: translateY(100px);
-        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      .page-container.mounted {
-        opacity: 1;
-        transform: translateY(0);
-      }
-
-      /* Fixed layout styles */
-      .main-content-container {
-        max-width: 100%;
-        width: 100%;
-        margin: 0 auto;
-        padding: 0 1rem;
-      }
-
-      @media (min-width: 1024px) {
-        .main-content-container {
-          max-width: calc(100% - 288px);
-          padding-right: 2rem;
-        }
-      }
-
-      .article-container {
-        max-width: 800px;
-        margin: 0 auto;
-      }
-
-      .prose {
-        font-size: 1rem;
-        line-height: 1.75;
-      }
-
-      .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
-        margin-top: 1.5em;
-        margin-bottom: 0.5em;
-      }
-
-      .prose p {
-        margin-bottom: 1.25em;
-      }
-
-      .sidebar-container {
-        width: 288px;
-        position: sticky;
-        top: 6rem;
-        height: fit-content;
-        overflow-y: auto;
-        max-height: calc(100vh - 8rem);
-      }
-
-      .tag {
-        display: inline-block;
-        background-color: #e0f2fe;
-        color: #0369a1;
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
-        font-size: 0.875rem;
-        margin-right: 0.5rem;
-        margin-bottom: 0.5rem;
-        transition: all 0.2s ease;
-      }
-
-      .dark .tag {
-        background-color: #1e3a8a;
-        color: #bfdbfe;
-      }
-
-      .tag:hover {
-        background-color: #bae6fd;
-        color: #075985;
-      }
-
-      .dark .tag:hover {
-        background-color: #1e40af;
-        color: #93c5fd;
-      }
-    `;
-    document.head.appendChild(style);
-
-    setIsMounted(true);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-
-    const handleScroll = () => {
-      clearTimeout(scrollTimeoutRef.current);
-      scrollTimeoutRef.current = setTimeout(() => {
-        setIsScrolling(false);
-      }, 100);
-      lastScrollPosition.current = window.scrollY;
-    };
-
-    window.addEventListener('scroll', handleScroll);
-
-    const handleKeyDown = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        openSearch();
-      } else if (e.key === 'Escape') {
-        closeSearch();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.head.removeChild(style);
-      window.removeEventListener('resize', checkMobile);
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('scroll', handleScroll);
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-      if (scrollTimeoutRef.current) {
-        cancelAnimationFrame(scrollTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!contentRef.current) return;
-
-    // Add copy buttons and handle code blocks
-    const codeBlocks = contentRef.current.querySelectorAll('pre');
-    codeBlocks.forEach((pre) => {
-      // Skip if already processed
-      if (pre.querySelector('.code-block-header')) return;
-
-      // Create copy button
-      const button = document.createElement('button');
-      button.className = 'copy-btn';
-      button.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-        </svg>
-        <span>复制</span>
-      `;
-
-      // Create header div
-      const header = document.createElement('div');
-      header.className = 'code-block-header';
-      
-      // Detect language (if specified in class)
-      const language = pre.className.match(/language-(\w+)/)?.[1] || '代码';
-      const languageSpan = document.createElement('span');
-      languageSpan.textContent = language;
-      
-      header.appendChild(languageSpan);
-      header.appendChild(button);
-      pre.insertBefore(header, pre.firstChild);
-
-      // Add copy functionality
-      button.addEventListener('click', () => {
-        const code = pre.querySelector('code')?.textContent || '';
-        navigator.clipboard.writeText(code).then(() => {
-          button.classList.add('copied');
-          button.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-            <span>已复制</span>
-          `;
-          setTimeout(() => {
-            button.classList.remove('copied');
-            button.innerHTML = `
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-              </svg>
-              <span>复制</span>
-            `;
-          }, 2000);
-        });
-      });
-    });
-
-    // Handle window resize to re-check overflow
-    const handleResize = () => {
-      const codeBlocks = contentRef.current?.querySelectorAll('pre') || [];
-      codeBlocks.forEach((pre) => {
-        const codeElement = pre.querySelector('code');
-        if (codeElement) {
-          // Force reflow to ensure proper width calculation
-          void codeElement.offsetWidth;
-        }
-      });
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
   }, [contentHtml]);
 
-  const highlightText = (text, query) => {
-    if (!query) return text;
-    const regex = new RegExp(`(${query})`, 'gi');
-    return text.replace(regex, '<span class="search-highlight">$1</span>');
-  };
-
-  const openSearch = () => {
-    setIsSearchOpen(true);
-    setTimeout(() => {
-      document.getElementById('search-input')?.focus();
-    }, 100);
-  };
-
-  const closeSearch = () => {
-    setIsSearchOpen(false);
-    setSearchQuery('');
-    setSearchResults([]);
-  };
-
-  const handleSearchResultClick = (slug) => {
-    closeSearch();
-    router.push(`/posts/${slug}`);
-  };
-
+  // --- 复制按钮逻辑 ---
   useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setSearchResults([]);
-      return;
-    }
-
-    const query = searchQuery.toLowerCase();
-    const results = allPostsData.filter(post => {
-      const titleMatch = post.title.toLowerCase().includes(query);
-      const excerptMatch = post.excerpt && post.excerpt.toLowerCase().includes(query);
-      const contentMatch = post.content && post.content.toLowerCase().includes(query);
-      const tagMatch = post.tags && post.tags.some(tag => tag.toLowerCase().includes(query));
-      
-      return titleMatch || excerptMatch || contentMatch || tagMatch;
-    }).map(post => ({
-      ...post,
-      highlightedTitle: highlightText(post.title, query),
-      highlightedExcerpt: post.excerpt ? highlightText(post.excerpt, query) : '',
-    }));
-
-    setSearchResults(results);
-  }, [searchQuery, allPostsData]);
-
-  useEffect(() => {
-    const handleRouteChangeStart = () => {
-      setIsMounted(false);
-    };
-
-    const handleRouteChangeComplete = () => {
-      setIsMounted(true);
-    };
-
-    router.events.on('routeChangeStart', handleRouteChangeStart);
-    router.events.on('routeChangeComplete', handleRouteChangeComplete);
-
-    return () => {
-      router.events.off('routeChangeStart', handleRouteChangeStart);
-      router.events.off('routeChangeComplete', handleRouteChangeComplete);
-    };
-  }, [router]);
-
-  const loadHighlightJS = (isDark) => {
-    return new Promise((resolve) => {
-      const existingTheme = document.querySelector('#hljs-theme');
-      if (existingTheme) existingTheme.remove();
-
-      const theme = document.createElement('link');
-      theme.id = 'hljs-theme';
-      theme.rel = 'stylesheet';
-      theme.href = isDark
-        ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css'
-        : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css';
-      
-      theme.onload = () => {
-        if (window.hljs) {
-          window.hljs.highlightAll();
-        }
-        resolve();
+    if (!contentRef.current) return;
+    const blocks = contentRef.current.querySelectorAll('pre');
+    blocks.forEach(pre => {
+      if (pre.querySelector('.code-header')) return;
+      const header = document.createElement('div');
+      header.className = 'code-header flex justify-between items-center px-4 py-2 bg-black/5 dark:bg-white/5 border-b border-black/5 dark:border-white/10 text-[10px] uppercase font-bold tracking-widest';
+      header.innerHTML = `<span>Code</span><button class="hover:text-blue-500 transition-colors">Copy</button>`;
+      pre.prepend(header);
+      header.querySelector('button').onclick = () => {
+        navigator.clipboard.writeText(pre.querySelector('code').innerText);
+        header.querySelector('button').innerText = 'Copied';
+        setTimeout(() => header.querySelector('button').innerText = 'Copy', 2000);
       };
-      document.head.appendChild(theme);
     });
-  };
+  }, [contentHtml]);
 
-  const initializeWaline = async () => {
-    if (walineInstance.current) {
-      walineInstance.current.destroy();
-      walineInstance.current = null;
-    }
-
-    if (!document.querySelector('#waline-css')) {
-      const link = document.createElement('link');
-      link.id = 'waline-css';
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/@waline/client@v2/dist/waline.css';
-      document.head.appendChild(link);
-    }
-
-    if (typeof window.Waline === 'undefined') {
-      await new Promise((resolve) => {
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/@waline/client@v2/dist/waline.js';
-        script.onload = resolve;
-        document.body.appendChild(script);
-      });
-    }
-
-    walineInstance.current = window.Waline.init({
-      el: '#waline-comment-container',
-      serverURL: 'https://comment.mrzxr.top/',
-      dark: 'html.dark',
-      path: router.asPath,
-      locale: { placeholder: '欢迎留言讨论...' },
-    });
-  };
-
-  const toggleDarkMode = async () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    localStorage.setItem('darkMode', newDarkMode);
-    document.documentElement.classList.toggle('dark', newDarkMode);
-
-    await loadHighlightJS(newDarkMode);
-    initializeWaline();
-  };
-
-  useEffect(() => {
-    return () => {
-      if (walineInstance.current) {
-        walineInstance.current.destroy();
-      }
-    };
-  }, []);
-
-  const setupHeadingObserver = useCallback(() => {
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-    }
-
-    const headings = contentRef.current?.querySelectorAll('h1, h2');
-    if (!headings || headings.length === 0) return;
-
-    const options = {
-      root: null,
-      rootMargin: '-100px 0px -50% 0px',
-      threshold: 0.5
-    };
-
-    observerRef.current = new IntersectionObserver((entries) => {
-      if (isScrolling) return;
-
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          setActiveHeading(entry.target.id);
-          
-          const currentScroll = window.pageYOffset;
-          if (currentScroll < lastScrollPosition.current) {
-            const headingTop = entry.target.getBoundingClientRect().top;
-            if (headingTop < 100) {
-              const scrollTo = window.pageYOffset + headingTop - 100;
-              window.scrollTo({
-                top: scrollTo,
-                behavior: 'smooth'
-              });
-            }
-          }
-          lastScrollPosition.current = currentScroll;
-        }
-      });
-    }, options);
-
-    headings.forEach(heading => {
-      observerRef.current.observe(heading);
-    });
-  }, [isScrolling]);
-
-  useEffect(() => {
-    const initializePage = async () => {
-      const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-      setIsDarkMode(savedDarkMode);
-      document.documentElement.classList.toggle('dark', savedDarkMode);
-
-      await Promise.all([
-        loadHighlightJS(savedDarkMode),
-        initializeWaline(),
-        loadHLJSBase()
-      ]);
-
-      if (contentHtml) {
-        generateToc();
-        setupImagePreview();
-        setupHeadingAnchors();
-        setTimeout(() => {
-          setupHeadingObserver();
-          if (window.location.hash) {
-            const id = window.location.hash.substring(1);
-            scrollToHeading(id, false);
-          }
-        }, 500);
-      }
-    };
-
-    const loadHLJSBase = () => {
-      if (!window.hljs) {
-        return new Promise((resolve) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js';
-          script.onload = () => resolve();
-          document.head.appendChild(script);
-        });
-      }
-      return Promise.resolve();
-    };
-
-    const setupImagePreview = () => {
-      const articleImages = document.querySelectorAll('.prose img');
-      articleImages.forEach(img => {
-        img.addEventListener('click', () => {
-          setPreviewImage(img.src);
-        });
-      });
-    };
-
-    const setupHeadingAnchors = () => {
-      if (contentRef.current) {
-        const headings = contentRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6');
-        
-        headings.forEach((heading) => {
-          if (!heading.id) {
-            const id = heading.textContent.toLowerCase().replace(/\s+/g, '-');
-            heading.id = id;
-          }
-        });
-      }
-    };
-
-    initializePage();
-  }, [contentHtml, setupHeadingObserver]);
-
-  const generateToc = () => {
-    if (contentRef.current) {
-      const headings = contentRef.current.querySelectorAll('h1, h2');
-      const tocItems = [];
-
-      headings.forEach((heading) => {
-        const id = heading.id || heading.textContent.toLowerCase().replace(/\s+/g, '-');
-        if (!heading.id) {
-          heading.id = id;
-        }
-        
-        tocItems.push({
-          level: heading.tagName.toLowerCase(),
-          text: heading.textContent,
-          id,
-        });
-      });
-
-      setToc(tocItems);
-    }
-  };
-
-  const scrollToHeading = useCallback((id, smooth = true) => {
-    const targetElement = document.getElementById(id);
-    if (!targetElement) return;
-
-    const offset = 100;
-    const elementPosition = targetElement.getBoundingClientRect().top;
-    const offsetPosition = elementPosition + window.pageYOffset - offset;
-
-    if (smooth) {
-      smoothScrollTo(offsetPosition, () => {
-        const finalPosition = targetElement.getBoundingClientRect().top;
-        if (finalPosition < offset) {
-          window.scrollBy({
-            top: finalPosition - offset,
-            behavior: 'auto'
-          });
-        }
-      });
-    } else {
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'auto'
-      });
-    }
-
-    window.history.replaceState(null, '', `#${id}`);
-    targetElement.setAttribute('tabindex', '-1');
-    targetElement.focus();
-    setActiveHeading(id);
-  }, [smoothScrollTo]);
-
-  const handleTocClick = (e, id) => {
-    e.preventDefault();
-    scrollToHeading(id);
-  };
-
-  const closePreview = () => {
-    setPreviewImage(null);
+  const toggleDarkMode = () => {
+    const next = !isDarkMode;
+    setIsDarkMode(next);
+    localStorage.setItem('darkMode', next);
+    document.documentElement.classList.toggle('dark', next);
   };
 
   return (
-    <>
-      <nav className="fixed top-0 left-0 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-md z-50">
-        <div className="container mx-auto px-8 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/" passHref>
-              <a className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700">
-                Typace
-              </a>
-            </Link>
+    <div className={`min-h-screen selection:bg-blue-600 selection:text-white transition-colors duration-700 ${isDarkMode ? 'dark bg-black text-white' : 'bg-[#fafafa] text-black'}`}>
+      <Head><title>{frontmatter.title} — Typace</title></Head>
+      <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />
 
-            <div className="hidden md:flex space-x-6 items-center">
-              <NavLink href="/">首页</NavLink>
-              <NavLink href="/about">关于</NavLink>
-              <NavLink href="/archive">归档</NavLink>
-              <NavLink href="/tags">标签</NavLink>
-              <button
-                onClick={openSearch}
-                className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors p-2"
-                title="搜索 (Ctrl+K)"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
-              <button
-                onClick={toggleDarkMode}
-                className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors p-2"
-              >
-                {isDarkMode ? '🌙' : '☀️'}
-              </button>
-            </div>
-
-            <div className="md:hidden flex items-center space-x-4">
-              <button
-                onClick={openSearch}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                title="搜索"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
-              <button
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
+      {/* 导航栏 (同主页) */}
+      <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
+        <div className="max-w-[1440px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
+          <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity">TYPACE</a></Link>
+          <div className="hidden md:flex items-center space-x-10 text-[10px] font-bold uppercase tracking-[0.25em]">
+            <NavLink href="/archive">Archive</NavLink>
+            <NavLink href="/tags">Tags</NavLink>
+            <NavLink href="/about">About</NavLink>
+            <button onClick={toggleDarkMode} className="text-lg w-6 h-6 flex items-center justify-center rounded-full border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all focus:outline-none">
+              {isDarkMode ? '☼' : '☾'}
+            </button>
           </div>
+          <button className="md:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            {isMobileMenuOpen ? 'CLOSE' : 'MENU'}
+          </button>
+        </div>
+        {/* 移动端全屏菜单 */}
+        <div className={`fixed inset-0 bg-white/95 dark:bg-black/95 backdrop-blur-3xl transition-all duration-500 md:hidden z-40 ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
+            <div className="flex flex-col items-center justify-center h-full space-y-8 text-4xl font-black tracking-tighter uppercase">
+                <Link href="/"><a onClick={() => setIsMobileMenuOpen(false)}>Home</a></Link>
+                <Link href="/archive"><a onClick={() => setIsMobileMenuOpen(false)}>Archive</a></Link>
+                <Link href="/tags"><a onClick={() => setIsMobileMenuOpen(false)}>Tags</a></Link>
+                <button onClick={() => { toggleDarkMode(); setIsMobileMenuOpen(false); }} className="text-xs border border-black/10 dark:border-white/10 px-8 py-3 rounded-full mt-10 uppercase tracking-widest font-bold">
+                    {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                </button>
+            </div>
         </div>
       </nav>
 
-      {isSearchOpen && (
-        <div className="search-modal">
-          <div className="search-container">
-            <div className="search-header">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                id="search-input"
-                type="text"
-                className="search-input"
-                placeholder="搜索文章..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                autoComplete="off"
-              />
-              <button className="search-close" onClick={closeSearch}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="search-results">
-              {searchResults.length > 0 ? (
-                searchResults.map((post) => (
-                  <div
-                    key={post.slug}
-                    className="search-result-item"
-                    onClick={() => handleSearchResultClick(post.slug)}
-                  >
-                    <h3 
-                      className="search-result-title"
-                      dangerouslySetInnerHTML={{ __html: post.highlightedTitle }}
-                    />
-                    {post.highlightedExcerpt && (
-                      <p 
-                        className="search-result-excerpt"
-                        dangerouslySetInnerHTML={{ __html: post.highlightedExcerpt }}
-                      />
-                    )}
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{post.date}</p>
-                  </div>
-                ))
-              ) : searchQuery ? (
-                <div className="no-results">没有找到匹配的文章</div>
-              ) : (
-                <div className="no-results">输入关键词搜索文章</div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className={`fixed inset-0 z-50 transition-all duration-300 ${isMenuOpen ? 'visible' : 'invisible'}`}>
-        <div 
-          className={`absolute inset-0 bg-black/20 dark:bg-black/40 transition-opacity ${
-            isMenuOpen ? 'opacity-100' : 'opacity-0'
-          }`}
-          onClick={() => setIsMenuOpen(false)}
-        />
+      {/* 主体内容 */}
+      <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-40 pb-32 transition-all duration-700 ${isMobileMenuOpen ? 'blur-2xl scale-[0.98]' : 'blur-0'}`}>
         
-        <div 
-          className={`absolute right-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl shadow-xl transition-transform duration-300 ${
-            isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
-        >
-          <div className="p-6 space-y-4 pt-2">
-            <button
-              className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            
-            <div className="mt-6 space-y-3">
-              <MobileNavLink href="/" onClick={() => setIsMenuOpen(false)}>首页</MobileNavLink>
-              <MobileNavLink href="/about" onClick={() => setIsMenuOpen(false)}>关于</MobileNavLink>
-              <MobileNavLink href="/archive" onClick={() => setIsMenuOpen(false)}>归档</MobileNavLink>
-              <MobileNavLink href="/tags" onClick={() => setIsMenuOpen(false)}>标签</MobileNavLink>
-            </div>
-            
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
-              <button
-                onClick={toggleDarkMode}
-                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <span>暗黑模式</span>
-                <span>{isDarkMode ? '🌙' : '☀️'}</span>
-              </button>
-            </div>
+        {/* 文章头部 - 开屏动画 */}
+        <header className={`mb-24 transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+          <div className="flex items-center space-x-4 mb-6 opacity-40">
+            <span className="text-[10px] font-mono tracking-widest">{frontmatter.date}</span>
+            <div className="h-px w-8 bg-current"></div>
+            <span className="text-[10px] uppercase font-bold tracking-widest">{frontmatter.tags?.[0] || 'Article'}</span>
           </div>
-        </div>
-      </div>
+          <h1 className="text-[clamp(2.5rem,8vw,5.5rem)] leading-[0.95] font-black tracking-tighter uppercase mb-10">
+            {frontmatter.title}
+          </h1>
+          {frontmatter.cover && (
+            <div className="w-full aspect-[21/9] overflow-hidden border border-black/5 dark:border-white/10 group">
+                <img src={frontmatter.cover} className="w-full h-full object-cover grayscale-[0.2] hover:grayscale-0 transition-all duration-1000 scale-105 hover:scale-100" />
+            </div>
+          )}
+        </header>
 
-      {previewImage && (
-        <div className="image-preview-overlay" onClick={closePreview}>
-          <div className="image-preview-container" onClick={(e) => e.stopPropagation()}>
-            <img src={previewImage} alt="Preview" />
-            <button className="image-preview-close" onClick={closePreview}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
+        <div className="flex flex-col lg:flex-row gap-20">
+          {/* 左侧目录 - 极简 */}
+          <aside className="lg:w-64 flex-shrink-0 hidden lg:block">
+            <div className="sticky top-32 space-y-8">
+              <div>
+                <h4 className="text-[9px] font-black uppercase tracking-[0.4em] opacity-30 mb-6">Catalogue</h4>
+                <ul className="space-y-4 border-l border-black/5 dark:border-white/10">
+                  {toc.map(item => (
+                    <li key={item.id} className={`${item.level === 'h3' ? 'pl-6' : 'pl-4'}`}>
+                      <a href={`#${item.id}`} className={`block text-[11px] uppercase font-bold transition-all hover:text-blue-500 ${activeHeading === item.id ? 'text-blue-500 translate-x-1' : 'opacity-30'}`}>
+                        {item.text}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </aside>
+
+          {/* 正文区域 */}
+          <article className={`flex-1 max-w-4xl transition-all duration-[1800ms] delay-300 ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+            <div 
+              ref={contentRef}
+              className="prose-custom dark:prose-invert"
+              dangerouslySetInnerHTML={{ __html: contentHtml }}
+            />
+            
+            {/* 评论区 - 微边框化 */}
+            <section id="comments" className="mt-32 pt-16 border-t border-black/5 dark:border-white/10">
+                <div className="flex items-center space-x-4 mb-10 opacity-30">
+                    <h3 className="text-xs font-black uppercase tracking-[0.4em]">Terminal Conversation</h3>
+                    <div className="h-px flex-1 bg-current"></div>
+                </div>
+                <div id="waline-comment-container" className="rounded-xl overflow-hidden" />
+            </section>
+          </article>
+        </div>
+
+        {/* 推荐文章 - Bento Grid 风格 */}
+        <section className="mt-48">
+          <div className="flex items-center space-x-6 mb-12">
+            <h2 className="text-xl font-black uppercase tracking-tighter">Read More</h2>
+            <div className="h-px flex-1 bg-black/5 dark:bg-white/10"></div>
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/10">
+            {recommendedPosts.map(post => (
+              <Link key={post.slug} href={`/posts/${post.slug}`}>
+                <a className="group relative bg-white dark:bg-black p-8 min-h-[300px] flex flex-col justify-end overflow-hidden transition-colors hover:bg-gray-50 dark:hover:bg-[#050505]">
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity">
+                    <img src={post.cover} className="w-full h-full object-cover grayscale" />
+                  </div>
+                  <span className="text-[9px] font-mono opacity-30 mb-2">{post.date}</span>
+                  <h4 className="text-lg font-black uppercase tracking-tighter leading-none group-hover:text-blue-500 transition-colors">{post.title}</h4>
+                </a>
+              </Link>
+            ))}
+          </div>
+        </section>
+      </main>
+
+      {/* 图片预览 Overlay */}
+      {previewImage && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-white/90 dark:bg-black/95 backdrop-blur-2xl p-10 cursor-zoom-out" onClick={() => setPreviewImage(null)}>
+            <img src={previewImage} className="max-w-full max-h-full shadow-2xl rounded-sm" />
         </div>
       )}
 
-      <button 
-        className="scroll-to-comment-btn"
-        onClick={scrollToComments}
-        aria-label="滚动到评论区"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-      </button>
-
-      <div className={`min-h-screen p-8 pt-24 relative z-10 bg-white dark:bg-gray-900 page-container ${
-        isMounted ? 'mounted' : ''
-      }`}>
-        <Head>
-          <title>{frontmatter.title} - Typace</title>
-        </Head>
-
-        <div className="container mx-auto flex flex-col lg:flex-row">
-          <div className="main-content-container">
-            <div className="article-container">
-              {frontmatter.cover && (
-                <div className="w-full h-48 md:h-64 mb-8">
-                  <img
-                    src={frontmatter.cover}
-                    alt={frontmatter.title}
-                    className="w-full h-full object-cover rounded-lg cursor-pointer"
-                    onClick={() => setPreviewImage(frontmatter.cover)}
-                  />
-                </div>
-              )}
-
-              <article className="prose max-w-none w-full" ref={contentRef}>
-                <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
-                  {frontmatter.title}
-                </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-8">
-                  {frontmatter.date}
-                </p>
-                {frontmatter.tags && frontmatter.tags.length > 0 && (
-                  <div className="mb-8">
-                    {frontmatter.tags.map((tag) => (
-                      <Link key={tag} href={`/tags#${tag}`} passHref>
-                        <a className="tag">
-                          {tag}
-                        </a>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-                <div
-                  className="text-gray-700 dark:text-gray-300 w-full"
-                  dangerouslySetInnerHTML={{ __html: contentHtml }}
-                />
-              </article>
-            </div>
-
-            {recommendedPosts.length > 0 && (
-              <section className="mt-12">
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">推荐文章</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {recommendedPosts.map((post) => (
-                    <Link key={post.slug} href={`/posts/${post.slug}`} legacyBehavior>
-                      <a className="block bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition transform hover:scale-105">
-                        {post.cover && (
-                          <div className="w-full h-48">
-                            <img
-                              src={post.cover}
-                              alt={post.title}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
-                        <div className="p-6">
-                          <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-                            {post.title}
-                          </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{post.date}</p>
-                        </div>
-                      </a>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            <section 
-              id="comments"
-              ref={commentSectionRef}
-              className="mt-12"
-            >
-              <div id="waline-comment-container" className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-                <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">评论</h3>
-              </div>
-            </section>
-
-            <footer className="text-center mt-12">
-              <a href="/api/sitemap" className="inline-block">
-                <img
-                  src="https://cdn.us.mrche.top/sitemap.svg"
-                  alt="Sitemap"
-                  className="block mx-auto w-8 h-8 dark:invert"
-                />
-              </a>
-              <p className="mt-4 text-gray-600 dark:text-gray-400">
-                由Terryzhang&mrche创建的
-                <a
-                  href="https://bgithub.xyz/terryzhangxr/typace-i"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  Typace
-                </a>
-                强力驱动
-              </p>
-            </footer>
-          </div>
-
-          <div className="sidebar-container hidden lg:block">
-            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-lg p-6 shadow-lg">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">目录</h2>
-              <ul className="space-y-2">
-                {toc.map((item) => (
-                  <li key={item.id}>
-                    <a
-                      href={`#${item.id}`}
-                      onClick={(e) => handleTocClick(e, item.id)}
-                      className={`toc-item ${item.level} ${
-                        activeHeading === item.id ? 'active' : ''
-                      }`}
-                      aria-current={activeHeading === item.id ? 'location' : undefined}
-                    >
-                      {item.text}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  ); 
+      {/* 自定义 Prose 样式 */}
+      <style jsx global>{`
+        .prose-custom {
+          font-family: 'Inter', sans-serif;
+          line-height: 1.8;
+          font-size: 1.05rem;
+          color: rgba(var(--text-color), 0.8);
+        }
+        .prose-custom h2 {
+          font-size: 1.8rem;
+          font-weight: 900;
+          letter-spacing: -0.05em;
+          text-transform: uppercase;
+          margin: 3rem 0 1.5rem;
+          display: flex;
+          align-items: center;
+        }
+        .prose-custom h2::before {
+          content: '';
+          width: 1rem;
+          height: 1rem;
+          background: #2563eb;
+          margin-right: 1rem;
+          display: inline-block;
+        }
+        .prose-custom p { margin-bottom: 1.8rem; }
+        .prose-custom img { 
+          border: 1px solid rgba(0,0,0,0.05); 
+          border-radius: 2px; 
+          margin: 3rem 0; 
+          cursor: zoom-in; 
+        }
+        .prose-custom pre {
+          background: #050505 !important;
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 4px;
+          margin: 2.5rem 0;
+          overflow: hidden;
+        }
+        .prose-custom code { font-family: 'Fira Code', monospace; font-size: 0.9em; }
+        .prose-custom blockquote {
+          border-left: 4px solid #2563eb;
+          padding-left: 2rem;
+          font-style: italic;
+          opacity: 0.6;
+          margin: 3rem 0;
+        }
+        .prose-custom table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 3rem 0;
+          font-size: 0.9rem;
+        }
+        .prose-custom th, .prose-custom td {
+          border: 1px solid rgba(0,0,0,0.05);
+          padding: 1rem;
+          text-align: left;
+        }
+        .dark .prose-custom th, .dark .prose-custom td { border-color: rgba(255,255,255,0.1); }
+      `}</style>
+    </div>
+  );
 }
 
 const NavLink = ({ href, children }) => (
-  <Link href={href} passHref>
-    <a className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
-      {children}
-    </a>
-  </Link>
-);
-
-const MobileNavLink = ({ href, children, onClick }) => (
-  <Link href={href} passHref>
-    <a 
-      onClick={onClick}
-      className="block p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-    >
-      {children}
-    </a>
-  </Link>
+  <Link href={href}><a className="opacity-40 hover:opacity-100 transition-opacity tracking-widest">{children}</a></Link>
 );
