@@ -16,7 +16,7 @@ export default function Home({ allPostsData }) {
   const [displayText, setDisplayText] = useState(''); 
   const [wordIndex, setWordIndex] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
-  const [showHero, setShowHero] = useState(false); // 控制文字开屏动画
+  const [showHero, setShowHero] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -35,14 +35,13 @@ export default function Home({ allPostsData }) {
     ).slice(0, 6);
   }, [searchQuery, allPostsData]);
 
-  // --- 粒子系统与动画副作用 ---
+  // --- 矩阵浮动粒子系统 ---
   useEffect(() => {
     setIsMounted(true);
     const savedDark = localStorage.getItem('darkMode') === 'true';
     setIsDarkMode(savedDark);
     document.documentElement.classList.toggle('dark', savedDark);
 
-    // 延时触发开屏文字动画
     setTimeout(() => setShowHero(true), 200);
 
     // 1. Hitokoto
@@ -58,10 +57,12 @@ export default function Home({ allPostsData }) {
     // 2. Payload 文字滚动
     const wordTimer = setInterval(() => setWordIndex(p => (p + 1) % SCROLL_WORDS.length), 3000);
 
-    // 3. 强化版粒子系统 (带连线)
+    // 3. 矩阵波动粒子 (Orderly Grid)
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    let particles = [];
+    let animationFrameId;
+    let time = 0;
+
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -69,45 +70,39 @@ export default function Home({ allPostsData }) {
     window.addEventListener('resize', resize);
     resize();
 
-    for (let i = 0; i < 60; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        size: Math.random() * 2 + 1,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-      });
-    }
-
-    const animate = () => {
+    const render = () => {
+      time += 0.02; // 控制波动速度
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const color = isDarkMode ? '255, 255, 255' : '0, 0, 0';
-      ctx.fillStyle = `rgba(${color}, 0.15)`;
       
-      particles.forEach((p, i) => {
-        p.x += p.vx; p.y += p.vy;
-        if(p.x < 0 || p.x > canvas.width) p.vx *= -1;
-        if(p.y < 0 || p.y > canvas.height) p.vy *= -1;
-        
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
+      const color = isDarkMode ? '255, 255, 255' : '0, 0, 0';
+      ctx.fillStyle = `rgba(${color}, 0.12)`;
+      
+      const gap = 60; // 粒子之间的间距
+      const rows = Math.ceil(canvas.height / gap) + 1;
+      const cols = Math.ceil(canvas.width / gap) + 1;
+      const amplitude = 15; // 浮动幅度
 
-        for(let j = i + 1; j < particles.length; j++) {
-          const p2 = particles[j];
-          const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-          if(dist < 100) {
-            ctx.strokeStyle = `rgba(${color}, ${0.1 * (1 - dist/100)})`;
-            ctx.lineWidth = 0.5;
-            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
-          }
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const x = c * gap;
+          // 基于行列和时间计算 y 轴偏移量，形成整齐的波动感
+          const yOffset = Math.sin(time + (c * 0.3) + (r * 0.2)) * amplitude;
+          const y = r * gap + yOffset;
+
+          ctx.beginPath();
+          ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+          ctx.fill();
         }
-      });
-      requestAnimationFrame(animate);
+      }
+      animationFrameId = requestAnimationFrame(render);
     };
-    animate();
+    render();
 
-    return () => { clearInterval(wordTimer); window.removeEventListener('resize', resize); };
+    return () => { 
+      clearInterval(wordTimer); 
+      window.removeEventListener('resize', resize); 
+      cancelAnimationFrame(animationFrameId);
+    };
   }, [isDarkMode]);
 
   const toggleDarkMode = () => {
@@ -120,21 +115,22 @@ export default function Home({ allPostsData }) {
   return (
     <div className={`min-h-screen selection:bg-blue-600 selection:text-white transition-colors duration-700 ${isDarkMode ? 'dark bg-black text-white' : 'bg-[#fafafa] text-black'}`}>
       <Head>
-        <title>TYPACE — Digital Excellence</title>
+        <title>TYPACE — Order & Aesthetic</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
       </Head>
 
-      <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />
+      {/* 矩阵粒子背景 */}
+      <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-80" />
 
-      {/* 极简导航 */}
+      {/* 导航 */}
       <nav className="fixed top-0 w-full z-50 border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="max-w-[1440px] mx-auto px-10 h-16 flex items-center justify-between">
           <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity">TYPACE</a></Link>
           <div className="flex items-center space-x-8 text-[11px] font-bold uppercase tracking-[0.2em]">
             <NavLink href="/archive">Archive</NavLink>
             <NavLink href="/about">About</NavLink>
-            <button onClick={() => setIsSearchOpen(true)} className="p-2"><SearchIcon /></button>
-            <button onClick={toggleDarkMode} className="text-lg w-6 h-6 flex items-center justify-center rounded-full border border-black/10 dark:border-white/10 transition-transform active:scale-90">
+            <button onClick={() => setIsSearchOpen(true)} className="p-2 opacity-40 hover:opacity-100 transition-opacity"><SearchIcon /></button>
+            <button onClick={toggleDarkMode} className="text-lg w-8 h-8 flex items-center justify-center rounded-full border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all">
               {isDarkMode ? '☼' : '☾'}
             </button>
           </div>
@@ -142,15 +138,15 @@ export default function Home({ allPostsData }) {
       </nav>
 
       <main className="relative z-10 max-w-[1440px] mx-auto px-10 pt-48 pb-32">
-        {/* 开屏文字动画 Header */}
-        <header className="mb-40 overflow-hidden">
-          <div className={`transition-all duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
-            <h1 className="text-[clamp(3rem,12vw,10rem)] leading-[0.8] font-black tracking-tighter mb-12">
-              STAY <br />
+        {/* 开屏动画 Header */}
+        <header className="mb-44 overflow-hidden text-center md:text-left">
+          <div className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-16 opacity-0'}`}>
+            <h1 className="text-[clamp(3.5rem,11vw,9.5rem)] leading-[0.82] font-black tracking-tighter mb-12">
+              MAKING <br />
               <div className="relative h-[1.1em] overflow-hidden">
                 <div 
-                  className={`transition-all duration-[1000ms] delay-300 ease-[cubic-bezier(0.85,0,0.15,1)] ${showHero ? 'translate-y-0' : 'translate-y-12'}`}
-                  style={{ transform: showHero ? `translateY(-${wordIndex * 20}%)` : 'translateY(100%)' }}
+                  className="transition-transform duration-[1000ms] delay-300 ease-[cubic-bezier(0.8,0,0.2,1)]"
+                  style={{ transform: `translateY(-${wordIndex * 20}%)` }}
                 >
                   {SCROLL_WORDS.map((w) => (
                     <div key={w} className="h-[1.1em] text-blue-600 dark:text-blue-500 uppercase">{w}</div>
@@ -160,121 +156,126 @@ export default function Home({ allPostsData }) {
             </h1>
           </div>
           
-          <div className={`transition-all duration-[1500ms] delay-500 ease-out ${showHero ? 'opacity-40 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-            <p className="max-w-xl text-base font-medium leading-relaxed italic">
-              "{displayText}"<span className="inline-block w-1.5 h-4 bg-blue-500 ml-1 animate-pulse" />
+          <div className={`transition-all duration-[1800ms] delay-700 ease-out ${showHero ? 'opacity-40 translate-y-0' : 'opacity-0 translate-y-6'}`}>
+            <p className="max-w-2xl text-base font-medium leading-relaxed italic font-mono">
+              {displayText}<span className="inline-block w-2 h-4 bg-blue-600 ml-2 animate-pulse" />
             </p>
           </div>
         </header>
 
-        {/* Bento Grid (每页10篇) */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        {/* Bento Grid (每页10篇布局) */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-px bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 shadow-2xl shadow-black/5">
           {paginatedPosts.map((post, idx) => {
             const gridClass = [0, 5, 8].includes(idx) ? 'md:col-span-8' : 'md:col-span-4';
             return (
-              <div 
-                key={post.slug} 
-                className={`${gridClass} min-h-[400px] border border-black/5 dark:border-white/10 hover:border-blue-500/50 transition-all duration-500 group relative bg-white dark:bg-[#050505]`}
-                style={{ transitionDelay: `${idx * 50}ms` }} // 文章块也增加微小的交错感
-              >
+              <div key={post.slug} className={`${gridClass} bg-white dark:bg-black min-h-[420px] relative group overflow-hidden`}>
                 <ArticleBox post={post} featured={[0, 5, 8].includes(idx)} />
               </div>
             );
           })}
         </div>
 
-        {/* 分页组件 */}
+        {/* 现代分页 */}
         {totalPages > 1 && (
-          <div className="mt-24 pt-12 border-t border-black/5 dark:border-white/10 flex items-center justify-between">
-            <div className="flex space-x-2">
+          <div className="mt-24 flex items-center justify-between border-t border-black/5 dark:border-white/10 pt-10">
+            <div className="flex gap-4">
               {Array.from({ length: totalPages }).map((_, i) => (
                 <button
                   key={i}
                   onClick={() => { setCurrentPage(i + 1); window.scrollTo({top: 0, behavior: 'smooth'}); }}
-                  className={`text-xs font-mono w-8 h-8 flex items-center justify-center transition-all ${currentPage === i + 1 ? 'bg-black text-white dark:bg-white dark:text-black' : 'opacity-30 hover:opacity-100'}`}
+                  className={`text-xs font-black transition-all border-b-2 ${currentPage === i + 1 ? 'border-blue-600 text-blue-600' : 'border-transparent opacity-30 hover:opacity-100'}`}
                 >
                   {(i + 1).toString().padStart(2, '0')}
                 </button>
               ))}
             </div>
-            <div className="text-[10px] uppercase tracking-[0.3em] opacity-30">
-              Page {currentPage} / {totalPages}
-            </div>
+            <span className="text-[10px] font-bold uppercase tracking-[0.4em] opacity-20">System Phase {currentPage}</span>
           </div>
         )}
       </main>
 
-      {/* 搜索模态框 */}
+      {/* 搜索 */}
       {isSearchOpen && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-6">
-          <div className="absolute inset-0 bg-white/95 dark:bg-black/95 backdrop-blur-md" onClick={() => setIsSearchOpen(false)} />
-          <div className="relative w-full max-w-2xl animate-in fade-in slide-in-from-top-8 duration-500">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-8">
+          <div className="absolute inset-0 bg-white/98 dark:bg-black/98 backdrop-blur-xl" onClick={() => setIsSearchOpen(false)} />
+          <div className="relative w-full max-w-3xl animate-in fade-in slide-in-from-bottom-4 duration-500">
             <input 
               autoFocus
-              className="w-full bg-transparent border-b border-black/20 dark:border-white/20 text-4xl font-black tracking-tighter outline-none pb-6 focus:border-blue-500 transition-colors"
-              placeholder="SEARCH CONTENT..."
+              className="w-full bg-transparent border-b-4 border-black/10 dark:border-white/10 text-5xl font-black tracking-tighter outline-none pb-8 focus:border-blue-600 transition-colors uppercase"
+              placeholder="Start Typing..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <div className="mt-12 space-y-8">
-              {searchResults.length > 0 ? searchResults.map(result => (
+            <div className="mt-16 space-y-10">
+              {searchResults.map(result => (
                 <Link key={result.slug} href={`/posts/${result.slug}`}>
                   <a className="group block" onClick={() => setIsSearchOpen(false)}>
-                    <span className="text-[10px] font-mono opacity-30 mb-2 block tracking-widest">{result.date}</span>
-                    <h4 className="text-2xl font-bold group-hover:text-blue-500 transition-colors uppercase tracking-tight">{result.title}</h4>
+                    <div className="flex items-center space-x-4 mb-2">
+                      <div className="h-px w-6 bg-blue-600 opacity-0 group-hover:opacity-100 transition-all"></div>
+                      <span className="text-[10px] font-mono opacity-30 tracking-widest uppercase">{result.date}</span>
+                    </div>
+                    <h4 className="text-3xl font-black group-hover:text-blue-600 transition-colors tracking-tighter uppercase">{result.title}</h4>
                   </a>
                 </Link>
-              )) : searchQuery && <p className="opacity-30 uppercase text-xs tracking-widest">No results found.</p>}
+              ))}
             </div>
           </div>
         </div>
       )}
 
-      <footer className="max-w-[1440px] mx-auto px-10 py-20 opacity-30 text-[9px] tracking-[0.4em] uppercase flex justify-between items-center">
-        <span>© TYPACE SYSTEM — 2026</span>
-        <span>DESIGNED FOR FUTURE INTERFACES</span>
+      <footer className="max-w-[1440px] mx-auto px-10 py-24 flex flex-col md:flex-row justify-between items-center border-t border-black/5 dark:border-white/10">
+        <div className="text-[9px] font-bold tracking-[0.5em] uppercase opacity-30 mb-8 md:mb-0">
+          © Typace System Core 2026 — Terminal Logic
+        </div>
+        <div className="flex space-x-8 text-[9px] font-black uppercase tracking-widest opacity-30">
+          <a href="#" className="hover:text-blue-600 transition-colors">Twitter</a>
+          <a href="#" className="hover:text-blue-600 transition-colors">Github</a>
+          <a href="#" className="hover:text-blue-600 transition-colors">Email</a>
+        </div>
       </footer>
 
       <style jsx global>{`
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.5); }
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); }
+        .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
       `}</style>
     </div>
   );
 }
 
-// --- 现代 Bento 文章块组件 ---
+// --- 子组件：Bento 文章块 ---
 const ArticleBox = ({ post, featured }) => (
   <Link href={`/posts/${post.slug}`}>
-    <a className="block h-full relative p-8 flex flex-col justify-end overflow-hidden group">
+    <a className="block h-full relative p-10 flex flex-col justify-end group">
+      {/* 极简灰度封面 (grayscale-30) */}
       <div className="absolute inset-0 z-0">
         <img 
-          src={post.cover || 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2070&auto=format&fit=crop'} 
-          className="w-full h-full object-cover grayscale-[0.3] opacity-10 group-hover:grayscale-0 group-hover:opacity-50 group-hover:scale-105 transition-all duration-[1500ms] ease-out"
+          src={post.cover || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop'} 
+          className="w-full h-full object-cover grayscale-[0.3] opacity-10 group-hover:grayscale-0 group-hover:opacity-60 group-hover:scale-105 transition-all duration-[1200ms] ease-out"
           alt=""
         />
       </div>
 
       <div className="relative z-10">
         <div className="mb-6 flex items-center space-x-4">
-          <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40">{post.date}</span>
-          <div className="h-[1px] w-0 group-hover:w-12 bg-blue-500 transition-all duration-700" />
+          <span className="text-[9px] font-black uppercase tracking-[0.4em] opacity-40">{post.date}</span>
+          <div className="h-[1px] w-0 group-hover:w-16 bg-blue-600 transition-all duration-700" />
         </div>
-        <h3 className={`font-black tracking-tighter leading-[0.95] uppercase transition-all duration-500 group-hover:text-blue-500 
-          ${featured ? 'text-4xl md:text-6xl' : 'text-2xl md:text-3xl'}`}>
+        <h3 className={`font-black tracking-tighter leading-[0.92] uppercase transition-all duration-500 group-hover:text-blue-600 
+          ${featured ? 'text-4xl md:text-7xl' : 'text-2xl md:text-4xl'}`}>
           {post.title}
         </h3>
         {featured && (
-          <p className="mt-8 text-sm opacity-0 group-hover:opacity-50 transition-all duration-700 translate-y-4 group-hover:translate-y-0 line-clamp-2 max-w-lg leading-relaxed font-medium">
-            {post.excerpt || "Dive deeper into the technical philosophy and architectural decisions behind this publication..."}
+          <p className="mt-10 text-sm opacity-0 group-hover:opacity-60 transition-all duration-700 translate-y-6 group-hover:translate-y-0 line-clamp-2 max-w-xl font-medium leading-relaxed">
+            {post.excerpt || "Analyzing the intersection of functional programming and minimalist interface design in contemporary systems..."}
           </p>
         )}
       </div>
 
-      <div className="absolute top-8 right-8 opacity-0 group-hover:opacity-100 transition-all duration-500 -translate-y-2 group-hover:translate-y-0 text-blue-500">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline>
+      <div className="absolute top-10 right-10 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.5">
+          <path d="M7 17L17 7M17 7H7M17 7V17" />
         </svg>
       </div>
     </a>
@@ -282,13 +283,11 @@ const ArticleBox = ({ post, featured }) => (
 );
 
 const NavLink = ({ href, children }) => (
-  <Link href={href}>
-    <a className="opacity-40 hover:opacity-100 transition-opacity">{children}</a>
-  </Link>
+  <Link href={href}><a className="opacity-40 hover:opacity-100 transition-opacity tracking-widest">{children}</a></Link>
 );
 
 const SearchIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 hover:opacity-100 transition-opacity">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
     <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
   </svg>
 );
