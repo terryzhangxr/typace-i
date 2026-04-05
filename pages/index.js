@@ -88,7 +88,7 @@ export default function Home({ allPostsData }) {
           const y = r * gap + yOffset;
 
           ctx.beginPath();
-          ctx.arc(x, y, 1, 0, Math.PI * 2);
+          ctx.arc(x, y, 1.5, 0, Math.PI * 2);
           ctx.fill();
         }
       }
