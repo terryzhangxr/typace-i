@@ -9,7 +9,7 @@ import html from 'remark-html';
 import Head from 'next/head';
 import Link from 'next/link';
 
-// --- 服务端数据获取 ---
+// --- 1. 服务端数据获取 ---
 export async function getStaticPaths() {
   const posts = getSortedPostsData();
   const paths = posts.map((post) => ({ params: { slug: post.slug } }));
@@ -30,14 +30,16 @@ export async function getStaticProps({ params }) {
   return { props: { frontmatter: data, contentHtml, recommendedPosts, allPostsData } };
 }
 
-export default function Post({ frontmatter, contentHtml, recommendedPosts, allPostsData }) {
+// --- 2. 主页面组件 ---
+// 接收全局 Props: isDarkMode, toggleDarkMode, themeMounted
+export default function Post({ frontmatter, contentHtml, recommendedPosts, allPostsData, isDarkMode, toggleDarkMode, themeMounted }) {
   const router = useRouter();
   const canvasRef = useRef(null);
   const contentRef = useRef(null);
   const walineInstance = useRef(null);
   
   // --- 状态管理 ---
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  // 【删除】此处不再定义本地 isDarkMode 状态
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,15 +84,13 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       el: '#waline-comment-container',
       serverURL: 'https://comment.mrzxr.top/',
       path: router.asPath,
-      dark: 'html.dark',
+      dark: 'html.dark', // 自动响应 html 标签上的 dark 类
     });
   }, [router.asPath]);
 
   // --- 核心副作用 ---
   useEffect(() => {
-    const savedDark = localStorage.getItem('darkMode') === 'true';
-    setIsDarkMode(savedDark);
-    document.documentElement.classList.toggle('dark', savedDark);
+    // 【删除】此处不再手动同步 localStorage 和 classList，由全局控制
     setTimeout(() => setShowContent(true), 150);
 
     // 动态脚本加载
@@ -109,8 +109,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
     loadScripts();
 
-    // 粒子动画
+    // 粒子动画 (使用 Props 传进来的 isDarkMode)
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     let time = 0, animationFrameId;
     const render = () => {
@@ -133,9 +134,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isDarkMode, applyHighlighting, initWaline]);
+  }, [isDarkMode, applyHighlighting, initWaline, isMobileMenuOpen, isSearchOpen]);
 
-  // 图片点击与 TOC 挂载
+  // 图片预览与目录处理
   useEffect(() => {
     if (!contentRef.current) return;
     const images = contentRef.current.querySelectorAll('img');
@@ -158,22 +159,15 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     return () => obs.disconnect();
   }, [contentHtml]);
 
-  // 滚动锁定
+  // 滚动锁定逻辑
   useEffect(() => {
     document.body.style.overflow = (isMobileMenuOpen || isSearchOpen) ? 'hidden' : 'unset';
   }, [isMobileMenuOpen, isSearchOpen]);
 
-  const toggleDarkMode = () => {
-    const next = !isDarkMode;
-    setIsDarkMode(next);
-    localStorage.setItem('darkMode', next);
-    document.documentElement.classList.toggle('dark', next);
-  };
-
   return (
     <div className={`min-h-screen selection:bg-blue-600 selection:text-white transition-colors duration-700 ${isDarkMode ? 'dark bg-black text-white' : 'bg-[#fafafa] text-black'}`}>
       <Head>
-        <title>{frontmatter.title} — Typace</title>
+        <title>{frontmatter.title} — TYPACE</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" />
         <link rel="stylesheet" href="https://unpkg.com/@waline/client@v2/dist/waline.css" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
@@ -192,7 +186,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             <NavLink href="/about">About</NavLink>
             <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-40 hover:opacity-100 transition-opacity"><SearchIcon /></button>
             <button onClick={toggleDarkMode} className="w-5 h-5 flex items-center justify-center rounded-full border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm">
-              {isDarkMode ? '☼' : '☾'}
+              {!themeMounted ? null : (isDarkMode ? '☼' : '☾')}
             </button>
           </div>
 
@@ -221,7 +215,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </div>
       </nav>
 
-      {/* 主体内容 */}
+      {/* 主体内容 (包含模糊缩放) */}
       <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-40 pb-32 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
         
         <header className={`max-w-4xl mx-auto mb-20 transition-all duration-[1500ms] ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
@@ -327,11 +321,10 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         .prose-terminal p { margin-bottom: 2.2rem; opacity: 0.85; }
         .prose-terminal pre { background: #050505 !important; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; margin: 3.5rem 0; overflow: hidden; }
         .prose-terminal pre code { display: block; padding: 1.8rem; font-family: 'Fira Code', monospace; font-size: 0.9rem; color: #e5e7eb; }
-        .hljs-keyword { color: #60a5fa; font-weight: bold; }
-        .hljs-string { color: #34d399; }
         .wl-panel { border: 1px solid rgba(128,128,128,0.1) !important; border-radius: 16px !important; background: transparent !important; }
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); }
+        .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
       `}</style>
     </div>
   );
@@ -350,14 +343,6 @@ const MobileNavLink = ({ href, children, onClick, index }) => (
   </Link>
 );
 
-const SearchIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-);
-
-const MenuIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-);
-
-const CloseIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-);
+const SearchIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
+const MenuIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>;
+const CloseIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
