@@ -4,7 +4,7 @@ import { getSortedPostsData } from '../lib/posts';
 import Head from 'next/head';
 import Link from 'next/link';
 
-// --- 1. 服务端数据获取 (确保全局唯一) ---
+// --- 1. 服务端数据获取 ---
 export async function getStaticProps() {
   const allPostsData = getSortedPostsData();
 
@@ -50,11 +50,14 @@ export default function ArchivePage({ postsByYear, allPostsData }) {
     ).slice(0, 6);
   }, [searchQuery, allPostsData]);
 
+  // --- 核心逻辑修改：防止闪屏 ---
   useEffect(() => {
     setIsMounted(true);
-    const savedDark = localStorage.getItem('darkMode') === 'true';
-    setIsDarkMode(savedDark);
-    document.documentElement.classList.toggle('dark', savedDark);
+    
+    // [关键] 同步 _document.js 已经设置好的类名，不再在这里 toggle class
+    const isCurrentlyDark = document.documentElement.classList.contains('dark');
+    setIsDarkMode(isCurrentlyDark);
+
     setTimeout(() => setShowHero(true), 150);
 
     document.body.style.overflow = (isMobileMenuOpen || isSearchOpen) ? 'hidden' : 'unset';
@@ -95,11 +98,16 @@ export default function ArchivePage({ postsByYear, allPostsData }) {
     };
   }, [isDarkMode, isMobileMenuOpen, isSearchOpen]);
 
+  // [关键] 手动切换时需要显式操作 documentElement
   const toggleDarkMode = () => {
     const next = !isDarkMode;
     setIsDarkMode(next);
     localStorage.setItem('darkMode', next);
-    document.documentElement.classList.toggle('dark', next);
+    if (next) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   };
 
   return (
@@ -213,7 +221,7 @@ export default function ArchivePage({ postsByYear, allPostsData }) {
   );
 }
 
-// --- 3. 辅助组件 (仅定义一次) ---
+// --- 3. 辅助组件 ---
 function NavLink({ href, children }) {
   return <Link href={href}><a className="opacity-40 hover:opacity-100 transition-opacity tracking-widest">{children}</a></Link>;
 }
