@@ -30,11 +30,12 @@ export async function getStaticProps() {
 }
 
 // --- 2. 主页面组件 ---
-export default function ArchivePage({ postsByYear, allPostsData }) {
+// 增加入参：isDarkMode, toggleDarkMode, themeMounted
+export default function ArchivePage({ postsByYear, allPostsData, isDarkMode, toggleDarkMode, themeMounted }) {
   const canvasRef = useRef(null);
   const router = useRouter();
 
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  // 【删除】此处不再定义本地 isDarkMode 状态
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,34 +51,44 @@ export default function ArchivePage({ postsByYear, allPostsData }) {
     ).slice(0, 6);
   }, [searchQuery, allPostsData]);
 
-  // --- 核心逻辑修改：防止闪屏 ---
+  // --- 副作用控制系统 ---
   useEffect(() => {
     setIsMounted(true);
+    // 【删除】此处不再读取 localStorage 和手动操作 classList
     
-    // [关键] 同步 _document.js 已经设置好的类名，不再在这里 toggle class
-    const isCurrentlyDark = document.documentElement.classList.contains('dark');
-    setIsDarkMode(isCurrentlyDark);
-
     setTimeout(() => setShowHero(true), 150);
 
     document.body.style.overflow = (isMobileMenuOpen || isSearchOpen) ? 'hidden' : 'unset';
 
+    // 一言打字机
+    let hitokotoTimer;
     fetch('https://v1.hitokoto.cn').then(res => res.json()).then(data => {
       let i = 0;
-      const timer = setInterval(() => {
+      hitokotoTimer = setInterval(() => {
         setDisplayText(data.hitokoto.slice(0, i + 1));
         i++;
-        if (i >= data.hitokoto.length) clearInterval(timer);
+        if (i >= data.hitokoto.length) clearInterval(hitokotoTimer);
       }, 45);
     });
 
+    // 矩阵粒子系统
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    let time = 0, animationFrameId;
+    let animationFrameId;
+    let time = 0;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', resize);
+    resize();
+
     const render = () => {
       time += 0.015;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // 使用 Props 传进来的 isDarkMode
       const colorRGB = isDarkMode ? '255, 255, 255' : '0, 0, 0';
       ctx.fillStyle = `rgba(${colorRGB}, ${isDarkMode ? 0.35 : 0.25})`;
       const gap = 64;
@@ -89,26 +100,16 @@ export default function ArchivePage({ postsByYear, allPostsData }) {
       }
       animationFrameId = requestAnimationFrame(render);
     };
-    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
-    window.addEventListener('resize', resize); resize(); render();
+    render();
 
     return () => {
+      if (hitokotoTimer) clearInterval(hitokotoTimer);
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isDarkMode, isMobileMenuOpen, isSearchOpen]);
+  }, [isDarkMode, isMobileMenuOpen, isSearchOpen]); // 依赖项同步
 
-  // [关键] 手动切换时需要显式操作 documentElement
-  const toggleDarkMode = () => {
-    const next = !isDarkMode;
-    setIsDarkMode(next);
-    localStorage.setItem('darkMode', next);
-    if (next) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  };
+  // 【删除】本地 toggleDarkMode 函数
 
   return (
     <div className={`min-h-screen selection:bg-blue-600 selection:text-white transition-colors duration-700 ${isDarkMode ? 'dark bg-black text-white' : 'bg-[#fafafa] text-black'}`}>
@@ -122,20 +123,25 @@ export default function ArchivePage({ postsByYear, allPostsData }) {
       <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
           <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity uppercase z-50">TYPACE</a></Link>
+          
           <div className="hidden md:flex items-center space-x-10 text-[10px] font-bold uppercase tracking-[0.25em]">
             <NavLink href="/archive">Archive</NavLink>
             <NavLink href="/tags">Tags</NavLink>
             <NavLink href="/about">About</NavLink>
             <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-40 hover:opacity-100 transition-opacity focus:outline-none"><SearchIcon /></button>
             <button onClick={toggleDarkMode} className="w-5 h-5 flex items-center justify-center rounded-full border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm focus:outline-none">
-              {isDarkMode ? '☼' : '☾'}
+              {!themeMounted ? null : (isDarkMode ? '☼' : '☾')}
             </button>
           </div>
+
           <div className="flex md:hidden items-center space-x-4 z-50">
             <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-60 focus:outline-none"><SearchIcon /></button>
-            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1 focus:outline-none">{isMobileMenuOpen ? <CloseIcon /> : <MenuIcon />}</button>
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1 focus:outline-none">
+              {isMobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
+            </button>
           </div>
         </div>
+
         <div className={`fixed inset-0 bg-white/95 dark:bg-black/95 backdrop-blur-3xl transition-all duration-500 md:hidden z-40 ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
           <div className="flex flex-col px-10 pt-32 h-full">
             <div className="flex flex-col space-y-6">
@@ -192,6 +198,7 @@ export default function ArchivePage({ postsByYear, allPostsData }) {
         </div>
       </main>
 
+      {/* 搜索系统 */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[150] flex items-start justify-center pt-[10vh] px-8">
           <div className="absolute inset-0 bg-white/98 dark:bg-black/98 backdrop-blur-2xl" onClick={() => setIsSearchOpen(false)} />
@@ -221,7 +228,7 @@ export default function ArchivePage({ postsByYear, allPostsData }) {
   );
 }
 
-// --- 3. 辅助组件 ---
+// --- 3. 辅助小组件 ---
 function NavLink({ href, children }) {
   return <Link href={href}><a className="opacity-40 hover:opacity-100 transition-opacity tracking-widest">{children}</a></Link>;
 }
