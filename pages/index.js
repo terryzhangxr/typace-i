@@ -42,17 +42,13 @@ export default function Home({ allPostsData }) {
   // --- 副作用控制系统 ---
   useEffect(() => {
     setIsMounted(true);
-    
-    /** * 关键修改：同步主题状态
-     * 不再在这里 toggle 'dark' 类，因为 _document.js 已经处理好了。
-     * 我们只需要让 React 的 state 与 html 标签当前的 class 保持同步。
-     */
-    const isCurrentlyDark = document.documentElement.classList.contains('dark');
-    setIsDarkMode(isCurrentlyDark);
+    const savedDark = localStorage.getItem('darkMode') === 'true';
+    setIsDarkMode(savedDark);
+    document.documentElement.classList.toggle('dark', savedDark);
 
     setTimeout(() => setShowHero(true), 150);
 
-    // 1. 滚动可见性监听 (Intersection Observer)
+    // 1. 滚动可见性监听
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) setIsArticlesVisible(true); },
       { threshold: 0.05, rootMargin: "0px 0px -50px 0px" }
@@ -60,10 +56,12 @@ export default function Home({ allPostsData }) {
     if (articlesRef.current) observer.observe(articlesRef.current);
 
     // 2. 移动端菜单开启时锁定滚动
-    if (isMobileMenuOpen || isSearchOpen) {
+    if (isMobileMenuOpen) {
       document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none'; // 额外防止触摸滑动
     } else {
       document.body.style.overflow = 'unset';
+      document.body.style.touchAction = 'auto';
     }
 
     // 3. 一言打字机
@@ -77,7 +75,7 @@ export default function Home({ allPostsData }) {
       }, 45);
     });
 
-    // 4. 单词滚动定时器
+    // 4. 单词滚动
     const wordTimer = setInterval(() => setWordIndex(p => (p + 1) % SCROLL_WORDS.length), 3000);
 
     // 5. 矩阵粒子系统
@@ -97,6 +95,7 @@ export default function Home({ allPostsData }) {
     const render = () => {
       time += 0.015;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // 动态色彩映射
       const colorRGB = isDarkMode ? '255, 255, 255' : '0, 0, 0';
       ctx.fillStyle = `rgba(${colorRGB}, ${isDarkMode ? 0.35 : 0.25})`;
       
@@ -123,18 +122,13 @@ export default function Home({ allPostsData }) {
       cancelAnimationFrame(animationFrameId);
       observer.disconnect();
     };
-  }, [isDarkMode, isMobileMenuOpen, isSearchOpen]);
+  }, [isDarkMode, isMobileMenuOpen]);
 
   const toggleDarkMode = () => {
     const next = !isDarkMode;
     setIsDarkMode(next);
     localStorage.setItem('darkMode', next);
-    // 这里需要手动同步标签类名，因为这是用户的主动行为
-    if (next) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.toggle('dark', next);
   };
 
   return (
@@ -144,12 +138,13 @@ export default function Home({ allPostsData }) {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
       </Head>
 
+      {/* 粒子背景 - Z索引最低 */}
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-100" />
 
-      {/* 极简导航栏 */}
+      {/* 极简导航栏 - Z索引最高 */}
       <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
-          <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity uppercase z-50">TYPACE</a></Link>
+          <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity z-50">TYPACE</a></Link>
           
           <div className="hidden md:flex items-center space-x-10 text-[10px] font-bold uppercase tracking-[0.25em]">
             <NavLink href="/archive">Archive</NavLink>
@@ -169,7 +164,7 @@ export default function Home({ allPostsData }) {
           </div>
         </div>
 
-        {/* 移动端全屏菜单 Overlay */}
+        {/* 移动端菜单 Overlay */}
         <div className={`fixed inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-3xl transition-all duration-500 md:hidden z-40 ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
           <div className="flex flex-col px-10 pt-32 h-full">
             <div className="flex flex-col space-y-6">
@@ -189,9 +184,12 @@ export default function Home({ allPostsData }) {
         </div>
       </nav>
 
-      {/* 主体内容 */}
+      {/* 核心修改：当移动端菜单开启时，应用 blur 和 scale
+          使用 pointer-events-none 防止菜单打开时点击到下方内容
+      */}
       <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-48 pb-32 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
         
+        {/* 开屏动画 Header */}
         <header className="min-h-[50vh] flex flex-col justify-center mb-32 md:mb-64">
           <div className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
             <h1 className="text-[clamp(3rem,11.5vw,10.5rem)] leading-[0.8] font-black tracking-tighter mb-12">
@@ -215,6 +213,7 @@ export default function Home({ allPostsData }) {
           </div>
         </header>
 
+        {/* 文章监听显现区域 */}
         <section 
           ref={articlesRef}
           className={`transition-all duration-[1200ms] ease-[cubic-bezier(0.2,0,0.2,1)] ${
@@ -223,6 +222,7 @@ export default function Home({ allPostsData }) {
         >
           <div className="grid grid-cols-1 md:grid-cols-12 gap-px bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/10">
             {paginatedPosts.map((post, idx) => {
+              // Bento Grid 逻辑：[0, 5, 8] 为宽块
               const isLarge = [0, 5, 8].includes(idx);
               return (
                 <div key={post.slug} className={`${isLarge ? 'md:col-span-8' : 'md:col-span-4'} bg-white dark:bg-black min-h-[440px] relative group overflow-hidden`}>
@@ -232,6 +232,7 @@ export default function Home({ allPostsData }) {
             })}
           </div>
 
+          {/* 分页组件 */}
           {totalPages > 1 && (
             <div className="mt-24 flex items-center justify-between border-t border-black/5 dark:border-white/10 pt-10">
               <div className="flex gap-4">
@@ -294,43 +295,43 @@ export default function Home({ allPostsData }) {
   );
 }
 
-// --- 组件定义 ---
+// --- 抽离的子组件 ---
 
-function ArticleBox({ post, featured }) {
-  return (
-    <Link href={`/posts/${post.slug}`}>
-      <a className="block h-full relative p-8 md:p-12 flex flex-col justify-end group">
-        <div className="absolute inset-0 z-0">
-          <img 
-            src={post.cover || 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2070&auto=format&fit=crop'} 
-            className="w-full h-full object-cover grayscale-[0.1] opacity-25 group-hover:grayscale-0 group-hover:opacity-60 group-hover:scale-105 transition-all duration-[1500ms] ease-out"
-            alt=""
-          />
+const ArticleBox = ({ post, featured }) => (
+  <Link href={`/posts/${post.slug}`}>
+    <a className="block h-full relative p-8 md:p-12 flex flex-col justify-end group">
+      <div className="absolute inset-0 z-0">
+        <img 
+          src={post.cover || 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2070&auto=format&fit=crop'} 
+          className="w-full h-full object-cover grayscale-[0.1] opacity-25 group-hover:grayscale-0 group-hover:opacity-60 group-hover:scale-105 transition-all duration-[1500ms] ease-out"
+          alt=""
+        />
+      </div>
+
+      <div className="relative z-10">
+        <div className="mb-4 md:mb-6 flex items-center space-x-4">
+          <span className="text-[9px] font-black uppercase tracking-[0.4em] opacity-40">{post.date}</span>
+          <div className="h-[1px] w-0 group-hover:w-16 bg-blue-600 transition-all duration-700" />
         </div>
-        <div className="relative z-10">
-          <div className="mb-4 md:mb-6 flex items-center space-x-4">
-            <span className="text-[9px] font-black uppercase tracking-[0.4em] opacity-40">{post.date}</span>
-            <div className="h-[1px] w-0 group-hover:w-16 bg-blue-600 transition-all duration-700" />
-          </div>
-          <h3 className={`font-black tracking-tighter leading-[0.92] uppercase transition-all duration-500 group-hover:text-blue-600 
-            ${featured ? 'text-3xl md:text-7xl' : 'text-xl md:text-3xl'}`}>
-            {post.title}
-          </h3>
-          {featured && (
-            <p className="mt-8 md:mt-10 text-sm opacity-0 group-hover:opacity-60 transition-all duration-700 translate-y-6 group-hover:translate-y-0 line-clamp-2 max-w-xl font-medium leading-relaxed hidden sm:block">
-              {post.excerpt || "Exploring the convergence of performance and aesthetics..."}
-            </p>
-          )}
-        </div>
-        <div className="absolute top-8 right-8 md:top-12 md:right-12 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="3">
-            <path d="M7 17L17 7M17 7H7M17 7V17" />
-          </svg>
-        </div>
-      </a>
-    </Link>
-  );
-}
+        <h3 className={`font-black tracking-tighter leading-[0.92] uppercase transition-all duration-500 group-hover:text-blue-600 
+          ${featured ? 'text-3xl md:text-7xl' : 'text-xl md:text-3xl'}`}>
+          {post.title}
+        </h3>
+        {featured && (
+          <p className="mt-8 md:mt-10 text-sm opacity-0 group-hover:opacity-60 transition-all duration-700 translate-y-6 group-hover:translate-y-0 line-clamp-2 max-w-xl font-medium leading-relaxed hidden sm:block">
+            {post.excerpt || "Exploring the convergence of performance and aesthetics..."}
+          </p>
+        )}
+      </div>
+
+      <div className="absolute top-8 right-8 md:top-12 md:right-12 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="3">
+          <path d="M7 17L17 7M17 7H7M17 7V17" />
+        </svg>
+      </div>
+    </a>
+  </Link>
+);
 
 const NavLink = ({ href, children }) => (
   <Link href={href}><a className="opacity-40 hover:opacity-100 transition-opacity tracking-widest">{children}</a></Link>
@@ -338,7 +339,11 @@ const NavLink = ({ href, children }) => (
 
 const MobileNavLink = ({ href, children, onClick, index }) => (
   <Link href={href}>
-    <a onClick={onClick} className="text-5xl font-black tracking-tighter uppercase hover:text-blue-600 transition-all duration-500 block transform translate-x-0" style={{ transitionDelay: `${index * 60}ms` }}>
+    <a 
+      onClick={onClick} 
+      className="text-5xl font-black tracking-tighter uppercase hover:text-blue-600 transition-all duration-500 block transform translate-x-0"
+      style={{ transitionDelay: `${index * 60}ms` }}
+    >
       {children}
     </a>
   </Link>
@@ -364,3 +369,15 @@ const CloseIcon = () => (
     <line x1="6" y1="6" x2="18" y2="18"></line>
   </svg>
 );
+
+export async function getStaticProps() {
+  const allPostsData = getSortedPostsData();
+  return {
+    props: {
+      allPostsData: allPostsData.map(post => ({
+        ...post,
+        content: post.content || "",
+      })),
+    },
+  };
+}
