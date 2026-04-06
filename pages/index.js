@@ -42,9 +42,13 @@ export default function Home({ allPostsData }) {
   // --- 副作用控制系统 ---
   useEffect(() => {
     setIsMounted(true);
-    const savedDark = localStorage.getItem('darkMode') === 'true';
-    setIsDarkMode(savedDark);
-    document.documentElement.classList.toggle('dark', savedDark);
+
+    /** * [关键修改：防止闪屏同步]
+     * 不再读取 localStorage 并操作 classList，
+     * 而是直接读取 _document.js 已经设置好的 html class。
+     */
+    const isDark = document.documentElement.classList.contains('dark');
+    setIsDarkMode(isDark);
 
     setTimeout(() => setShowHero(true), 150);
 
@@ -56,12 +60,10 @@ export default function Home({ allPostsData }) {
     if (articlesRef.current) observer.observe(articlesRef.current);
 
     // 2. 移动端菜单开启时锁定滚动
-    if (isMobileMenuOpen) {
+    if (isMobileMenuOpen || isSearchOpen) {
       document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none'; // 额外防止触摸滑动
     } else {
       document.body.style.overflow = 'unset';
-      document.body.style.touchAction = 'auto';
     }
 
     // 3. 一言打字机
@@ -95,7 +97,6 @@ export default function Home({ allPostsData }) {
     const render = () => {
       time += 0.015;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // 动态色彩映射
       const colorRGB = isDarkMode ? '255, 255, 255' : '0, 0, 0';
       ctx.fillStyle = `rgba(${colorRGB}, ${isDarkMode ? 0.35 : 0.25})`;
       
@@ -122,13 +123,18 @@ export default function Home({ allPostsData }) {
       cancelAnimationFrame(animationFrameId);
       observer.disconnect();
     };
-  }, [isDarkMode, isMobileMenuOpen]);
+  }, [isDarkMode, isMobileMenuOpen, isSearchOpen]); // 确保状态变化时重新触发逻辑
 
   const toggleDarkMode = () => {
     const next = !isDarkMode;
     setIsDarkMode(next);
     localStorage.setItem('darkMode', next);
-    document.documentElement.classList.toggle('dark', next);
+    // 用户手动切换时，必须操作 classList
+    if (next) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   };
 
   return (
@@ -138,10 +144,8 @@ export default function Home({ allPostsData }) {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
       </Head>
 
-      {/* 粒子背景 - Z索引最低 */}
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-100" />
 
-      {/* 极简导航栏 - Z索引最高 */}
       <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
           <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity z-50">TYPACE</a></Link>
@@ -164,7 +168,6 @@ export default function Home({ allPostsData }) {
           </div>
         </div>
 
-        {/* 移动端菜单 Overlay */}
         <div className={`fixed inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-3xl transition-all duration-500 md:hidden z-40 ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
           <div className="flex flex-col px-10 pt-32 h-full">
             <div className="flex flex-col space-y-6">
@@ -184,12 +187,8 @@ export default function Home({ allPostsData }) {
         </div>
       </nav>
 
-      {/* 核心修改：当移动端菜单开启时，应用 blur 和 scale
-          使用 pointer-events-none 防止菜单打开时点击到下方内容
-      */}
       <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-48 pb-32 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
         
-        {/* 开屏动画 Header */}
         <header className="min-h-[50vh] flex flex-col justify-center mb-32 md:mb-64">
           <div className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
             <h1 className="text-[clamp(3rem,11.5vw,10.5rem)] leading-[0.8] font-black tracking-tighter mb-12">
@@ -213,7 +212,6 @@ export default function Home({ allPostsData }) {
           </div>
         </header>
 
-        {/* 文章监听显现区域 */}
         <section 
           ref={articlesRef}
           className={`transition-all duration-[1200ms] ease-[cubic-bezier(0.2,0,0.2,1)] ${
@@ -222,7 +220,6 @@ export default function Home({ allPostsData }) {
         >
           <div className="grid grid-cols-1 md:grid-cols-12 gap-px bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/10">
             {paginatedPosts.map((post, idx) => {
-              // Bento Grid 逻辑：[0, 5, 8] 为宽块
               const isLarge = [0, 5, 8].includes(idx);
               return (
                 <div key={post.slug} className={`${isLarge ? 'md:col-span-8' : 'md:col-span-4'} bg-white dark:bg-black min-h-[440px] relative group overflow-hidden`}>
@@ -232,7 +229,6 @@ export default function Home({ allPostsData }) {
             })}
           </div>
 
-          {/* 分页组件 */}
           {totalPages > 1 && (
             <div className="mt-24 flex items-center justify-between border-t border-black/5 dark:border-white/10 pt-10">
               <div className="flex gap-4">
@@ -252,7 +248,6 @@ export default function Home({ allPostsData }) {
         </section>
       </main>
 
-      {/* 搜索系统 */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[150] flex items-start justify-center pt-[10vh] px-8">
           <div className="absolute inset-0 bg-white/98 dark:bg-black/98 backdrop-blur-2xl" onClick={() => setIsSearchOpen(false)} />
@@ -295,7 +290,7 @@ export default function Home({ allPostsData }) {
   );
 }
 
-// --- 抽离的子组件 ---
+// --- 组件定义 ---
 
 const ArticleBox = ({ post, featured }) => (
   <Link href={`/posts/${post.slug}`}>
