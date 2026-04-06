@@ -7,14 +7,15 @@ import Link from 'next/link';
 const POSTS_PER_PAGE = 10;
 const SCROLL_WORDS = ["Modern", "Scalable", "Performant", "Minimalist", "Elegant"];
 
-export default function Home({ allPostsData }) {
+// 1. 修改入参：接收来自 _app.js 的 isDarkMode, toggleDarkMode, themeMounted
+export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMounted }) {
   const canvasRef = useRef(null);
   const articlesRef = useRef(null);
   const router = useRouter();
 
   // --- 状态管理 ---
   const [currentPage, setCurrentPage] = useState(1);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  // 【删除】此处不再定义本地 isDarkMode 状态
   const [displayText, setDisplayText] = useState(''); 
   const [wordIndex, setWordIndex] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
@@ -42,14 +43,8 @@ export default function Home({ allPostsData }) {
   // --- 副作用控制系统 ---
   useEffect(() => {
     setIsMounted(true);
-
-    /** * [关键修改：防止闪屏同步]
-     * 不再读取 localStorage 并操作 classList，
-     * 而是直接读取 _document.js 已经设置好的 html class。
-     */
-    const isDark = document.documentElement.classList.contains('dark');
-    setIsDarkMode(isDark);
-
+    // 【删除】此处不再读取 localStorage 和操作 classList
+    
     setTimeout(() => setShowHero(true), 150);
 
     // 1. 滚动可见性监听
@@ -97,6 +92,7 @@ export default function Home({ allPostsData }) {
     const render = () => {
       time += 0.015;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // 动态色彩映射 - 直接使用 Props 传进来的 isDarkMode
       const colorRGB = isDarkMode ? '255, 255, 255' : '0, 0, 0';
       ctx.fillStyle = `rgba(${colorRGB}, ${isDarkMode ? 0.35 : 0.25})`;
       
@@ -123,19 +119,10 @@ export default function Home({ allPostsData }) {
       cancelAnimationFrame(animationFrameId);
       observer.disconnect();
     };
-  }, [isDarkMode, isMobileMenuOpen, isSearchOpen]); // 确保状态变化时重新触发逻辑
+    // 依赖项加入 isDarkMode，确保切换时粒子颜色立即更新
+  }, [isDarkMode, isMobileMenuOpen, isSearchOpen]); 
 
-  const toggleDarkMode = () => {
-    const next = !isDarkMode;
-    setIsDarkMode(next);
-    localStorage.setItem('darkMode', next);
-    // 用户手动切换时，必须操作 classList
-    if (next) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  };
+  // 【删除】本地 toggleDarkMode 函数
 
   return (
     <div className={`min-h-screen selection:bg-blue-600 selection:text-white transition-colors duration-700 ${isDarkMode ? 'dark bg-black text-white' : 'bg-[#fafafa] text-black'}`}>
@@ -155,8 +142,9 @@ export default function Home({ allPostsData }) {
             <NavLink href="/tags">Tags</NavLink>
             <NavLink href="/about">About</NavLink>
             <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-40 hover:opacity-100 transition-opacity focus:outline-none"><SearchIcon /></button>
+            {/* 使用全局 toggleDarkMode，并根据 themeMounted 渲染图标防止水合闪烁 */}
             <button onClick={toggleDarkMode} className="w-5 h-5 flex items-center justify-center rounded-full border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm focus:outline-none">
-              {isDarkMode ? '☼' : '☾'}
+              {!themeMounted ? null : (isDarkMode ? '☼' : '☾')}
             </button>
           </div>
 
@@ -168,6 +156,7 @@ export default function Home({ allPostsData }) {
           </div>
         </div>
 
+        {/* 移动端菜单 */}
         <div className={`fixed inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-3xl transition-all duration-500 md:hidden z-40 ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
           <div className="flex flex-col px-10 pt-32 h-full">
             <div className="flex flex-col space-y-6">
@@ -248,6 +237,7 @@ export default function Home({ allPostsData }) {
         </section>
       </main>
 
+      {/* 搜索系统 */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[150] flex items-start justify-center pt-[10vh] px-8">
           <div className="absolute inset-0 bg-white/98 dark:bg-black/98 backdrop-blur-2xl" onClick={() => setIsSearchOpen(false)} />
@@ -290,7 +280,7 @@ export default function Home({ allPostsData }) {
   );
 }
 
-// --- 组件定义 ---
+// --- 抽离的子组件 ---
 
 const ArticleBox = ({ post, featured }) => (
   <Link href={`/posts/${post.slug}`}>
