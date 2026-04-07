@@ -12,4 +12,5 @@ Typace 由 MRCHE 和 terryzhang 两位初中生共同创建，本主题正在开
 如果你有任何问题或建议，欢迎通过以下方式联系我们：
 
 - 邮箱：[zhang@mrzxr.com](mailto:zhang@mrzxr.com)
-- GitHub：[@mrche](https://github.com/mrche)
+- GitHub：[@terryzhangxr](https://github.com/terryzhangxr)
+          [@mrche](https://github.com/mrche)
