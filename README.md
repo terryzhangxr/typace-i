@@ -2,7 +2,7 @@
 
 注：中文版介绍及教程正在typace官网编写中，敬请期待
 
-   本仓库为typace项目的正式版，目前由Terryzhang负责开发，有最新的功能，目前开放fork，欢迎clone和star
+   本仓库为typace项目的正式版，由Mrche创始，目前由Terryzhang负责开发，有最新的功能，目前开放fork，欢迎clone和star
 
 Welcome to **Typace**, an under-construction blog platform which based on Next.js focused on sharing technology, life, and thoughts.
 
