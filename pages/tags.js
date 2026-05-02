@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/router';
-import { getSortedPostsData } from '../lib/posts'; // 请确保该路径在构建时有效
+import { getSortedPostsData } from '../lib/posts'; 
 import Head from 'next/head';
 import Link from 'next/link';
 
@@ -31,7 +31,6 @@ export async function getStaticProps() {
           title: post.title || '',
           date: post.date || '',
           excerpt: post.excerpt || '',
-          content: post.content || "",
         })),
       },
     };
@@ -122,6 +121,7 @@ export default function TagsPage({ tagsWithPosts = {}, allPostsData = [], isDark
 
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-100" />
 
+      {/* --- 导航栏 --- */}
       <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
           <Link href="/" className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity uppercase z-50">
@@ -146,6 +146,7 @@ export default function TagsPage({ tagsWithPosts = {}, allPostsData = [], isDark
           </div>
         </div>
 
+        {/* 移动端全屏菜单 */}
         <div className={`fixed inset-0 bg-white/95 dark:bg-black/95 backdrop-blur-3xl transition-all duration-500 md:hidden z-40 ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
           <div className="flex flex-col px-10 pt-32 h-full">
             <div className="flex flex-col space-y-6">
@@ -164,12 +165,13 @@ export default function TagsPage({ tagsWithPosts = {}, allPostsData = [], isDark
         </div>
       </nav>
 
+      {/* --- 主内容区 --- */}
       <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-40 pb-32 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
         
         <header className="mb-24">
           <div className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
             <h1 className="text-[clamp(3.5rem,10vw,8rem)] leading-[0.85] font-black tracking-tighter uppercase mb-8">
-              TAGS.
+              TAGS <br /> SYSTEM.
             </h1>
           </div>
           <div className={`transition-all duration-[1800ms] delay-500 ease-out ${showHero ? 'opacity-40 translate-y-0' : 'opacity-0 translate-y-6'}`}>
@@ -179,6 +181,7 @@ export default function TagsPage({ tagsWithPosts = {}, allPostsData = [], isDark
           </div>
         </header>
 
+        {/* 标签分类网格 */}
         <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/10 transition-all duration-[2000ms] delay-700 ${showHero ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
           {Object.entries(tagsWithPosts).sort((a, b) => b[1].length - a[1].length).map(([tag, posts]) => (
             <div key={tag} className="bg-white dark:bg-black p-10 flex flex-col group hover:bg-gray-50 dark:hover:bg-[#050505] transition-colors">
@@ -190,7 +193,11 @@ export default function TagsPage({ tagsWithPosts = {}, allPostsData = [], isDark
               <ul className="space-y-4">
                 {posts.map(({ slug, title }) => (
                   <li key={slug}>
-                    <Link href={`/posts/${slug}`} className="block text-[11px] font-bold uppercase tracking-wider opacity-40 hover:opacity-100 hover:translate-x-2 transition-all duration-300">
+                    {/* 重点修正：显式定义 text-black/40 dark:text-white/40 防止颜色切换闪烁 */}
+                    <Link 
+                      href={`/posts/${slug}`} 
+                      className="block text-[11px] font-bold uppercase tracking-wider text-black/40 dark:text-white/40 hover:text-blue-600 dark:hover:text-blue-500 hover:translate-x-2 transition-all duration-300"
+                    >
                         {title}
                     </Link>
                   </li>
@@ -210,7 +217,7 @@ export default function TagsPage({ tagsWithPosts = {}, allPostsData = [], isDark
         </footer>
       </main>
 
-      {/* 搜索系统 */}
+      {/* --- 搜索系统 --- */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[150] flex items-start justify-center pt-[10vh] px-8">
           <div className="absolute inset-0 bg-white/98 dark:bg-black/98 backdrop-blur-2xl" onClick={() => setIsSearchOpen(false)} />
@@ -230,17 +237,29 @@ export default function TagsPage({ tagsWithPosts = {}, allPostsData = [], isDark
 
       <style jsx global>{`
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
+        
+       
+        .dark body { color: #ffffff; background-color: #000000; }
+        
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); }
         .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
+        
+        .transition-colors {
+          transition-property: background-color, border-color, fill, stroke !important;
+        }
       `}</style>
     </div>
   );
 }
 
-// --- 3. 辅助组件 ---
+// --- 3. 辅助 UI 组件 ---
 function NavLink({ href, children }) {
-  return <Link href={href} className="opacity-40 hover:opacity-100 transition-opacity tracking-widest">{children}</Link>;
+  return (
+    <Link href={href} className="opacity-40 hover:opacity-100 transition-opacity tracking-widest">
+      {children}
+    </Link>
+  );
 }
 
 function MobileNavLink({ href, children, onClick, index }) {
