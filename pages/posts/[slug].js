@@ -31,15 +31,12 @@ export async function getStaticProps({ params }) {
 }
 
 // --- 2. 主页面组件 ---
-// 接收全局 Props: isDarkMode, toggleDarkMode, themeMounted
 export default function Post({ frontmatter, contentHtml, recommendedPosts, allPostsData, isDarkMode, toggleDarkMode, themeMounted }) {
   const router = useRouter();
   const canvasRef = useRef(null);
   const contentRef = useRef(null);
   const walineInstance = useRef(null);
   
-  // --- 状态管理 ---
-  // 【删除】此处不再定义本地 isDarkMode 状态
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,7 +45,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   const [toc, setToc] = useState([]);
   const [activeHeading, setActiveHeading] = useState(null);
 
-  // --- 搜索逻辑 ---
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
@@ -57,7 +53,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     ).slice(0, 6);
   }, [searchQuery, allPostsData]);
 
-  // --- 功能函数 ---
   const applyHighlighting = useCallback(() => {
     if (typeof window !== 'undefined' && window.hljs && contentRef.current) {
       contentRef.current.querySelectorAll('pre code').forEach(el => window.hljs.highlightElement(el));
@@ -84,16 +79,12 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       el: '#waline-comment-container',
       serverURL: 'https://comment.mrzxr.top/',
       path: router.asPath,
-      dark: 'html.dark', // 自动响应 html 标签上的 dark 类
+      dark: 'html.dark',
     });
   }, [router.asPath]);
 
-  // --- 核心副作用 ---
   useEffect(() => {
-    // 【删除】此处不再手动同步 localStorage 和 classList，由全局控制
     setTimeout(() => setShowContent(true), 150);
-
-    // 动态脚本加载
     const loadScripts = () => {
       const scripts = [
         { id: 'hljs-js', src: 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js', callback: applyHighlighting },
@@ -109,7 +100,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
     loadScripts();
 
-    // 粒子动画 (使用 Props 传进来的 isDarkMode)
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -129,14 +119,13 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
     const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     window.addEventListener('resize', resize); resize(); render();
-
     return () => {
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animationFrameId);
     };
   }, [isDarkMode, applyHighlighting, initWaline, isMobileMenuOpen, isSearchOpen]);
 
-  // 图片预览与目录处理
+  // --- 修正标题提取逻辑 ---
   useEffect(() => {
     if (!contentRef.current) return;
     const images = contentRef.current.querySelectorAll('img');
@@ -145,21 +134,22 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       img.onclick = () => setPreviewImage(img.src);
     });
 
-    const headings = Array.from(contentRef.current.querySelectorAll('h1, h2, h3'));
+    // 重点更改：通常 Markdown 渲染后，正文内部不建议有 h1
+    // 我们提取 h2 和 h3 作为主要的目录层级
+    const headings = Array.from(contentRef.current.querySelectorAll('h2, h3'));
     setToc(headings.map(h => ({ 
-      id: h.id || (h.id = h.textContent.toLowerCase().replace(/\s+/g, '-')), 
+      id: h.id || (h.id = h.textContent.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')), 
       text: h.textContent, 
       level: h.tagName.toLowerCase() 
     })));
 
     const obs = new IntersectionObserver(entries => {
       entries.forEach(e => { if (e.isIntersecting) setActiveHeading(e.target.id); });
-    }, { rootMargin: '-10% 0px -80% 0px' });
+    }, { rootMargin: '-10% 0px -70% 0px' });
     headings.forEach(h => obs.observe(h));
     return () => obs.disconnect();
   }, [contentHtml]);
 
-  // 滚动锁定逻辑
   useEffect(() => {
     document.body.style.overflow = (isMobileMenuOpen || isSearchOpen) ? 'hidden' : 'unset';
   }, [isMobileMenuOpen, isSearchOpen]);
@@ -175,11 +165,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-100" />
 
-      {/* 统一导航栏 */}
       <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
           <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity uppercase z-50">TYPACE</a></Link>
-          
           <div className="hidden md:flex items-center space-x-10 text-[10px] font-bold uppercase tracking-[0.25em]">
             <NavLink href="/archive">Archive</NavLink>
             <NavLink href="/tags">Tags</NavLink>
@@ -189,33 +177,13 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
               {!themeMounted ? null : (isDarkMode ? '☼' : '☾')}
             </button>
           </div>
-
           <div className="flex md:hidden items-center space-x-4 z-50">
             <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-60"><SearchIcon /></button>
             <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1">{isMobileMenuOpen ? <CloseIcon /> : <MenuIcon />}</button>
           </div>
         </div>
-        
-        {/* 移动端菜单 */}
-        <div className={`fixed inset-0 bg-white/95 dark:bg-black/95 backdrop-blur-3xl transition-all duration-500 md:hidden z-40 ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
-          <div className="flex flex-col px-10 pt-32 h-full">
-            <div className="flex flex-col space-y-6">
-              <MobileNavLink href="/" onClick={() => setIsMobileMenuOpen(false)} index={1}>Home</MobileNavLink>
-              <MobileNavLink href="/archive" onClick={() => setIsMobileMenuOpen(false)} index={2}>Archive</MobileNavLink>
-              <MobileNavLink href="/tags" onClick={() => setIsMobileMenuOpen(false)} index={3}>Tags</MobileNavLink>
-              <MobileNavLink href="/about" onClick={() => setIsMobileMenuOpen(false)} index={4}>About</MobileNavLink>
-            </div>
-            <div className="mt-auto pb-16 border-t border-black/5 dark:border-white/10 pt-8 flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-widest opacity-40">System Theme</span>
-              <button onClick={toggleDarkMode} className="text-xs font-bold uppercase tracking-widest border border-black/10 dark:border-white/10 px-6 py-2 rounded-full active:scale-95 transition-all">
-                {isDarkMode ? 'Light' : 'Dark'}
-              </button>
-            </div>
-          </div>
-        </div>
       </nav>
 
-      {/* 主体内容 (包含模糊缩放) */}
       <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-40 pb-32 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
         
         <header className={`max-w-4xl mx-auto mb-20 transition-all duration-[1500ms] ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
@@ -233,7 +201,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </header>
 
         <div className="flex flex-col lg:flex-row gap-20 max-w-6xl mx-auto">
-          {/* 目录侧边栏 */}
           <aside className="lg:w-64 flex-shrink-0 hidden lg:block">
             <div className="sticky top-32">
               <h4 className="text-[11px] font-black uppercase tracking-[0.4em] opacity-40 mb-8">Catalogue</h4>
@@ -250,7 +217,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             </div>
           </aside>
 
-          {/* 文章正文 */}
           <article className={`flex-1 max-w-3xl transition-all duration-[1800ms] delay-200 ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
             <div ref={contentRef} className="prose-terminal dark:prose-invert" dangerouslySetInnerHTML={{ __html: contentHtml }} />
             <section id="comments" className="mt-32 pt-16 border-t border-black/5 dark:border-white/10">
@@ -258,8 +224,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             </section>
           </article>
         </div>
-
-        {/* 推荐文章 */}
+        {/* ... (后续推荐、搜索、图片预览组件保持不变) ... */}
         <section className="mt-48 max-w-6xl mx-auto">
           <div className="flex items-center space-x-6 mb-12 opacity-20">
             <h2 className="text-xs font-black uppercase tracking-[0.5em]">Next Phase</h2>
@@ -283,7 +248,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </section>
       </main>
 
-      {/* 搜索系统 */}
+      {/* 搜索和预览逻辑保持不变 */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[150] flex items-start justify-center pt-[10vh] px-8">
           <div className="absolute inset-0 bg-white/98 dark:bg-black/98 backdrop-blur-2xl" onClick={() => setIsSearchOpen(false)} />
@@ -303,7 +268,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </div>
       )}
 
-      {/* 图片预览 */}
       {previewImage && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/80 dark:bg-black/90 backdrop-blur-3xl p-4 md:p-20 cursor-zoom-out animate-in fade-in duration-300" onClick={() => setPreviewImage(null)}>
           <div className="relative animate-in zoom-in-95 duration-300 ease-out">
@@ -315,12 +279,45 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
       <style jsx global>{`
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
-        .prose-terminal h1, .prose-terminal h2, .prose-terminal h3 { scroll-margin-top: 100px; }
+        
+        /* 修正锚点滚动偏移，防止标题被导航栏遮挡 */
+        .prose-terminal h2, .prose-terminal h3 { scroll-margin-top: 100px; }
+        
         .prose-terminal { line-height: 1.9; font-size: 1.05rem; }
-        .prose-terminal h2 { font-size: 2rem; font-weight: 900; letter-spacing: -0.05em; text-transform: uppercase; margin: 4.5rem 0 1.5rem; }
+
+        /* 重点：修正一级（h2）和二级（h3）标题的视觉显示 */
+        .prose-terminal h2 { 
+          font-size: 2.2rem; 
+          font-weight: 900; 
+          letter-spacing: -0.05em; 
+          text-transform: uppercase; 
+          margin: 5rem 0 2rem; 
+          line-height: 1.1;
+        }
+
+        .prose-terminal h3 { 
+          font-size: 1.4rem; 
+          font-weight: 800; 
+          letter-spacing: -0.02em; 
+          text-transform: uppercase; 
+          margin: 3.5rem 0 1.5rem; 
+          opacity: 0.9;
+        }
+
+        /* 如果用户在正文里用了 h1 (不推荐)，也给一个样式保证不崩 */
+        .prose-terminal h1 {
+          font-size: 2.8rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          margin-bottom: 3rem;
+          border-bottom: 4px solid currentColor;
+          padding-bottom: 1rem;
+        }
+
         .prose-terminal p { margin-bottom: 2.2rem; opacity: 0.85; }
         .prose-terminal pre { background: #050505 !important; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; margin: 3.5rem 0; overflow: hidden; }
         .prose-terminal pre code { display: block; padding: 1.8rem; font-family: 'Fira Code', monospace; font-size: 0.9rem; color: #e5e7eb; }
+        
         .wl-panel { border: 1px solid rgba(128,128,128,0.1) !important; border-radius: 16px !important; background: transparent !important; }
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); }
@@ -330,11 +327,10 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   );
 }
 
-// --- 组件定义 ---
+// 辅助组件保持不变
 const NavLink = ({ href, children }) => (
   <Link href={href}><a className="opacity-40 hover:opacity-100 transition-opacity tracking-widest">{children}</a></Link>
 );
-
 const MobileNavLink = ({ href, children, onClick, index }) => (
   <Link href={href}>
     <a onClick={onClick} className="text-5xl font-black tracking-tighter uppercase hover:text-blue-600 transition-all duration-500 block transform translate-x-0" style={{ transitionDelay: `${index * 60}ms` }}>
@@ -342,7 +338,6 @@ const MobileNavLink = ({ href, children, onClick, index }) => (
     </a>
   </Link>
 );
-
 const SearchIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
 const MenuIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>;
 const CloseIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
