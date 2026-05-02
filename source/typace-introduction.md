@@ -79,11 +79,16 @@ sticky: 999
 </div>
 ```
 ## 2.2页面大标题设置
-此处更改的是首页顶部的巨大滚动关键词，代码位置如下
+此处更改的是首页顶部的巨大滚动关键词和固定单词，代码位置如下
 ```
-// index.js 第 7 行
+// index.js 第 7 行 （更改引号中四个单词）
 const SCROLL_WORDS = ["Modern", "Scalable", "Performant", "Minimalist", "Elegant"];
+
+// index.js 第 184 行 （更改第一行的白色固定单词，此处为building）
+ <h1 className="text-[clamp(3rem,11.5vw,10.5rem)] leading-[0.8] font-black tracking-tighter mb-12">
+   BUILDING <br />
+   <div className="relative h-[1.1em] overflow-hidden">
 ```
-提示： 建议保持 5 个单词以获得最佳的滚动节奏。单词越短，视觉冲击力越强。
+提示： 建议保持 5 个单词以获得最佳的滚动节奏。单词越短，视觉冲击力越强
 效果如下
 ![图片描述](https://ik.imagekit.io/terryzhang/%E5%B1%8F%E5%B9%95%E6%88%AA%E5%9B%BE%202026-05-02%20230331.png)
