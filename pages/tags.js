@@ -1,95 +1,88 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/router';
-import { getSortedPostsData } from '../lib/posts';
+import { getSortedPostsData } from '../lib/posts'; // 请确保该路径在构建时有效
 import Head from 'next/head';
 import Link from 'next/link';
 
 // --- 1. 服务端数据获取 ---
 export async function getStaticProps() {
-  const allPostsData = getSortedPostsData();
+  try {
+    const allPostsData = getSortedPostsData() || [];
 
-  // 按标签分类文章逻辑
-  const tagsWithPosts = allPostsData.reduce((acc, post) => {
-    if (post.tags && Array.isArray(post.tags)) {
-      post.tags.forEach(tag => {
-        if (!acc[tag]) {
-          acc[tag] = [];
-        }
-        acc[tag].push({
-          slug: post.slug,
-          title: post.title,
-          date: post.date,
+    const tagsWithPosts = allPostsData.reduce((acc, post) => {
+      if (post.tags && Array.isArray(post.tags)) {
+        post.tags.forEach(tag => {
+          if (!acc[tag]) acc[tag] = [];
+          acc[tag].push({
+            slug: post.slug,
+            title: post.title,
+            date: post.date || '',
+          });
         });
-      });
-    }
-    return acc;
-  }, {});
+      }
+      return acc;
+    }, {});
 
-  return {
-    props: {
-      tagsWithPosts,
-      allPostsData: allPostsData.map(post => ({
-        ...post,
-        content: post.content || "",
-      })),
-    },
-  };
+    return {
+      props: {
+        tagsWithPosts,
+        allPostsData: allPostsData.map(post => ({
+          slug: post.slug || '',
+          title: post.title || '',
+          date: post.date || '',
+          excerpt: post.excerpt || '',
+          content: post.content || "",
+        })),
+      },
+    };
+  } catch (error) {
+    console.error("Build error in tags.js:", error);
+    return { props: { tagsWithPosts: {}, allPostsData: [] } };
+  }
 }
 
 // --- 2. 主页面组件 ---
-// 接收全局 Props: isDarkMode, toggleDarkMode, themeMounted
-export default function TagsPage({ tagsWithPosts, allPostsData, isDarkMode, toggleDarkMode, themeMounted }) {
+export default function TagsPage({ tagsWithPosts = {}, allPostsData = [], isDarkMode, toggleDarkMode, themeMounted }) {
   const canvasRef = useRef(null);
-  const router = useRouter();
-
-  // --- 状态管理 ---
-  // 【删除】此处不再定义本地 isDarkMode 状态
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isMounted, setIsMounted] = useState(false);
   const [showHero, setShowHero] = useState(false);
   const [displayText, setDisplayText] = useState('');
 
-  // --- 搜索逻辑 ---
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
     return allPostsData.filter(post => 
-      post.title.toLowerCase().includes(q) || post.excerpt?.toLowerCase().includes(q)
+      post.title?.toLowerCase().includes(q) || post.excerpt?.toLowerCase().includes(q)
     ).slice(0, 6);
   }, [searchQuery, allPostsData]);
 
-  // --- 副作用控制系统 ---
   useEffect(() => {
-    setIsMounted(true);
-    // 【删除】此处不再读取 localStorage 和操作 classList，由 _app.js 和 _document.js 负责
-    
-    setTimeout(() => setShowHero(true), 150);
-
-    // 1. 滚动锁定
+    setShowHero(true);
     document.body.style.overflow = (isMobileMenuOpen || isSearchOpen) ? 'hidden' : 'unset';
 
-    // 2. 一言打字机
     let hitokotoTimer;
-    fetch('https://v1.hitokoto.cn').then(res => res.json()).then(data => {
-      let i = 0;
-      hitokotoTimer = setInterval(() => {
-        setDisplayText(data.hitokoto.slice(0, i + 1));
-        i++;
-        if (i >= data.hitokoto.length) clearInterval(hitokotoTimer);
-      }, 45);
-    });
+    fetch('https://v1.hitokoto.cn')
+      .then(res => res.json())
+      .then(data => {
+        let i = 0;
+        hitokotoTimer = setInterval(() => {
+          setDisplayText(data.hitokoto.slice(0, i + 1));
+          i++;
+          if (i >= data.hitokoto.length) clearInterval(hitokotoTimer);
+        }, 45);
+      })
+      .catch(() => setDisplayText("Connection established. Reading tags..."));
 
-    // 3. 矩阵粒子系统
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     let time = 0, animationFrameId;
+
     const render = () => {
       time += 0.015;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // 使用 Props 传进来的 isDarkMode
       const colorRGB = isDarkMode ? '255, 255, 255' : '0, 0, 0';
       ctx.fillStyle = `rgba(${colorRGB}, ${isDarkMode ? 0.35 : 0.25})`;
       const gap = 64;
@@ -101,17 +94,24 @@ export default function TagsPage({ tagsWithPosts, allPostsData, isDarkMode, togg
       }
       animationFrameId = requestAnimationFrame(render);
     };
-    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
-    window.addEventListener('resize', resize); resize(); render();
+
+    const resize = () => { 
+      if (canvas) {
+        canvas.width = window.innerWidth; 
+        canvas.height = window.innerHeight; 
+      }
+    };
+
+    window.addEventListener('resize', resize);
+    resize();
+    render();
 
     return () => {
       if (hitokotoTimer) clearInterval(hitokotoTimer);
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isDarkMode, isMobileMenuOpen, isSearchOpen]); // 同步主题与交互状态
-
-  // 【删除】本地 toggleDarkMode 函数，直接使用 Props 里的
+  }, [isDarkMode, isMobileMenuOpen, isSearchOpen]);
 
   return (
     <div className={`min-h-screen selection:bg-blue-600 selection:text-white transition-colors duration-700 ${isDarkMode ? 'dark bg-black text-white' : 'bg-[#fafafa] text-black'}`}>
@@ -122,17 +122,17 @@ export default function TagsPage({ tagsWithPosts, allPostsData, isDarkMode, togg
 
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-100" />
 
-      {/* --- 统一导航栏 --- */}
       <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
-          <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity uppercase z-50">TYPACE</a></Link>
+          <Link href="/" className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity uppercase z-50">
+            TYPACE
+          </Link>
           
           <div className="hidden md:flex items-center space-x-10 text-[10px] font-bold uppercase tracking-[0.25em]">
             <NavLink href="/archive">Archive</NavLink>
             <NavLink href="/tags">Tags</NavLink>
             <NavLink href="/about">About</NavLink>
             <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-40 hover:opacity-100 transition-opacity focus:outline-none"><SearchIcon /></button>
-            {/* 使用 themeMounted 防止服务端渲染与客户端不一致导致的闪现 */}
             <button onClick={toggleDarkMode} className="w-5 h-5 flex items-center justify-center rounded-full border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm focus:outline-none">
               {!themeMounted ? null : (isDarkMode ? '☼' : '☾')}
             </button>
@@ -146,7 +146,6 @@ export default function TagsPage({ tagsWithPosts, allPostsData, isDarkMode, togg
           </div>
         </div>
 
-        {/* 移动端菜单 */}
         <div className={`fixed inset-0 bg-white/95 dark:bg-black/95 backdrop-blur-3xl transition-all duration-500 md:hidden z-40 ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
           <div className="flex flex-col px-10 pt-32 h-full">
             <div className="flex flex-col space-y-6">
@@ -165,24 +164,21 @@ export default function TagsPage({ tagsWithPosts, allPostsData, isDarkMode, togg
         </div>
       </nav>
 
-      {/* --- 主内容区 --- */}
       <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-40 pb-32 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
         
-        {/* 标签页 Hero */}
         <header className="mb-24">
           <div className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
             <h1 className="text-[clamp(3.5rem,10vw,8rem)] leading-[0.85] font-black tracking-tighter uppercase mb-8">
-              TAGS <br /> SYSTEM.
+              TAGS.
             </h1>
           </div>
           <div className={`transition-all duration-[1800ms] delay-500 ease-out ${showHero ? 'opacity-40 translate-y-0' : 'opacity-0 translate-y-6'}`}>
-            <p className="max-w-xl text-base font-medium leading-relaxed italic font-mono">
+            <p className="max-w-xl text-base font-medium leading-relaxed italic font-mono min-h-[1.5em]">
               {displayText}<span className="inline-block w-2 h-4 bg-blue-600 ml-2 animate-pulse" />
             </p>
           </div>
         </header>
 
-        {/* 标签分类网格 */}
         <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/10 transition-all duration-[2000ms] delay-700 ${showHero ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
           {Object.entries(tagsWithPosts).sort((a, b) => b[1].length - a[1].length).map(([tag, posts]) => (
             <div key={tag} className="bg-white dark:bg-black p-10 flex flex-col group hover:bg-gray-50 dark:hover:bg-[#050505] transition-colors">
@@ -194,10 +190,8 @@ export default function TagsPage({ tagsWithPosts, allPostsData, isDarkMode, togg
               <ul className="space-y-4">
                 {posts.map(({ slug, title }) => (
                   <li key={slug}>
-                    <Link href={`/posts/${slug}`}>
-                      <a className="block text-[11px] font-bold uppercase tracking-wider opacity-40 hover:opacity-100 hover:translate-x-2 transition-all duration-300">
+                    <Link href={`/posts/${slug}`} className="block text-[11px] font-bold uppercase tracking-wider opacity-40 hover:opacity-100 hover:translate-x-2 transition-all duration-300">
                         {title}
-                      </a>
                     </Link>
                   </li>
                 ))}
@@ -216,7 +210,7 @@ export default function TagsPage({ tagsWithPosts, allPostsData, isDarkMode, togg
         </footer>
       </main>
 
-      {/* --- 全新搜索系统 --- */}
+      {/* 搜索系统 */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[150] flex items-start justify-center pt-[10vh] px-8">
           <div className="absolute inset-0 bg-white/98 dark:bg-black/98 backdrop-blur-2xl" onClick={() => setIsSearchOpen(false)} />
@@ -224,11 +218,9 @@ export default function TagsPage({ tagsWithPosts, allPostsData, isDarkMode, togg
             <input autoFocus className="w-full bg-transparent border-b-2 border-black/10 dark:border-white/10 text-3xl md:text-5xl font-black tracking-tighter outline-none pb-8 focus:border-blue-600 transition-all uppercase" placeholder="SEARCH..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             <div className="mt-16 space-y-12 overflow-y-auto max-h-[60vh] pr-4 text-left">
               {searchResults.length > 0 ? searchResults.map(result => (
-                <Link key={result.slug} href={`/posts/${result.slug}`}>
-                  <a className="group block" onClick={() => setIsSearchOpen(false)}>
+                <Link key={result.slug} href={`/posts/${result.slug}`} className="group block" onClick={() => setIsSearchOpen(false)}>
                     <div className="flex items-center space-x-4 mb-2 opacity-30"><span className="text-[9px] font-mono tracking-widest">{result.date}</span></div>
                     <h4 className="text-2xl md:text-3xl font-black group-hover:text-blue-600 transition-colors tracking-tighter uppercase">{result.title}</h4>
-                  </a>
                 </Link>
               )) : searchQuery && <p className="opacity-40 uppercase text-xs tracking-widest text-left">No results found.</p>}
             </div>
@@ -248,15 +240,13 @@ export default function TagsPage({ tagsWithPosts, allPostsData, isDarkMode, togg
 
 // --- 3. 辅助组件 ---
 function NavLink({ href, children }) {
-  return <Link href={href}><a className="opacity-40 hover:opacity-100 transition-opacity tracking-widest">{children}</a></Link>;
+  return <Link href={href} className="opacity-40 hover:opacity-100 transition-opacity tracking-widest">{children}</Link>;
 }
 
 function MobileNavLink({ href, children, onClick, index }) {
   return (
-    <Link href={href}>
-      <a onClick={onClick} className="text-5xl font-black tracking-tighter uppercase hover:text-blue-600 transition-all duration-500 block transform translate-x-0" style={{ transitionDelay: `${index * 60}ms` }}>
+    <Link href={href} onClick={onClick} className="text-5xl font-black tracking-tighter uppercase hover:text-blue-600 transition-all duration-500 block transform translate-x-0" style={{ transitionDelay: `${index * 60}ms` }}>
         {children}
-      </a>
     </Link>
   );
 }
