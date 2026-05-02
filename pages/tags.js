@@ -171,7 +171,7 @@ export default function TagsPage({ tagsWithPosts = {}, allPostsData = [], isDark
         <header className="mb-24">
           <div className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
             <h1 className="text-[clamp(3.5rem,10vw,8rem)] leading-[0.85] font-black tracking-tighter uppercase mb-8">
-              TAGS <br /> SYSTEM.
+              TAGS.
             </h1>
           </div>
           <div className={`transition-all duration-[1800ms] delay-500 ease-out ${showHero ? 'opacity-40 translate-y-0' : 'opacity-0 translate-y-6'}`}>
