@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
-import { getSortedPostsData } from '../../lib/posts';
+import { getSortedPostsData } from '../../lib/posts'; // 请确保路径正确，可能需要根据你的项目调整
 import fs from 'fs'; 
 import path from 'path';
 import matter from 'gray-matter';
@@ -172,27 +172,52 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-100" />
 
-      {/* 导航栏 */}
+      {/* --- 导航栏 --- */}
       <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
-          <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity uppercase z-50">TYPACE</a></Link>
+          <Link href="/" className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity uppercase z-[110]">
+            TYPACE
+          </Link>
+          
           <div className="hidden md:flex items-center space-x-10 text-[10px] font-bold uppercase tracking-[0.25em]">
             <NavLink href="/archive">Archive</NavLink>
             <NavLink href="/tags">Tags</NavLink>
             <NavLink href="/about">About</NavLink>
-            <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-40 hover:opacity-100 transition-opacity"><SearchIcon /></button>
-            <button onClick={toggleDarkMode} className="w-5 h-5 flex items-center justify-center rounded-full border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm">
+            <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-40 hover:opacity-100 transition-opacity focus:outline-none"><SearchIcon /></button>
+            <button onClick={toggleDarkMode} className="w-5 h-5 flex items-center justify-center rounded-full border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm focus:outline-none">
               {!themeMounted ? null : (isDarkMode ? '☼' : '☾')}
             </button>
           </div>
-          <div className="flex md:hidden items-center space-x-4 z-50">
-            <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-60"><SearchIcon /></button>
-            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1">{isMobileMenuOpen ? <CloseIcon /> : <MenuIcon />}</button>
+
+          <div className="flex md:hidden items-center space-x-4 z-[210]">
+            <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-60 focus:outline-none"><SearchIcon /></button>
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1 focus:outline-none">
+              {isMobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
+            </button>
+          </div>
+        </div>
+
+        {/* 修正后的移动端全屏菜单 */}
+        <div className={`fixed inset-0 bg-white/95 dark:bg-black/95 backdrop-blur-3xl transition-all duration-500 md:hidden z-[200] ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
+          <div className="flex flex-col px-10 pt-32 h-full">
+            <div className="flex flex-col space-y-6">
+              <MobileNavLink href="/" onClick={() => setIsMobileMenuOpen(false)} index={1}>Home</MobileNavLink>
+              <MobileNavLink href="/archive" onClick={() => setIsMobileMenuOpen(false)} index={2}>Archive</MobileNavLink>
+              <MobileNavLink href="/tags" onClick={() => setIsMobileMenuOpen(false)} index={3}>Tags</MobileNavLink>
+              <MobileNavLink href="/about" onClick={() => setIsMobileMenuOpen(false)} index={4}>About</MobileNavLink>
+            </div>
+            <div className="mt-auto pb-16 border-t border-black/5 dark:border-white/10 pt-8 flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-widest opacity-40">System Theme</span>
+              <button onClick={toggleDarkMode} className="text-xs font-bold uppercase tracking-widest border border-black/10 dark:border-white/10 px-6 py-2 rounded-full active:scale-95 transition-all focus:outline-none">
+                {isDarkMode ? 'Light' : 'Dark'}
+              </button>
+            </div>
           </div>
         </div>
       </nav>
 
-      <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-40 pb-32 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
+      {/* --- 主内容区 --- */}
+      <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-40 pb-32 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.98] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
         
         {/* 文章头 */}
         <header className={`max-w-4xl mx-auto mb-20 transition-all duration-[1500ms] ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
@@ -247,23 +272,21 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/10">
             {recommendedPosts.map(post => (
-              <Link key={post.slug} href={`/posts/${post.slug}`}>
-                <a className="group relative bg-white dark:bg-black p-10 min-h-[300px] flex flex-col justify-end overflow-hidden">
+              <Link key={post.slug} href={`/posts/${post.slug}`} className="group relative bg-white dark:bg-black p-10 min-h-[300px] flex flex-col justify-end overflow-hidden">
                   <div className="absolute inset-0 z-0 transition-all duration-1000 group-hover:scale-110">
-                    <img src={post.cover} className="w-full h-full object-cover opacity-20 group-hover:opacity-60" />
+                    <img src={post.cover} className="w-full h-full object-cover opacity-20 group-hover:opacity-60" alt="" />
                   </div>
                   <div className="relative z-10 text-left">
                     <span className="text-[10px] font-mono opacity-30 mb-2 block uppercase tracking-widest">{post.date}</span>
                     <h4 className="text-xl font-black uppercase tracking-tighter leading-[1.1] group-hover:text-blue-500 transition-colors">{post.title}</h4>
                   </div>
-                </a>
               </Link>
             ))}
           </div>
         </section>
       </main>
 
-      {/* 搜索系统弹窗 */}
+      {/* --- 搜索系统弹窗 --- */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[150] flex items-start justify-center pt-[10vh] px-8">
           <div className="absolute inset-0 bg-white/98 dark:bg-black/98 backdrop-blur-2xl" onClick={() => setIsSearchOpen(false)} />
@@ -271,11 +294,9 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             <input autoFocus className="w-full bg-transparent border-b-2 border-black/10 dark:border-white/10 text-3xl md:text-5xl font-black tracking-tighter outline-none pb-8 focus:border-blue-600 transition-all uppercase" placeholder="SEARCH..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             <div className="mt-16 space-y-12 overflow-y-auto max-h-[60vh] pr-4 text-left">
               {searchResults.length > 0 ? searchResults.map(result => (
-                <Link key={result.slug} href={`/posts/${result.slug}`}>
-                  <a className="group block" onClick={() => setIsSearchOpen(false)}>
+                <Link key={result.slug} href={`/posts/${result.slug}`} className="group block" onClick={() => setIsSearchOpen(false)}>
                     <div className="flex items-center space-x-4 mb-2 opacity-30"><span className="text-[9px] font-mono tracking-widest">{result.date}</span></div>
                     <h4 className="text-2xl md:text-3xl font-black group-hover:text-blue-600 transition-colors tracking-tighter uppercase">{result.title}</h4>
-                  </a>
                 </Link>
               )) : searchQuery && <p className="opacity-40 uppercase text-xs tracking-widest text-left">No results found.</p>}
             </div>
@@ -283,7 +304,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </div>
       )}
 
-      {/* 图片全屏预览 */}
+      {/* --- 图片全屏预览 --- */}
       {previewImage && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/80 dark:bg-black/90 backdrop-blur-3xl p-4 md:p-20 cursor-zoom-out animate-in fade-in duration-300" onClick={() => setPreviewImage(null)}>
           <div className="relative animate-in zoom-in-95 duration-300 ease-out">
@@ -346,14 +367,19 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
 // --- 辅助 UI 组件 ---
 const NavLink = ({ href, children }) => (
-  <Link href={href}><a className="opacity-40 hover:opacity-100 transition-opacity tracking-widest">{children}</a></Link>
+  <Link href={href} className="opacity-40 hover:opacity-100 transition-opacity tracking-widest">
+    {children}
+  </Link>
 );
 
 const MobileNavLink = ({ href, children, onClick, index }) => (
-  <Link href={href}>
-    <a onClick={onClick} className="text-5xl font-black tracking-tighter uppercase hover:text-blue-600 transition-all duration-500 block transform translate-x-0" style={{ transitionDelay: `${index * 60}ms` }}>
-      {children}
-    </a>
+  <Link 
+    href={href} 
+    onClick={onClick} 
+    className="text-5xl font-black tracking-tighter uppercase hover:text-blue-600 transition-all duration-500 block transform translate-x-0" 
+    style={{ transitionDelay: `${index * 60}ms` }}
+  >
+    {children}
   </Link>
 );
 
