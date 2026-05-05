@@ -132,21 +132,16 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   // 目录提取与图片逻辑
   useEffect(() => {
     if (!contentRef.current) return;
-
-    // 正文图片点击预览
     contentRef.current.querySelectorAll('img').forEach(img => {
       img.style.cursor = 'zoom-in';
       img.onclick = () => setPreviewImage(img.src);
     });
-
-    // 标题提取 (修正 3 级标题与 ID)
     const headings = Array.from(contentRef.current.querySelectorAll('h1, h2, h3'));
     setToc(headings.map((h, i) => {
       const id = h.id || `${h.textContent.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\u4e00-\u9fa5-]/g, '')}-${i}`;
       h.id = id; 
       return { id, text: h.textContent, level: h.tagName.toLowerCase() };
     }));
-
     const obs = new IntersectionObserver(entries => {
       entries.forEach(e => { if (e.isIntersecting) setActiveHeading(e.target.id); });
     }, { rootMargin: '-10% 0px -70% 0px' });
@@ -169,10 +164,10 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-100" />
 
-      {/* 导航栏 */}
+      {/* --- 导航栏：已统一 --- */}
       <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
-          <Link href="/" className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity uppercase z-[110]">
+          <Link href="/" className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity uppercase z-[210]">
             TYPACE
           </Link>
           
@@ -188,13 +183,13 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
           <div className="flex md:hidden items-center space-x-4 z-[210]">
             <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-60 focus:outline-none"><SearchIcon /></button>
-            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1 focus:outline-none relative">
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1 focus:outline-none">
               {isMobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
             </button>
           </div>
         </div>
 
-        {/* 移动菜单 */}
+        {/* 移动端菜单：已统一 UI & 交互逻辑 */}
         <div className={`fixed inset-0 bg-white/95 dark:bg-black/95 backdrop-blur-3xl transition-all duration-500 md:hidden z-[200] ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
           <div className="flex flex-col px-10 pt-32 h-full">
             <div className="flex flex-col space-y-6">
@@ -203,11 +198,26 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
               <MobileNavLink href="/tags" onClick={() => setIsMobileMenuOpen(false)} index={3}>Tags</MobileNavLink>
               <MobileNavLink href="/about" onClick={() => setIsMobileMenuOpen(false)} index={4}>About</MobileNavLink>
             </div>
+            
+            {/* 底部系统状态栏 */}
+            <div className="mt-auto pb-16 border-t border-black/5 dark:border-white/10 pt-8 flex items-center justify-between">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">System Theme</span>
+                <span className="text-[9px] font-mono opacity-20 mt-1">v2.0.26 / STABLE</span>
+              </div>
+              <button 
+                onClick={toggleDarkMode} 
+                className="text-[10px] font-black uppercase tracking-widest border border-black/10 dark:border-white/20 px-8 py-3 rounded-full active:scale-95 transition-all bg-black/5 dark:bg-white/5"
+              >
+                {isDarkMode ? 'Set Light' : 'Set Dark'}
+              </button>
+            </div>
           </div>
         </div>
       </nav>
 
-      <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-40 pb-32 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.98] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
+      {/* --- 主体内容：已统一缩放 & 模糊联动 --- */}
+      <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-40 pb-32 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
         
         {/* 文章头 */}
         <header className={`max-w-4xl mx-auto mb-20 transition-all duration-[1500ms] ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
@@ -253,7 +263,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </div>
       </main>
 
-      {/* 搜索与预览略...保持原样 */}
+      {/* 搜索与预览略... */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[150] flex items-start justify-center pt-[10vh] px-8">
           <div className="absolute inset-0 bg-white/98 dark:bg-black/98 backdrop-blur-2xl" onClick={() => setIsSearchOpen(false)} />
@@ -279,21 +289,15 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </div>
       )}
 
+      <footer className={`max-w-[1440px] mx-auto px-10 py-24 flex justify-between items-center opacity-20 text-[9px] font-bold tracking-[0.5em] uppercase border-t border-black/5 dark:border-white/10 transition-all ${isMobileMenuOpen ? 'blur-2xl' : 'blur-0'}`}>
+        <span>© TYPACE SYSTEM 2026</span>
+        <span className="hidden sm:inline">ENGINEERED FOR THE WEB</span>
+      </footer>
+
       <style jsx global>{`
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
         .prose-terminal { line-height: 1.9; font-size: 1.05rem; }
-        
-        /* 核心修改点：彻底移除文章内图片的灰度、透明度和滤镜 */
-        .prose-terminal img { 
-          filter: none !important; 
-          opacity: 1 !important; 
-          border-radius: 8px; 
-          margin: 2rem auto;
-          display: block;
-          max-width: 100%;
-          transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
+        .prose-terminal img { filter: none !important; opacity: 1 !important; border-radius: 8px; margin: 2rem auto; display: block; max-width: 100%; transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
         .prose-terminal h1 { font-size: 2.8rem; font-weight: 900; letter-spacing: -0.05em; text-transform: uppercase; margin: 6rem 0 2.5rem; line-height: 1; border-bottom: 1px solid rgba(128, 128, 128, 0.2); padding-bottom: 1rem; }
         .prose-terminal h2 { font-size: 2rem; font-weight: 800; letter-spacing: -0.04em; text-transform: uppercase; margin: 4.5rem 0 1.5rem; line-height: 1.1; }
         .prose-terminal h3 { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; text-transform: uppercase; margin: 3rem 0 1.2rem; opacity: 0.85; }
@@ -310,7 +314,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   );
 }
 
-// 辅助组件略...
+// --- 辅助组件 ---
 const NavLink = ({ href, children }) => (
   <Link href={href} className="opacity-40 hover:opacity-100 transition-opacity tracking-widest">
     {children}
@@ -318,12 +322,7 @@ const NavLink = ({ href, children }) => (
 );
 
 const MobileNavLink = ({ href, children, onClick, index }) => (
-  <Link 
-    href={href} 
-    onClick={onClick} 
-    className="text-5xl font-black tracking-tighter uppercase hover:text-blue-600 transition-all duration-500 block transform translate-x-0" 
-    style={{ transitionDelay: `${index * 60}ms` }}
-  >
+  <Link href={href} onClick={onClick} className="text-5xl font-black tracking-tighter uppercase hover:text-blue-600 transition-all duration-500 block transform translate-x-0" style={{ transitionDelay: `${index * 60}ms` }}>
     {children}
   </Link>
 );
