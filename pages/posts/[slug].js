@@ -24,25 +24,21 @@ export async function getStaticProps({ params }) {
   const contentHtml = processedContent.toString();
   
   const allPostsData = getSortedPostsData();
-  const recommendedPosts = allPostsData
-    .filter((post) => post.slug !== params.slug)
-    .sort(() => 0.5 - Math.random()).slice(0, 3);
 
-  return { props: { frontmatter: data, contentHtml, recommendedPosts, allPostsData } };
+  return { props: { frontmatter: data, contentHtml, allPostsData } };
 }
 
 // --- 2. 主页面组件 ---
-export default function Post({ frontmatter, contentHtml, recommendedPosts, allPostsData, isDarkMode, toggleDarkMode, themeMounted }) {
-  const router = useRouter();
+export default function Post({ frontmatter, contentHtml, allPostsData, isDarkMode, toggleDarkMode, themeMounted }) {
   const canvasRef = useRef(null);
   const contentRef = useRef(null);
   
-  // 状态管理：同步首页逻辑
+  // 状态管理
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showContent, setShowContent] = useState(false);
-  const [previewImage, setPreviewImage] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null); // 图片放大状态
   const [toc, setToc] = useState([]);
   const [activeHeading, setActiveHeading] = useState(null);
 
@@ -59,14 +55,14 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   useEffect(() => {
     setTimeout(() => setShowContent(true), 150);
     
-    // 移动端菜单或搜索开启时锁定滚动
-    if (isMobileMenuOpen || isSearchOpen) {
+    // 移动端菜单、搜索或图片预览开启时锁定滚动
+    if (isMobileMenuOpen || isSearchOpen || previewImage) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
 
-    // 矩阵粒子背景 (同步首页)
+    // 矩阵粒子背景
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -91,22 +87,41 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isDarkMode, isMobileMenuOpen, isSearchOpen]);
+  }, [isDarkMode, isMobileMenuOpen, isSearchOpen, previewImage]);
 
-  // 目录提取逻辑 (已修复 3 级标题问题)
+  // 目录提取及正文图片点击绑定
   useEffect(() => {
     if (!contentRef.current) return;
+
+    // 1. 提取目录
     const headings = Array.from(contentRef.current.querySelectorAll('h1, h2, h3'));
     setToc(headings.map((h, i) => {
-      const id = h.id || `${h.textContent.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\u4e00-\u9fa5-]/g, '')}-${i}`;
+      const id = h.id || `${h.textContent.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')}-${i}`;
       h.id = id; 
       return { id, text: h.textContent, level: h.tagName.toLowerCase() };
     }));
+
+    // 2. 绑定图片点击放大效果 (针对 Markdown 生成的图片)
+    const images = contentRef.current.querySelectorAll('img');
+    const handleImageClick = (e) => {
+      setPreviewImage(e.target.src);
+    };
+
+    images.forEach(img => {
+      img.style.cursor = 'zoom-in';
+      img.addEventListener('click', handleImageClick);
+    });
+
+    // 3. 滚动监听
     const obs = new IntersectionObserver(entries => {
       entries.forEach(e => { if (e.isIntersecting) setActiveHeading(e.target.id); });
     }, { rootMargin: '-10% 0px -70% 0px' });
     headings.forEach(h => obs.observe(h));
-    return () => obs.disconnect();
+
+    return () => {
+      obs.disconnect();
+      images.forEach(img => img.removeEventListener('click', handleImageClick));
+    };
   }, [contentHtml]);
 
   return (
@@ -118,12 +133,11 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-100" />
 
-      {/* --- 导航栏：同步首页结构 --- */}
+      {/* --- 导航栏 --- */}
       <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
           <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity uppercase z-[110]">TYPACE</a></Link>
           
-          {/* 桌面端菜单 */}
           <div className="hidden md:flex items-center space-x-10 text-[10px] font-bold uppercase tracking-[0.25em]">
             <NavLink href="/archive">Archive</NavLink>
             <NavLink href="/tags">Tags</NavLink>
@@ -134,7 +148,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             </button>
           </div>
 
-          {/* 移动端触发按钮 */}
           <div className="flex md:hidden items-center space-x-4 z-[110]">
             <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-60 focus:outline-none"><SearchIcon /></button>
             <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1 focus:outline-none relative">
@@ -143,7 +156,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           </div>
         </div>
 
-        {/* 移动端全屏菜单遮罩 */}
         <div className={`fixed inset-0 bg-white/95 dark:bg-black/95 backdrop-blur-3xl transition-all duration-500 md:hidden z-[100] ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
           <div className="flex flex-col px-10 pt-32 h-full">
             <div className="flex flex-col space-y-6">
@@ -162,7 +174,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </div>
       </nav>
 
-      {/* 主内容区域：添加模糊联动效果 */}
+      {/* --- 主内容区域 --- */}
       <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-40 pb-32 transition-all duration-700 ease-in-out ${isMobileMenuOpen || isSearchOpen ? 'blur-2xl scale-[0.98] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
         <header className={`max-w-4xl mx-auto mb-20 transition-all duration-[1500ms] ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
           <div className="flex items-center space-x-4 mb-6 opacity-40 text-[10px] font-mono tracking-widest uppercase font-black">
@@ -171,6 +183,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             <span>{frontmatter.tags?.[0] || 'Article'}</span>
           </div>
           <h1 className="text-[clamp(2.2rem,6vw,4.5rem)] leading-[1.05] font-black tracking-tighter uppercase mb-12">{frontmatter.title}</h1>
+          
+          {/* 封面图点击放大 */}
           {frontmatter.cover && (
             <div className="w-full max-w-2xl aspect-video overflow-hidden border border-black/5 dark:border-white/10 rounded-2xl group cursor-zoom-in" onClick={() => setPreviewImage(frontmatter.cover)}>
                 <img src={frontmatter.cover} className="w-full h-full object-cover transition-all duration-[1.5s] group-hover:scale-105" alt="cover" />
@@ -179,7 +193,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </header>
 
         <div className="flex flex-col lg:flex-row gap-20 max-w-6xl mx-auto">
-          {/* 目录侧边栏 (桌面端) */}
           <aside className="lg:w-64 flex-shrink-0 hidden lg:block">
             <div className="sticky top-32">
               <h4 className="text-[11px] font-black uppercase tracking-[0.4em] opacity-40 mb-8">Catalogue</h4>
@@ -197,12 +210,13 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           </aside>
 
           <article className={`flex-1 max-w-3xl transition-all duration-[1800ms] delay-200 ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+            {/* 正文内容 */}
             <div ref={contentRef} className="prose-terminal dark:prose-invert" dangerouslySetInnerHTML={{ __html: contentHtml }} />
           </article>
         </div>
       </main>
 
-      {/* 搜索系统 (同步首页) */}
+      {/* --- 搜索系统 --- */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[150] flex items-start justify-center pt-[10vh] px-8">
           <div className="absolute inset-0 bg-white/98 dark:bg-black/98 backdrop-blur-2xl" onClick={() => setIsSearchOpen(false)} />
@@ -222,17 +236,38 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </div>
       )}
 
-      {/* 图片预览 */}
+      {/* --- 全屏图片预览 (放大效果) --- */}
       {previewImage && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/80 dark:bg-black/90 backdrop-blur-3xl p-4 md:p-20 cursor-zoom-out" onClick={() => setPreviewImage(null)}>
-          <img src={previewImage} className="max-w-full max-h-[90vh] object-contain shadow-2xl rounded-sm animate-in zoom-in-95 duration-300" alt="Preview" />
+        <div 
+          className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/90 dark:bg-black/95 backdrop-blur-2xl p-4 md:p-20 cursor-zoom-out" 
+          onClick={() => setPreviewImage(null)}
+        >
+          {/* 动画效果：从中心放大并淡入 */}
+          <img 
+            src={previewImage} 
+            className="max-w-full max-h-full object-contain shadow-[0_20px_80px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_80px_rgba(255,255,255,0.1)] rounded-sm animate-in zoom-in-95 fade-in duration-300" 
+            alt="Preview" 
+          />
+          {/* 关闭指示图标 */}
+          <div className="absolute top-10 right-10 opacity-50 hover:opacity-100 transition-opacity">
+            <CloseIcon />
+          </div>
         </div>
       )}
 
       <style jsx global>{`
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
-        .prose-terminal img { filter: none !important; opacity: 1 !important; border-radius: 12px; margin: 3rem 0; }
-        .prose-terminal h1, .prose-terminal h2, .prose-terminal h3 { scroll-margin-top: 100px; text-transform: uppercase; font-black tracking-tighter; }
+        .prose-terminal img { 
+          filter: none !important; 
+          opacity: 1 !important; 
+          border-radius: 12px; 
+          margin: 3rem 0; 
+          transition: transform 0.3s ease;
+        }
+        .prose-terminal img:hover {
+          transform: translateY(-4px);
+        }
+        .prose-terminal h1, .prose-terminal h2, .prose-terminal h3 { scroll-margin-top: 100px; text-transform: uppercase; font-weight: 900; tracking-tighter; }
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); }
       `}</style>
@@ -240,7 +275,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   );
 }
 
-// --- 辅助子组件 (保持一致) ---
+// --- 子组件 ---
 const NavLink = ({ href, children }) => (
   <Link href={href}><a className="opacity-40 hover:opacity-100 transition-opacity tracking-widest">{children}</a></Link>
 );
