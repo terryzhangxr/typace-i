@@ -203,13 +203,12 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             <div className="mt-auto pb-16 border-t border-black/5 dark:border-white/10 pt-8 flex items-center justify-between">
               <div className="flex flex-col">
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">System Theme</span>
-                <span className="text-[9px] font-mono opacity-20 mt-1">v2.0.26 / STABLE</span>
               </div>
               <button 
                 onClick={toggleDarkMode} 
                 className="text-[10px] font-black uppercase tracking-widest border border-black/10 dark:border-white/20 px-8 py-3 rounded-full active:scale-95 transition-all bg-black/5 dark:bg-white/5"
               >
-                {isDarkMode ? 'Set Light' : 'Set Dark'}
+                {isDarkMode ? 'Light' : 'Dark'}
               </button>
             </div>
           </div>
