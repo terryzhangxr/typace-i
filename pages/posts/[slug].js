@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
-import { getSortedPostsData } from '../../lib/posts'; // 请确保路径正确，可能需要根据你的项目调整
+import { getSortedPostsData } from '../../lib/posts'; 
 import fs from 'fs'; 
 import path from 'path';
 import matter from 'gray-matter';
@@ -104,7 +104,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
     };
     loadScripts();
 
-    // 粒子背景
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -134,22 +133,21 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
   useEffect(() => {
     if (!contentRef.current) return;
 
-    // 处理图片预览
-    const images = contentRef.current.querySelectorAll('img');
-    images.forEach(img => {
+    // 图片点击预览
+    contentRef.current.querySelectorAll('img').forEach(img => {
       img.style.cursor = 'zoom-in';
       img.onclick = () => setPreviewImage(img.src);
     });
 
-    // 提取标题 (h1, h2, h3)
+    // 修复 3 级标题及中文目录逻辑
     const headings = Array.from(contentRef.current.querySelectorAll('h1, h2, h3'));
-    setToc(headings.map(h => {
-      const id = h.id || h.textContent.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
-      if (!h.id) h.id = id; // 回填 ID 以便锚点跳转
+    setToc(headings.map((h, i) => {
+      // 这里的正则支持中文，并加上 index 后缀确保 ID 唯一，防止 3 级标题重复导致的报错
+      const id = h.id || `${h.textContent.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\u4e00-\u9fa5-]/g, '')}-${i}`;
+      h.id = id; 
       return { id, text: h.textContent, level: h.tagName.toLowerCase() };
     }));
 
-    // 目录高亮观察者
     const obs = new IntersectionObserver(entries => {
       entries.forEach(e => { if (e.isIntersecting) setActiveHeading(e.target.id); });
     }, { rootMargin: '-10% 0px -70% 0px' });
@@ -172,7 +170,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
       
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-100" />
 
-      {/* --- 导航栏 --- */}
+      {/* 导航栏 */}
       <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
           <Link href="/" className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity uppercase z-[110]">
@@ -191,13 +189,13 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
 
           <div className="flex md:hidden items-center space-x-4 z-[210]">
             <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-60 focus:outline-none"><SearchIcon /></button>
-            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1 focus:outline-none">
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1 focus:outline-none relative">
               {isMobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
             </button>
           </div>
         </div>
 
-        {/* 修正后的移动端全屏菜单 */}
+        {/* 修复后的移动端全屏菜单 */}
         <div className={`fixed inset-0 bg-white/95 dark:bg-black/95 backdrop-blur-3xl transition-all duration-500 md:hidden z-[200] ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
           <div className="flex flex-col px-10 pt-32 h-full">
             <div className="flex flex-col space-y-6">
@@ -208,7 +206,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             </div>
             <div className="mt-auto pb-16 border-t border-black/5 dark:border-white/10 pt-8 flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest opacity-40">System Theme</span>
-              <button onClick={toggleDarkMode} className="text-xs font-bold uppercase tracking-widest border border-black/10 dark:border-white/10 px-6 py-2 rounded-full active:scale-95 transition-all focus:outline-none">
+              <button onClick={toggleDarkMode} className="text-xs font-bold uppercase tracking-widest border border-black/10 dark:border-white/10 px-6 py-2 rounded-full active:scale-95 transition-all">
                 {isDarkMode ? 'Light' : 'Dark'}
               </button>
             </div>
@@ -216,10 +214,7 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </div>
       </nav>
 
-      {/* --- 主内容区 --- */}
       <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-40 pb-32 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.98] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
-        
-        {/* 文章头 */}
         <header className={`max-w-4xl mx-auto mb-20 transition-all duration-[1500ms] ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
           <div className="flex items-center space-x-4 mb-6 opacity-40 text-[10px] font-mono tracking-widest uppercase font-black">
             <span>{frontmatter.date}</span>
@@ -235,7 +230,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </header>
 
         <div className="flex flex-col lg:flex-row gap-20 max-w-6xl mx-auto">
-          {/* 侧边栏目录 */}
           <aside className="lg:w-64 flex-shrink-0 hidden lg:block">
             <div className="sticky top-32">
               <h4 className="text-[11px] font-black uppercase tracking-[0.4em] opacity-40 mb-8">Catalogue</h4>
@@ -255,7 +249,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             </div>
           </aside>
 
-          {/* 文章主体 */}
           <article className={`flex-1 max-w-3xl transition-all duration-[1800ms] delay-200 ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
             <div ref={contentRef} className="prose-terminal dark:prose-invert" dangerouslySetInnerHTML={{ __html: contentHtml }} />
             <section id="comments" className="mt-32 pt-16 border-t border-black/5 dark:border-white/10">
@@ -264,7 +257,6 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           </article>
         </div>
 
-        {/* 底部推荐 */}
         <section className="mt-48 max-w-6xl mx-auto">
           <div className="flex items-center space-x-6 mb-12 opacity-20">
             <h2 className="text-xs font-black uppercase tracking-[0.5em]">Next Phase</h2>
@@ -273,20 +265,20 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
           <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/10">
             {recommendedPosts.map(post => (
               <Link key={post.slug} href={`/posts/${post.slug}`} className="group relative bg-white dark:bg-black p-10 min-h-[300px] flex flex-col justify-end overflow-hidden">
-                  <div className="absolute inset-0 z-0 transition-all duration-1000 group-hover:scale-110">
-                    <img src={post.cover} className="w-full h-full object-cover opacity-20 group-hover:opacity-60" alt="" />
-                  </div>
-                  <div className="relative z-10 text-left">
-                    <span className="text-[10px] font-mono opacity-30 mb-2 block uppercase tracking-widest">{post.date}</span>
-                    <h4 className="text-xl font-black uppercase tracking-tighter leading-[1.1] group-hover:text-blue-500 transition-colors">{post.title}</h4>
-                  </div>
+                <div className="absolute inset-0 z-0 transition-all duration-1000 group-hover:scale-110">
+                  <img src={post.cover} className="w-full h-full object-cover opacity-20 group-hover:opacity-60" alt="" />
+                </div>
+                <div className="relative z-10 text-left">
+                  <span className="text-[10px] font-mono opacity-30 mb-2 block uppercase tracking-widest">{post.date}</span>
+                  <h4 className="text-xl font-black uppercase tracking-tighter leading-[1.1] group-hover:text-blue-500 transition-colors">{post.title}</h4>
+                </div>
               </Link>
             ))}
           </div>
         </section>
       </main>
 
-      {/* --- 搜索系统弹窗 --- */}
+      {/* 搜索 */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[150] flex items-start justify-center pt-[10vh] px-8">
           <div className="absolute inset-0 bg-white/98 dark:bg-black/98 backdrop-blur-2xl" onClick={() => setIsSearchOpen(false)} />
@@ -295,8 +287,8 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
             <div className="mt-16 space-y-12 overflow-y-auto max-h-[60vh] pr-4 text-left">
               {searchResults.length > 0 ? searchResults.map(result => (
                 <Link key={result.slug} href={`/posts/${result.slug}`} className="group block" onClick={() => setIsSearchOpen(false)}>
-                    <div className="flex items-center space-x-4 mb-2 opacity-30"><span className="text-[9px] font-mono tracking-widest">{result.date}</span></div>
-                    <h4 className="text-2xl md:text-3xl font-black group-hover:text-blue-600 transition-colors tracking-tighter uppercase">{result.title}</h4>
+                  <div className="flex items-center space-x-4 mb-2 opacity-30"><span className="text-[9px] font-mono tracking-widest">{result.date}</span></div>
+                  <h4 className="text-2xl md:text-3xl font-black group-hover:text-blue-600 transition-colors tracking-tighter uppercase">{result.title}</h4>
                 </Link>
               )) : searchQuery && <p className="opacity-40 uppercase text-xs tracking-widest text-left">No results found.</p>}
             </div>
@@ -304,58 +296,25 @@ export default function Post({ frontmatter, contentHtml, recommendedPosts, allPo
         </div>
       )}
 
-      {/* --- 图片全屏预览 --- */}
+      {/* 预览 */}
       {previewImage && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/80 dark:bg-black/90 backdrop-blur-3xl p-4 md:p-20 cursor-zoom-out animate-in fade-in duration-300" onClick={() => setPreviewImage(null)}>
-          <div className="relative animate-in zoom-in-95 duration-300 ease-out">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/80 dark:bg-black/90 backdrop-blur-3xl p-4 md:p-20 cursor-zoom-out" onClick={() => setPreviewImage(null)}>
+          <div className="relative animate-in zoom-in-95 duration-300">
             <img src={previewImage} className="max-w-full max-h-[90vh] object-contain shadow-2xl rounded-sm border border-black/5 dark:border-white/10" alt="Preview" />
-            <div className="absolute -top-10 left-0 right-0 text-center uppercase text-[10px] font-black tracking-widest opacity-40">Click anywhere to close</div>
           </div>
         </div>
       )}
 
       <style jsx global>{`
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
-        
-        /* 正文样式修正：层级分明 */
         .prose-terminal { line-height: 1.9; font-size: 1.05rem; }
-
-        .prose-terminal h1 { 
-          font-size: 2.8rem; 
-          font-weight: 900; 
-          letter-spacing: -0.05em; 
-          text-transform: uppercase; 
-          margin: 6rem 0 2.5rem; 
-          line-height: 1;
-          border-bottom: 1px solid rgba(128, 128, 128, 0.2);
-          padding-bottom: 1rem;
-        }
-
-        .prose-terminal h2 { 
-          font-size: 2rem; 
-          font-weight: 800; 
-          letter-spacing: -0.04em; 
-          text-transform: uppercase; 
-          margin: 4.5rem 0 1.5rem; 
-          line-height: 1.1;
-        }
-
-        .prose-terminal h3 { 
-          font-size: 1.3rem; 
-          font-weight: 700; 
-          letter-spacing: -0.02em; 
-          text-transform: uppercase; 
-          margin: 3rem 0 1.2rem; 
-          opacity: 0.85;
-        }
-
-        /* 锚点偏移 */
+        .prose-terminal h1 { font-size: 2.8rem; font-weight: 900; letter-spacing: -0.05em; text-transform: uppercase; margin: 6rem 0 2.5rem; line-height: 1; border-bottom: 1px solid rgba(128, 128, 128, 0.2); padding-bottom: 1rem; }
+        .prose-terminal h2 { font-size: 2rem; font-weight: 800; letter-spacing: -0.04em; text-transform: uppercase; margin: 4.5rem 0 1.5rem; line-height: 1.1; }
+        .prose-terminal h3 { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; text-transform: uppercase; margin: 3rem 0 1.2rem; opacity: 0.85; }
         .prose-terminal h1, .prose-terminal h2, .prose-terminal h3 { scroll-margin-top: 120px; }
-
         .prose-terminal p { margin-bottom: 2.2rem; opacity: 0.85; }
         .prose-terminal pre { background: #050505 !important; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; margin: 3.5rem 0; overflow: hidden; }
         .prose-terminal pre code { display: block; padding: 1.8rem; font-family: 'Fira Code', monospace; font-size: 0.9rem; color: #e5e7eb; }
-        
         .wl-panel { border: 1px solid rgba(128,128,128,0.1) !important; border-radius: 16px !important; background: transparent !important; }
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); }
