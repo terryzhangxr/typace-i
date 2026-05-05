@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/router';
 import { getSortedPostsData } from '../../lib/posts'; 
 import fs from 'fs'; 
 import path from 'path';
 import matter from 'gray-matter';
 import { remark } from 'remark';
-import html from 'remark-html';
+import remarkRehype from 'remark-rehype';
+import rehypeHighlight from 'rehype-highlight';
+import rehypeStringify from 'rehype-stringify';
 import Head from 'next/head';
 import Link from 'next/link';
 
@@ -20,7 +21,13 @@ export async function getStaticProps({ params }) {
   const filePath = path.join(process.cwd(), 'source', `${params.slug}.md`);
   const fileContents = fs.readFileSync(filePath, 'utf8');
   const { data, content } = matter(fileContents);
-  const processedContent = await remark().use(html).process(content);
+
+  // 使用 rehype 插件系统进行代码高亮处理
+  const processedContent = await remark()
+    .use(remarkRehype)
+    .use(rehypeHighlight) // 自动为代码块添加 hljs 类名
+    .use(rehypeStringify)
+    .process(content);
   const contentHtml = processedContent.toString();
   
   const allPostsData = getSortedPostsData();
@@ -33,12 +40,11 @@ export default function Post({ frontmatter, contentHtml, allPostsData, isDarkMod
   const canvasRef = useRef(null);
   const contentRef = useRef(null);
   
-  // 状态管理
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showContent, setShowContent] = useState(false);
-  const [previewImage, setPreviewImage] = useState(null); // 图片放大状态
+  const [previewImage, setPreviewImage] = useState(null); 
   const [toc, setToc] = useState([]);
   const [activeHeading, setActiveHeading] = useState(null);
 
@@ -51,18 +57,16 @@ export default function Post({ frontmatter, contentHtml, allPostsData, isDarkMod
     ).slice(0, 6);
   }, [searchQuery, allPostsData]);
 
-  // 副作用：处理滚动锁定、动画触发
+  // 背景与滚动控制
   useEffect(() => {
     setTimeout(() => setShowContent(true), 150);
     
-    // 移动端菜单、搜索或图片预览开启时锁定滚动
     if (isMobileMenuOpen || isSearchOpen || previewImage) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
 
-    // 矩阵粒子背景
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -89,11 +93,11 @@ export default function Post({ frontmatter, contentHtml, allPostsData, isDarkMod
     };
   }, [isDarkMode, isMobileMenuOpen, isSearchOpen, previewImage]);
 
-  // 目录提取及正文图片点击绑定
+  // 目录提取与图片点击事件绑定
   useEffect(() => {
     if (!contentRef.current) return;
 
-    // 1. 提取目录
+    // 目录处理
     const headings = Array.from(contentRef.current.querySelectorAll('h1, h2, h3'));
     setToc(headings.map((h, i) => {
       const id = h.id || `${h.textContent.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')}-${i}`;
@@ -101,18 +105,14 @@ export default function Post({ frontmatter, contentHtml, allPostsData, isDarkMod
       return { id, text: h.textContent, level: h.tagName.toLowerCase() };
     }));
 
-    // 2. 绑定图片点击放大效果 (针对 Markdown 生成的图片)
+    // 图片放大绑定
     const images = contentRef.current.querySelectorAll('img');
-    const handleImageClick = (e) => {
-      setPreviewImage(e.target.src);
-    };
-
+    const handleImageClick = (e) => setPreviewImage(e.target.src);
     images.forEach(img => {
       img.style.cursor = 'zoom-in';
       img.addEventListener('click', handleImageClick);
     });
 
-    // 3. 滚动监听
     const obs = new IntersectionObserver(entries => {
       entries.forEach(e => { if (e.isIntersecting) setActiveHeading(e.target.id); });
     }, { rootMargin: '-10% 0px -70% 0px' });
@@ -125,37 +125,40 @@ export default function Post({ frontmatter, contentHtml, allPostsData, isDarkMod
   }, [contentHtml]);
 
   return (
-    <div className={`min-h-screen selection:bg-blue-600 selection:text-white transition-colors duration-700 ${isDarkMode ? 'dark bg-black text-white' : 'bg-[#fafafa] text-black'}`}>
+    <div className={`min-h-screen transition-colors duration-700 ${isDarkMode ? 'dark bg-black text-white' : 'bg-[#fafafa] text-black'}`}>
       <Head>
         <title>{frontmatter.title} — TYPACE</title>
+        {/* 引入代码高亮主题 CSS */}
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark-reasonable.min.css" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
       </Head>
       
-      <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-100" />
+      <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />
 
-      {/* --- 导航栏 --- */}
+      {/* 导航栏 */}
       <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
-          <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity uppercase z-[110]">TYPACE</a></Link>
+          <Link href="/"><a className="text-sm font-black tracking-widest uppercase z-[110]">TYPACE</a></Link>
           
           <div className="hidden md:flex items-center space-x-10 text-[10px] font-bold uppercase tracking-[0.25em]">
             <NavLink href="/archive">Archive</NavLink>
             <NavLink href="/tags">Tags</NavLink>
             <NavLink href="/about">About</NavLink>
-            <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-40 hover:opacity-100 transition-opacity focus:outline-none"><SearchIcon /></button>
-            <button onClick={toggleDarkMode} className="w-5 h-5 flex items-center justify-center rounded-full border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm focus:outline-none">
+            <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-40 hover:opacity-100 transition-opacity"><SearchIcon /></button>
+            <button onClick={toggleDarkMode} className="w-5 h-5 flex items-center justify-center rounded-full border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all">
               {!themeMounted ? null : (isDarkMode ? '☼' : '☾')}
             </button>
           </div>
 
           <div className="flex md:hidden items-center space-x-4 z-[110]">
-            <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-60 focus:outline-none"><SearchIcon /></button>
-            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1 focus:outline-none relative">
+            <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-60"><SearchIcon /></button>
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1 relative">
               {isMobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
             </button>
           </div>
         </div>
 
+        {/* 移动端菜单 */}
         <div className={`fixed inset-0 bg-white/95 dark:bg-black/95 backdrop-blur-3xl transition-all duration-500 md:hidden z-[100] ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
           <div className="flex flex-col px-10 pt-32 h-full">
             <div className="flex flex-col space-y-6">
@@ -165,8 +168,8 @@ export default function Post({ frontmatter, contentHtml, allPostsData, isDarkMod
               <MobileNavLink href="/about" onClick={() => setIsMobileMenuOpen(false)} index={4}>About</MobileNavLink>
             </div>
             <div className="mt-auto pb-16 border-t border-black/5 dark:border-white/10 pt-8 flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-widest opacity-40">System Theme</span>
-              <button onClick={toggleDarkMode} className="text-xs font-bold uppercase tracking-widest border border-black/10 dark:border-white/10 px-6 py-2 rounded-full active:scale-95 transition-all">
+              <span className="text-[10px] font-black uppercase opacity-40">System Theme</span>
+              <button onClick={toggleDarkMode} className="text-xs font-bold uppercase border border-black/10 dark:border-white/10 px-6 py-2 rounded-full">
                 {isDarkMode ? 'Light' : 'Dark'}
               </button>
             </div>
@@ -174,20 +177,18 @@ export default function Post({ frontmatter, contentHtml, allPostsData, isDarkMod
         </div>
       </nav>
 
-      {/* --- 主内容区域 --- */}
-      <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-40 pb-32 transition-all duration-700 ease-in-out ${isMobileMenuOpen || isSearchOpen ? 'blur-2xl scale-[0.98] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
-        <header className={`max-w-4xl mx-auto mb-20 transition-all duration-[1500ms] ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
-          <div className="flex items-center space-x-4 mb-6 opacity-40 text-[10px] font-mono tracking-widest uppercase font-black">
+      {/* 主内容 */}
+      <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-40 pb-32 transition-all duration-700 ${isMobileMenuOpen || isSearchOpen ? 'blur-2xl scale-[0.98] opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
+        <header className={`max-w-4xl mx-auto mb-20 transition-all duration-[1000ms] ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+          <div className="flex items-center space-x-4 mb-6 opacity-40 text-[10px] font-mono uppercase font-black">
             <span>{frontmatter.date}</span>
             <div className="h-px w-8 bg-current"></div>
             <span>{frontmatter.tags?.[0] || 'Article'}</span>
           </div>
           <h1 className="text-[clamp(2.2rem,6vw,4.5rem)] leading-[1.05] font-black tracking-tighter uppercase mb-12">{frontmatter.title}</h1>
-          
-          {/* 封面图点击放大 */}
           {frontmatter.cover && (
-            <div className="w-full max-w-2xl aspect-video overflow-hidden border border-black/5 dark:border-white/10 rounded-2xl group cursor-zoom-in" onClick={() => setPreviewImage(frontmatter.cover)}>
-                <img src={frontmatter.cover} className="w-full h-full object-cover transition-all duration-[1.5s] group-hover:scale-105" alt="cover" />
+            <div className="w-full max-w-2xl aspect-video overflow-hidden border border-black/5 dark:border-white/10 rounded-2xl cursor-zoom-in" onClick={() => setPreviewImage(frontmatter.cover)}>
+                <img src={frontmatter.cover} className="w-full h-full object-cover" alt="cover" />
             </div>
           )}
         </header>
@@ -199,7 +200,7 @@ export default function Post({ frontmatter, contentHtml, allPostsData, isDarkMod
               <ul className="space-y-5 border-l border-black/5 dark:border-white/10">
                 {toc.map(item => (
                   <li key={item.id} className={`relative transition-all ${item.level === 'h1' ? 'pl-4' : item.level === 'h2' ? 'pl-8' : 'pl-12'}`}>
-                    <a href={`#${item.id}`} className={`block text-[12px] uppercase font-bold tracking-wider transition-all duration-300 ${activeHeading === item.id ? 'text-blue-500 translate-x-2' : 'text-current opacity-30 hover:opacity-60 hover:translate-x-1'}`}>
+                    <a href={`#${item.id}`} className={`block text-[12px] uppercase font-bold transition-all duration-300 ${activeHeading === item.id ? 'text-blue-500 translate-x-2' : 'text-current opacity-30 hover:opacity-60'}`}>
                       {item.text}
                     </a>
                     {activeHeading === item.id && <div className="absolute left-[-1px] top-0 bottom-0 w-[2px] bg-blue-500 shadow-[0_0_10px_rgba(37,99,235,0.4)]" />}
@@ -209,65 +210,52 @@ export default function Post({ frontmatter, contentHtml, allPostsData, isDarkMod
             </div>
           </aside>
 
-          <article className={`flex-1 max-w-3xl transition-all duration-[1800ms] delay-200 ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
-            {/* 正文内容 */}
+          <article className={`flex-1 max-w-3xl transition-all duration-[1200ms] delay-200 ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
             <div ref={contentRef} className="prose-terminal dark:prose-invert" dangerouslySetInnerHTML={{ __html: contentHtml }} />
           </article>
         </div>
       </main>
 
-      {/* --- 搜索系统 --- */}
+      {/* 搜索系统 */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[150] flex items-start justify-center pt-[10vh] px-8">
           <div className="absolute inset-0 bg-white/98 dark:bg-black/98 backdrop-blur-2xl" onClick={() => setIsSearchOpen(false)} />
           <div className="relative w-full max-w-3xl animate-in fade-in slide-in-from-bottom-8 duration-700">
-            <input autoFocus className="w-full bg-transparent border-b-2 border-black/10 dark:border-white/10 text-3xl md:text-5xl font-black tracking-tighter outline-none pb-8 focus:border-blue-600 transition-all uppercase" placeholder="SEARCH..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-            <div className="mt-16 space-y-12 overflow-y-auto max-h-[60vh] pr-4 text-left">
-              {searchResults.length > 0 ? searchResults.map(result => (
+            <input autoFocus className="w-full bg-transparent border-b-2 border-black/10 dark:border-white/10 text-3xl md:text-5xl font-black outline-none pb-8 focus:border-blue-600 transition-all uppercase" placeholder="SEARCH..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <div className="mt-16 space-y-12 overflow-y-auto max-h-[60vh] text-left">
+              {searchResults.map(result => (
                 <Link key={result.slug} href={`/posts/${result.slug}`}>
                   <a className="group block" onClick={() => setIsSearchOpen(false)}>
-                    <div className="flex items-center space-x-4 mb-2 opacity-30"><span className="text-[9px] font-mono tracking-widest">{result.date}</span></div>
-                    <h4 className="text-2xl md:text-3xl font-black group-hover:text-blue-600 transition-colors tracking-tighter uppercase">{result.title}</h4>
+                    <h4 className="text-2xl md:text-3xl font-black group-hover:text-blue-600 transition-colors uppercase">{result.title}</h4>
                   </a>
                 </Link>
-              )) : searchQuery && <p className="opacity-40 uppercase text-xs tracking-widest text-left">No results found.</p>}
+              ))}
             </div>
           </div>
         </div>
       )}
 
-      {/* --- 全屏图片预览 (放大效果) --- */}
+      {/* 图片放大预览 */}
       {previewImage && (
-        <div 
-          className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/90 dark:bg-black/95 backdrop-blur-2xl p-4 md:p-20 cursor-zoom-out" 
-          onClick={() => setPreviewImage(null)}
-        >
-          {/* 动画效果：从中心放大并淡入 */}
-          <img 
-            src={previewImage} 
-            className="max-w-full max-h-full object-contain shadow-[0_20px_80px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_80px_rgba(255,255,255,0.1)] rounded-sm animate-in zoom-in-95 fade-in duration-300" 
-            alt="Preview" 
-          />
-          {/* 关闭指示图标 */}
-          <div className="absolute top-10 right-10 opacity-50 hover:opacity-100 transition-opacity">
-            <CloseIcon />
-          </div>
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/90 dark:bg-black/95 backdrop-blur-2xl cursor-zoom-out" onClick={() => setPreviewImage(null)}>
+          <img src={previewImage} className="max-w-full max-h-[90vh] object-contain shadow-2xl animate-in zoom-in-95 duration-300" />
         </div>
       )}
 
       <style jsx global>{`
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
-        .prose-terminal img { 
-          filter: none !important; 
-          opacity: 1 !important; 
+        .prose-terminal img { border-radius: 12px; margin: 3rem 0; transition: transform 0.3s; }
+        .prose-terminal img:hover { transform: translateY(-4px); }
+        .prose-terminal pre { 
+          background: #1a1a1a !important; 
+          padding: 1.5rem; 
           border-radius: 12px; 
-          margin: 3rem 0; 
-          transition: transform 0.3s ease;
+          margin: 2rem 0; 
+          overflow-x: auto;
+          border: 1px solid rgba(255,255,255,0.05);
         }
-        .prose-terminal img:hover {
-          transform: translateY(-4px);
-        }
-        .prose-terminal h1, .prose-terminal h2, .prose-terminal h3 { scroll-margin-top: 100px; text-transform: uppercase; font-weight: 900; tracking-tighter; }
+        .prose-terminal code { font-family: 'Fira Code', monospace; font-size: 0.9em; }
+        .prose-terminal h1, .prose-terminal h2, .prose-terminal h3 { scroll-margin-top: 100px; text-transform: uppercase; font-weight: 900; }
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); }
       `}</style>
@@ -275,14 +263,13 @@ export default function Post({ frontmatter, contentHtml, allPostsData, isDarkMod
   );
 }
 
-// --- 子组件 ---
 const NavLink = ({ href, children }) => (
   <Link href={href}><a className="opacity-40 hover:opacity-100 transition-opacity tracking-widest">{children}</a></Link>
 );
 
 const MobileNavLink = ({ href, children, onClick, index }) => (
   <Link href={href}>
-    <a onClick={onClick} className="text-5xl font-black tracking-tighter uppercase hover:text-blue-600 transition-all duration-500 block transform translate-x-0" style={{ transitionDelay: `${index * 60}ms` }}>
+    <a onClick={onClick} className="text-5xl font-black tracking-tighter uppercase hover:text-blue-600 transition-all duration-500 block" style={{ transitionDelay: `${index * 60}ms` }}>
       {children}
     </a>
   </Link>
