@@ -22,7 +22,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
   // --- 状态管理 ---
   const [currentPage, setCurrentPage] = useState(1);
   const [displayText, setDisplayText] = useState(''); 
-  const [wordIndex, setWordIndex] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
   const [showHero, setShowHero] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -77,8 +76,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
       }, 45);
     });
 
-    const wordTimer = setInterval(() => setWordIndex(p => (p + 1) % SCROLL_WORDS.length), 3000);
-
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -115,7 +112,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
     render();
 
     return () => { 
-      clearInterval(wordTimer); 
       clearInterval(hitokotoTimer);
       window.removeEventListener('resize', resize); 
       cancelAnimationFrame(animationFrameId);
@@ -200,16 +196,16 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
                 BUILDING
               </span>
 
-              {/* 2. 蓝条与滚动词：流光蓝色 */}
-              <div className="flex items-center gap-4 md:gap-8 my-2 md:my-4 h-[1.1em] overflow-hidden">
-                <div className="w-16 md:w-40 h-[clamp(0.6rem,1.5vw,1.2rem)] bg-blue-600 flex-shrink-0"></div>
-                <div
-                  className="transition-transform duration-[1200ms] ease-[cubic-bezier(0.85,0,0.15,1)] flex flex-col w-full"
-                  style={{ transform: `translateY(-${wordIndex * (100 / SCROLL_WORDS.length)}%)` }}
-                >
-                  {SCROLL_WORDS.map((w) => (
-                    <div key={w} className="h-[1.1em] text-metallic-blue flex items-center w-full">{w}</div>
+              {/* 2. 纯粹滚动词 (移除了装饰条，纯净展示) */}
+              <div className="flex items-center my-2 md:my-4 h-[1.1em] overflow-hidden">
+                <div className="flex flex-col w-full animate-text-scroll">
+                  {SCROLL_WORDS.map((w, index) => (
+                    <div key={index} className="h-[1.1em] text-metallic-blue flex items-center w-full">{w}</div>
                   ))}
+                  {/* 克隆第一个词，用于纯 CSS 无缝完美循环，再无空白期 */}
+                  <div aria-hidden="true" className="h-[1.1em] text-metallic-blue flex items-center w-full">
+                    {SCROLL_WORDS[0]}
+                  </div>
                 </div>
               </div>
             </h1>
@@ -303,6 +299,20 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); }
         .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
+
+        /* 纯 CSS 无缝循环动画：利用贝塞尔曲线做到停顿与急弹结合 */
+        @keyframes text-scroll {
+          0%, 15% { transform: translateY(0%); }
+          20%, 35% { transform: translateY(-16.666%); }
+          40%, 55% { transform: translateY(-33.333%); }
+          60%, 75% { transform: translateY(-50%); }
+          80%, 95% { transform: translateY(-66.666%); }
+          100% { transform: translateY(-83.333%); }
+        }
+
+        .animate-text-scroll {
+          animation: text-scroll 15s cubic-bezier(0.85, 0, 0.15, 1) infinite;
+        }
 
         @keyframes metallic-shine {
           0% { background-position: 0% center; }
