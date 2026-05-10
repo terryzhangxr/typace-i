@@ -186,7 +186,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
                 BUILDING
               </span>
 
-              {/* 纯粹滚动词：无破折号，极致干净 */}
               <div className="relative my-2 md:my-4 h-[1em] w-full overflow-hidden">
                 <div className="absolute top-0 left-0 w-full flex flex-col animate-text-scroll">
                   {SCROLL_WORDS.map((w, index) => (
@@ -194,7 +193,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
                       {w}
                     </div>
                   ))}
-                  {/* 克隆第一个词，无缝衔接 */}
                   <div aria-hidden="true" className="h-[1em] text-metallic-blue flex items-center leading-none">
                     {SCROLL_WORDS[0]}
                   </div>
@@ -204,13 +202,14 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
             </h1>
           </div>
 
-          {/* 底部信息条*/}
-          <div className={`absolute bottom-16 left-0 w-full px-6 md:px-0 flex flex-col md:flex-row md:items-end justify-between gap-8 transition-all duration-[1500ms] delay-500 ease-out ${showHero ? 'opacity-70 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <p className="max-w-md text-sm md:text-base font-mono leading-relaxed">
+          {/* 底部信息条：移除了容器上多余的 px-6，让其完全贴合父级网格的左边缘 */}
+          <div className={`absolute bottom-16 left-0 w-full flex flex-col md:flex-row md:items-end justify-between gap-6 md:gap-8 transition-all duration-[1500ms] delay-500 ease-out ${showHero ? 'opacity-70 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            <p className="max-w-md text-sm md:text-base font-mono leading-relaxed text-left">
               {displayText}<span className="inline-block w-2 md:w-2.5 h-4 md:h-5 bg-blue-600 ml-2 animate-pulse align-middle" />
             </p>
             
-            <div className="flex flex-col items-start md:items-end space-y-1.5 text-[9px] font-mono tracking-widest uppercase opacity-60">
+            {/* 系统状态：移动端靠左(items-start / text-left)，桌面端靠右(items-end / text-right) */}
+            <div className="flex flex-col items-start md:items-end space-y-1.5 text-[9px] font-mono tracking-widest uppercase opacity-60 text-left md:text-right">
               <div className="flex items-center space-x-2.5">
                 <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
                 <span>SYS.STATUS / ONLINE |</span>
@@ -299,7 +298,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); }
         .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
 
-       
         @keyframes text-scroll {
           0%, 15%   { transform: translateY(0); }
           20%, 35%  { transform: translateY(calc(-100% * 1 / 6)); }
@@ -318,7 +316,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
           100% { background-position: 200% center; }
         }
 
-        
         .text-metallic {
           background: linear-gradient(105deg, 
             #6b7280 0%,     /* 灰 500 */
@@ -335,7 +332,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
           animation: metallic-shine 14s ease-in-out infinite;
         }
 
-       
         .dark .text-metallic {
           background: linear-gradient(105deg, 
             #374151 0%,     /* 灰 700 */
@@ -352,7 +348,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
           animation: metallic-shine 14s ease-in-out infinite;
         }
 
-        
         .text-metallic-blue {
           background: linear-gradient(105deg, 
             #2563eb 0%, 
