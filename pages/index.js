@@ -166,57 +166,87 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
       <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
         
         {/* =========================================
-            全新 Flex 布局：防止遮挡的流光金属首屏
+            全新非对称网格：对角线视觉流 Hero
             ========================================= */}
-        <header className="min-h-screen flex flex-col items-center justify-between pt-32 pb-24 md:pt-40 md:pb-32 relative text-center">
+        <header className="min-h-screen pt-32 pb-24 md:pt-40 md:pb-32 relative flex flex-col justify-center">
           
-          {/* 背后氛围光（固定在中心） */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50vw] h-[50vw] max-w-[500px] max-h-[500px] bg-blue-500/5 dark:bg-blue-400/10 blur-[100px] rounded-full pointer-events-none z-0"></div>
+          {/* 背景环境光（偏右分布平衡视觉） */}
+          <div className="absolute top-1/2 right-0 md:right-1/4 -translate-y-1/2 w-[60vw] h-[60vw] max-w-[600px] max-h-[600px] bg-blue-500/10 dark:bg-blue-400/15 blur-[120px] rounded-full pointer-events-none z-0"></div>
 
-          {/* 1. 顶部微小系统标识 */}
-          <div className={`relative z-10 flex flex-col items-center space-y-3 transition-all duration-[1500ms] ease-out ${showHero ? 'opacity-50 translate-y-0' : 'opacity-0 -translate-y-6'}`}>
-            <span className="text-[9px] font-black tracking-[0.5em] uppercase border border-black/20 dark:border-white/20 px-4 py-1.5 rounded-full">
-              Digital Order · 2026
-            </span>
-          </div>
-
-          {/* 2. 居中巨型排版区 (占据主要弹性空间) */}
-          <div className={`relative z-10 flex-1 flex flex-col justify-center w-full my-12 transition-all duration-[1500ms] delay-150 ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
-            <h1 className="text-[clamp(3.2rem,10vw,11rem)] leading-[0.85] font-black tracking-tighter uppercase flex flex-col items-center justify-center">
-              
-              <span className="block text-metallic pb-1">BUILDING</span>
-
-              <div className="relative h-[1.2em] w-full overflow-hidden my-2 md:my-4 flex justify-center items-center">
-                <div
-                  className="transition-transform duration-[1000ms] ease-[cubic-bezier(0.85,0,0.15,1)] flex flex-col items-center w-full"
-                  style={{ transform: `translateY(-${wordIndex * (100 / SCROLL_WORDS.length)}%)` }}
-                >
-                  {SCROLL_WORDS.map((w) => (
-                    <div key={w} className="h-[1.2em] text-metallic-blue flex items-center justify-center w-full">{w}</div>
-                  ))}
-                </div>
-              </div>
-
-              <span className="block text-metallic pt-1">SYSTEMS.</span>
-            </h1>
-          </div>
-
-          {/* 3. 底部一言与仪表盘信息 (自然排布在底部) */}
-          <div className={`relative z-10 flex flex-col items-center space-y-6 transition-all duration-[1500ms] delay-500 ease-out ${showHero ? 'opacity-80 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <p className="max-w-xl text-sm md:text-base font-medium leading-relaxed font-mono text-center px-4">
-              {displayText}<span className="inline-block w-2 md:w-2.5 h-4 md:h-5 bg-blue-600 ml-2 animate-pulse align-middle" />
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-4 relative z-10 w-full h-full">
             
-            <div className="flex items-center space-x-6 text-[9px] font-mono tracking-widest uppercase opacity-40">
-              <div className="flex items-center space-x-2">
-                <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse"></div>
-                <span>Sync_Active</span>
+            {/* 左侧：核心排版区 */}
+            <div className={`md:col-span-8 flex flex-col justify-center transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'translate-x-0 opacity-100' : '-translate-x-12 opacity-0'}`}>
+              
+              {/* 微型标识 */}
+              <div className="flex items-center space-x-4 mb-8 md:mb-16">
+                <div className="w-4 h-4 border border-black/30 dark:border-white/30 flex items-center justify-center">
+                  <div className="w-1 h-1 bg-current"></div>
+                </div>
+                <span className="text-[9px] font-black tracking-[0.4em] uppercase opacity-60">
+                  Phase_01 / Engine
+                </span>
               </div>
-              <span className="hidden md:inline">|</span>
-              <span className="hidden md:inline">Core: Optimal</span>
-            </div>
-          </div>
 
+              {/* 左对齐巨幕排版 */}
+              <h1 className="text-[clamp(3.8rem,9.5vw,10rem)] leading-[0.88] font-black tracking-tighter uppercase">
+                
+                {/* 描边特效字体 */}
+                <span 
+                  className="block text-transparent pb-1 transition-colors duration-700 hover:text-black/5 dark:hover:text-white/5"
+                  style={{ WebkitTextStroke: isDarkMode ? '1.5px rgba(255,255,255,0.85)' : '1.5px rgba(0,0,0,0.85)' }}
+                >
+                  BUILDING
+                </span>
+
+                <div className="relative h-[1.2em] w-full overflow-hidden my-3 md:my-5 flex items-center">
+                  {/* 蓝条装饰块 */}
+                  <div className="hidden md:block w-16 md:w-24 h-[clamp(0.6rem,1.5vw,1rem)] bg-blue-600 mr-6 md:mr-8 flex-shrink-0"></div>
+                  <div
+                    className="transition-transform duration-[1000ms] ease-[cubic-bezier(0.85,0,0.15,1)] flex flex-col w-full"
+                    style={{ transform: `translateY(-${wordIndex * (100 / SCROLL_WORDS.length)}%)` }}
+                  >
+                    {SCROLL_WORDS.map((w) => (
+                      <div key={w} className="h-[1.2em] text-metallic-blue flex items-center w-full">{w}</div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 流光金属实心字 */}
+                <span className="block text-metallic pt-1">SYSTEMS.</span>
+              </h1>
+            </div>
+
+            {/* 右侧：功能信息区 (放置在网格底部，形成对角线) */}
+            <div className={`md:col-span-4 flex flex-col justify-end md:items-end text-left md:text-right mt-16 md:mt-0 pb-4 transition-all duration-[1500ms] delay-500 ease-out ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+              
+              {/* 打字机 */}
+              <div className="border-l-2 md:border-l-0 md:border-r-2 border-blue-600 pl-4 md:pl-0 md:pr-4 py-1 mb-8 md:mb-12">
+                <p className="max-w-[280px] text-sm md:text-sm font-medium leading-relaxed font-mono opacity-80">
+                  {displayText}<span className="inline-block w-2 h-4 bg-blue-600 ml-1.5 animate-pulse align-middle" />
+                </p>
+              </div>
+
+              {/* 仪表盘数据栈 */}
+              <div className="flex flex-col space-y-3 text-[10px] font-mono tracking-widest uppercase opacity-50">
+                <div className="flex items-center md:justify-end space-x-3">
+                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
+                  <span>Net: Connected</span>
+                </div>
+                <span>Render: 60FPS / 0ms</span>
+                <span>Lat: 1.3521° N</span>
+              </div>
+              
+              {/* 装饰刻度 */}
+              <div className="mt-8 flex space-x-1 opacity-20">
+                {[...Array(12)].map((_, i) => (
+                  <div key={i} className={`h-1 bg-current ${i % 4 === 0 ? 'w-4' : 'w-1'}`}></div>
+                ))}
+              </div>
+
+            </div>
+
+          </div>
         </header>
 
         {/* --- 文章列表区 --- */}
@@ -299,7 +329,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); }
         .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
 
-        /* 呼吸式往复流光，比单向 linear 更自然 */
         @keyframes metallic-shine {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
@@ -328,7 +357,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
           animation: metallic-shine 8s ease-in-out infinite;
         }
 
-        /* 金属蓝滚动字：调和对比度，更顺滑的渐变 */
+        /* 金属蓝滚动字 */
         .text-metallic-blue {
           background: linear-gradient(105deg, #1e3a8a 0%, #3b82f6 25%, #93c5fd 50%, #3b82f6 75%, #1e3a8a 100%);
           background-size: 200% auto;
