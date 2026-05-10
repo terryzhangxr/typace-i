@@ -8,7 +8,7 @@ import Link from 'next/link';
 const POSTS_PER_PAGE = 10;
 const SCROLL_WORDS = ["Modern", "Scalable", "Performant", "Minimalist", "Elegant"];
 
-// 自定义背景图配置（填入图片 URL 或相对路径，留空则使用默认极简纯色）
+// 自定义背景图配置
 const BG_IMAGES = {
   light: "", 
   dark: ""   
@@ -47,7 +47,8 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
 
   useEffect(() => {
     setIsMounted(true);
-    setTimeout(() => setShowHero(true), 150);
+    // 缩短初始延迟，让开屏更早触发，感觉更迅捷
+    setTimeout(() => setShowHero(true), 50);
 
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) setIsArticlesVisible(true); },
@@ -135,7 +136,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
       </Head>
 
-      <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
+      <nav className={`fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl transition-all duration-1000 ease-out ${showHero ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
         <div className="max-w-[1440px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
           <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity z-50">TYPACE</a></Link>
           
@@ -179,7 +180,11 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         
         <header className="min-h-screen pt-32 pb-24 flex flex-col justify-center relative">
           
-          <div className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+          {/* 优化核心：加入 blur 滤镜过渡与更紧凑的时间轴 */}
+          <div 
+            className={`transition-all duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] transform-gpu ${showHero ? 'translate-y-0 opacity-100 blur-0' : 'translate-y-12 opacity-0 blur-md'}`}
+            style={{ willChange: 'transform, opacity, filter' }}
+          >
             <h1 className="text-[clamp(3.8rem,11.5vw,13rem)] leading-none font-black tracking-tighter uppercase flex flex-col">
               
               <span className="block text-metallic pb-2 md:pb-4">
@@ -202,13 +207,15 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
             </h1>
           </div>
 
-          {/* 底部信息条：移除了容器上多余的 px-6，让其完全贴合父级网格的左边缘 */}
-          <div className={`absolute bottom-16 left-0 w-full flex flex-col md:flex-row md:items-end justify-between gap-6 md:gap-8 transition-all duration-[1500ms] delay-500 ease-out ${showHero ? 'opacity-70 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          {/* 底部信息条：缩短 delay (200ms)，增加 blur 效果使其流畅浮现 */}
+          <div 
+            className={`absolute bottom-16 left-0 w-full flex flex-col md:flex-row md:items-end justify-between gap-6 md:gap-8 transition-all duration-[1200ms] delay-200 ease-[cubic-bezier(0.16,1,0.3,1)] transform-gpu ${showHero ? 'opacity-70 translate-y-0 blur-0' : 'opacity-0 translate-y-6 blur-md'}`}
+            style={{ willChange: 'transform, opacity, filter' }}
+          >
             <p className="max-w-md text-sm md:text-base font-mono leading-relaxed text-left">
               {displayText}<span className="inline-block w-2 md:w-2.5 h-4 md:h-5 bg-blue-600 ml-2 animate-pulse align-middle" />
             </p>
             
-            {/* 系统状态：移动端靠左(items-start / text-left)，桌面端靠右(items-end / text-right) */}
             <div className="flex flex-col items-start md:items-end space-y-1.5 text-[9px] font-mono tracking-widest uppercase opacity-60 text-left md:text-right">
               <div className="flex items-center space-x-2.5">
                 <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
@@ -290,7 +297,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
       </footer>
 
       {/* =======================
-          光泽与滚动样式
+          动画样式核心
           ======================= */}
       <style jsx global>{`
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
