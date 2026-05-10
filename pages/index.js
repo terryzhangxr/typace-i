@@ -44,21 +44,18 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
     
     setTimeout(() => setShowHero(true), 150);
 
-    // 1. 滚动可见性监听
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) setIsArticlesVisible(true); },
       { threshold: 0.05, rootMargin: "0px 0px -50px 0px" }
     );
     if (articlesRef.current) observer.observe(articlesRef.current);
 
-    // 2. 移动端菜单开启时锁定滚动
     if (isMobileMenuOpen || isSearchOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
 
-    // 3. 一言打字机
     let hitokotoTimer;
     fetch('https://v1.hitokoto.cn').then(res => res.json()).then(data => {
       let i = 0;
@@ -69,10 +66,8 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
       }, 45);
     });
 
-    // 4. 单词滚动
-    const wordTimer = setInterval(() => setWordIndex(p => (p + 1) % SCROLL_WORDS.length), 3000);
+    const wordTimer = setInterval(() => setWordIndex(p => (p + 1) % SCROLL_WORDS.length), 2500);
 
-    // 5. 矩阵粒子系统
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -126,7 +121,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
 
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-100" />
 
-      {/* --- 顶部导航栏 (保持不变) --- */}
+      {/* --- 顶部导航栏 --- */}
       <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
           <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity z-50">TYPACE</a></Link>
@@ -158,7 +153,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
               <MobileNavLink href="/tags" onClick={() => setIsMobileMenuOpen(false)} index={3}>Tags</MobileNavLink>
               <MobileNavLink href="/about" onClick={() => setIsMobileMenuOpen(false)} index={4}>About</MobileNavLink>
             </div>
-            
             <div className="mt-auto pb-16 border-t border-black/5 dark:border-white/10 pt-8 flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest opacity-40">System Theme</span>
               <button onClick={toggleDarkMode} className="text-xs font-bold uppercase tracking-widest border border-black/10 dark:border-white/10 px-6 py-2 rounded-full active:scale-95 transition-all">
@@ -169,78 +163,63 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         </div>
       </nav>
 
-      <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-40 md:pt-48 pb-32 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
+      <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-20 md:pt-0 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
         
         {/* =========================================
-            全新升级的高级感首屏 (Hero Section) 
+            全新升级：中置对称流光金属首屏
             ========================================= */}
-        <header className="min-h-[75vh] md:min-h-[85vh] relative flex flex-col justify-center mb-32 md:mb-56">
+        <header className="min-h-[85vh] md:min-h-screen flex flex-col items-center justify-center relative mb-24 md:mb-40 text-center">
           
-          {/* 左上角极简装饰条 */}
-          <div className={`absolute top-0 left-0 flex items-center space-x-4 md:space-x-6 transition-all duration-[2000ms] delay-300 ease-out ${showHero ? 'opacity-40 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
-            <div className="h-[1px] w-8 md:w-16 bg-black dark:bg-white"></div>
-            <span className="text-[9px] font-mono tracking-[0.4em] uppercase">Init_Phase // V_2.0.26</span>
+          {/* 顶部微小系统标识 */}
+          <div className={`absolute top-1/4 md:top-32 flex flex-col items-center space-y-3 transition-all duration-[2000ms] delay-300 ease-out ${showHero ? 'opacity-50 translate-y-0' : 'opacity-0 -translate-y-10'}`}>
+            <span className="text-[9px] font-black tracking-[0.5em] uppercase border border-black/20 dark:border-white/20 px-4 py-1.5 rounded-full">
+              Digital Order · 2026
+            </span>
           </div>
 
-          {/* 巨幅排版区 */}
-          <div className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] z-10 w-full ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0'}`}>
-            <h1 className="text-[clamp(3.8rem,10.5vw,11rem)] leading-[0.85] font-black tracking-tighter uppercase flex flex-col">
-              
-              <span className="block opacity-90 transition-opacity">BUILDING</span>
+          {/* 背后若隐若现的发光轮廓（增强金属反光感） */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] max-w-[600px] max-h-[600px] bg-blue-500/5 dark:bg-blue-400/10 blur-[100px] rounded-full pointer-events-none z-0"></div>
 
-              <div className="flex items-center gap-4 md:gap-8 my-1 md:my-3">
-                <div className="hidden md:block w-12 md:w-28 h-[clamp(0.6rem,1.5vw,1rem)] bg-blue-600 flex-shrink-0"></div>
-                <div className="relative h-[1.1em] overflow-hidden w-full">
-                  <div
-                    className="transition-transform duration-[1000ms] delay-300 ease-[cubic-bezier(0.85,0,0.15,1)]"
-                    style={{ transform: `translateY(-${wordIndex * 20}%)` }}
-                  >
-                    {SCROLL_WORDS.map((w) => (
-                      <div key={w} className="h-[1.1em] text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-400 dark:from-blue-500 dark:to-blue-300 flex items-center">{w}</div>
-                    ))}
-                  </div>
+          {/* 巨型中置排版 */}
+          <div className={`relative z-10 transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] w-full ${showHero ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
+            <h1 className="text-[clamp(3.5rem,11vw,12rem)] leading-[0.85] font-black tracking-tighter uppercase flex flex-col items-center justify-center">
+              
+              <span className="block text-metallic">BUILDING</span>
+
+              <div className="relative h-[1em] w-full overflow-hidden my-3 md:my-5 flex justify-center items-center">
+                <div
+                  className="transition-transform duration-[1000ms] ease-[cubic-bezier(0.85,0,0.15,1)] flex flex-col items-center w-full"
+                  style={{ transform: `translateY(-${wordIndex * 20}%)` }}
+                >
+                  {SCROLL_WORDS.map((w) => (
+                    <div key={w} className="h-[1em] text-metallic-blue flex items-center justify-center w-full">{w}</div>
+                  ))}
                 </div>
               </div>
 
-              {/* 引入描边文字效果增加层次感 */}
-              <span 
-                className="block text-transparent transition-all duration-700 hover:text-black dark:hover:text-white" 
-                style={{ WebkitTextStroke: isDarkMode ? '1.5px rgba(255,255,255,0.8)' : '1.5px rgba(0,0,0,0.8)' }}
-              >
-                SYSTEMS.
-              </span>
+              <span className="block text-metallic">SYSTEMS.</span>
             </h1>
           </div>
 
-          {/* 底部打字机面板 & 科技仪表盘组合 */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 mt-16 md:mt-32 border-t border-black/10 dark:border-white/10 pt-10 relative">
+          {/* 底部居中一言与仪表盘信息 */}
+          <div className={`absolute bottom-24 md:bottom-32 flex flex-col items-center space-y-6 transition-all duration-[2000ms] delay-700 ease-out ${showHero ? 'opacity-80 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+            <p className="max-w-xl text-sm md:text-base font-medium leading-relaxed font-mono text-center">
+              {displayText}<span className="inline-block w-2 md:w-2.5 h-4 md:h-5 bg-blue-600 ml-2 animate-pulse align-middle" />
+            </p>
             
-            <div className={`md:col-span-8 transition-all duration-[1800ms] delay-700 ease-out ${showHero ? 'opacity-80 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              <p className="max-w-2xl text-sm md:text-lg font-medium leading-relaxed font-mono">
-                {displayText}<span className="inline-block w-2 md:w-3 h-4 md:h-5 bg-blue-600 ml-2 animate-pulse align-middle" />
-              </p>
-            </div>
-
-            {/* 右侧高级数据组件 */}
-            <div className={`md:col-span-4 hidden md:flex flex-col items-end justify-end space-y-3 text-right transition-all duration-[2000ms] delay-1000 ease-out ${showHero ? 'opacity-40 translate-x-0' : 'opacity-0 translate-x-8'}`}>
-              <div className="flex items-center space-x-3">
-                <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-ping"></div>
-                <span className="text-[10px] font-mono tracking-widest uppercase">Sys.Status : Online</span>
+            <div className="flex items-center space-x-6 text-[9px] font-mono tracking-widest uppercase opacity-40">
+              <div className="flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse"></div>
+                <span>Sync_Active</span>
               </div>
-              <span className="text-[10px] font-mono tracking-widest uppercase">Lat: 1.3521° N, Lon: 103.8198° E</span>
-              <div className="h-px w-12 bg-current mt-2 opacity-30"></div>
+              <span className="hidden md:inline">|</span>
+              <span className="hidden md:inline">Core: Optimal</span>
             </div>
-          </div>
-
-          {/* 垂直滚动引导器 (Scroll Indicator) */}
-          <div className={`absolute -bottom-16 md:-bottom-24 left-0 hidden md:flex flex-col items-center space-y-4 transition-all duration-[2000ms] delay-1000 ${showHero ? 'opacity-30' : 'opacity-0'}`}>
-            <span className="text-[9px] font-mono tracking-[0.5em] [writing-mode:vertical-lr] uppercase">Scroll</span>
-            <div className="w-[1px] h-16 bg-gradient-to-b from-current to-transparent animate-pulse"></div>
           </div>
 
         </header>
 
-        {/* --- 文章列表区 (保持不变) --- */}
+        {/* --- 文章列表区 --- */}
         <section 
           ref={articlesRef}
           className={`transition-all duration-[1200ms] ease-[cubic-bezier(0.2,0,0.2,1)] ${
@@ -277,7 +256,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         </section>
       </main>
 
-      {/* --- 搜索系统 (保持不变) --- */}
+      {/* --- 搜索系统 --- */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[150] flex items-start justify-center pt-[10vh] px-8">
           <div className="absolute inset-0 bg-white/98 dark:bg-black/98 backdrop-blur-2xl" onClick={() => setIsSearchOpen(false)} />
@@ -305,17 +284,70 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         </div>
       )}
 
-      {/* --- Footer (保持不变) --- */}
+      {/* --- Footer --- */}
       <footer className={`max-w-[1440px] mx-auto px-10 py-24 flex justify-between items-center opacity-20 text-[9px] font-bold tracking-[0.5em] uppercase border-t border-black/5 dark:border-white/10 transition-all ${isMobileMenuOpen ? 'blur-2xl' : 'blur-0'}`}>
         <span>© TYPACE SYSTEM 2026</span>
         <span className="hidden sm:inline">ENGINEERED FOR THE WEB</span>
       </footer>
 
+      {/* =========================================
+          全局样式与流光金属特效
+          ========================================= */}
       <style jsx global>{`
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); }
         .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
+
+        @keyframes metallic-shine {
+          0% { background-position: 0% center; }
+          100% { background-position: 200% center; }
+        }
+
+        /* 浅色模式：液态银质感 */
+        .text-metallic {
+          background: linear-gradient(to right, #4b5563 0%, #d1d5db 20%, #ffffff 40%, #9ca3af 60%, #4b5563 100%);
+          background-size: 200% auto;
+          color: transparent;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: metallic-shine 7s linear infinite;
+          filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.1));
+        }
+
+        /* 暗黑模式：钛合金反光质感 */
+        .dark .text-metallic {
+          background: linear-gradient(to right, #111827 0%, #6b7280 20%, #f3f4f6 40%, #4b5563 60%, #111827 100%);
+          background-size: 200% auto;
+          color: transparent;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: metallic-shine 7s linear infinite;
+          filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.5));
+        }
+
+        /* 金属蓝滚动字 */
+        .text-metallic-blue {
+          background: linear-gradient(to right, #1e3a8a 0%, #3b82f6 20%, #bfdbfe 40%, #2563eb 60%, #1e3a8a 100%);
+          background-size: 200% auto;
+          color: transparent;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: metallic-shine 6s linear infinite;
+        }
+
+        .dark .text-metallic-blue {
+          background: linear-gradient(to right, #172554 0%, #2563eb 20%, #93c5fd 40%, #1d4ed8 60%, #172554 100%);
+          background-size: 200% auto;
+          color: transparent;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: metallic-shine 6s linear infinite;
+        }
       `}</style>
     </div>
   );
