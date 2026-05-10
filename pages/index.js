@@ -213,8 +213,8 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
             <div className="flex flex-col items-start md:items-end space-y-1.5 text-[9px] font-mono tracking-widest uppercase opacity-60">
               <div className="flex items-center space-x-2.5">
                 <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
-                <span>SYS.STATUS / ONLINE</span>
-                <span>Location / Shanghai</span>
+                <span>SYS.STATUS / ONLINE |</span>
+                <span> Location / Shanghai</span>
               </div>
               <span className="opacity-60">All nodes operational</span>
             </div>
