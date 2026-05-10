@@ -8,7 +8,7 @@ import Link from 'next/link';
 const POSTS_PER_PAGE = 10;
 const SCROLL_WORDS = ["Modern", "Scalable", "Performant", "Minimalist", "Elegant"];
 
-// 自定义背景图配置（填入图片 URL 或相对路径，留空则使用默认极简纯色）
+// 自定义背景图配置
 const BG_IMAGES = {
   light: "", 
   dark: ""   
@@ -19,7 +19,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
   const articlesRef = useRef(null);
   const router = useRouter();
 
-  // --- 状态管理 ---
   const [currentPage, setCurrentPage] = useState(1);
   const [displayText, setDisplayText] = useState(''); 
   const [isMounted, setIsMounted] = useState(false);
@@ -29,11 +28,9 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
   const [isArticlesVisible, setIsArticlesVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 动态读取背景配置
   const currentBgImage = isDarkMode ? BG_IMAGES.dark : BG_IMAGES.light;
   const hasCustomBg = !!currentBgImage;
 
-  // --- 核心逻辑：分页与搜索 ---
   const totalPages = Math.ceil(allPostsData.length / POSTS_PER_PAGE);
   const paginatedPosts = useMemo(() => {
     const start = (currentPage - 1) * POSTS_PER_PAGE;
@@ -48,10 +45,8 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
     ).slice(0, 6);
   }, [searchQuery, allPostsData]);
 
-  // --- 副作用控制系统 ---
   useEffect(() => {
     setIsMounted(true);
-    
     setTimeout(() => setShowHero(true), 150);
 
     const observer = new IntersectionObserver(
@@ -129,12 +124,10 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         backgroundAttachment: 'fixed',
       } : {}}
     >
-      {/* 背景遮罩层 */}
       {hasCustomBg && (
         <div className={`fixed inset-0 pointer-events-none z-0 transition-colors duration-700 ${isDarkMode ? 'bg-black/75' : 'bg-white/80'}`}></div>
       )}
 
-      {/* 粒子层 */}
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-100" />
 
       <Head>
@@ -142,7 +135,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
       </Head>
 
-      {/* --- 顶部导航栏 --- */}
       <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
           <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity z-50">TYPACE</a></Link>
@@ -165,7 +157,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
           </div>
         </div>
 
-        {/* 移动端菜单 */}
         <div className={`fixed inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-3xl transition-all duration-500 md:hidden z-40 ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
           <div className="flex flex-col px-10 pt-32 h-full">
             <div className="flex flex-col space-y-6">
@@ -189,32 +180,40 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         <header className="min-h-screen pt-32 pb-24 flex flex-col justify-center relative">
           
           <div className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
-            {/* 这里的行高设置了 0.85 使得整体紧凑 */}
-            <h1 className="text-[clamp(3.8rem,11.5vw,13rem)] leading-[0.85] font-black tracking-tighter uppercase">
+            {/* 严格锁定行高 leading-none 防止任何外边距溢出 */}
+            <h1 className="text-[clamp(3.8rem,11.5vw,13rem)] leading-none font-black tracking-tighter uppercase flex flex-col">
               
               {/* 1. BUILDING：流光实心填充 */}
               <span className="block text-metallic pb-2 md:pb-4">
                 BUILDING
               </span>
 
-              {/* 2. 纯粹滚动词 (高度精准固定在 1.2em，防压缩) */}
-              <div className="flex items-center my-2 md:my-4 h-[1.2em] overflow-hidden">
-                <div className="flex flex-col w-full animate-text-scroll">
-                  {SCROLL_WORDS.map((w, index) => (
-                    <div key={index} className="h-[1.2em] flex-shrink-0 text-metallic-blue flex items-center w-full leading-none">
-                      {w}
+              {/* 2. 纯粹滚动词 (绝对定位方案) */}
+              <div className="flex items-center my-2 md:my-4 h-[1em] overflow-hidden relative">
+                
+                {/* 蓝条装饰 */}
+                <div className="w-16 md:w-32 h-[clamp(0.6rem,1.5vw,1rem)] bg-blue-600 mr-6 md:mr-8 flex-shrink-0 z-10"></div>
+                
+                {/* 外层定高容器 */}
+                <div className="relative h-[1em] w-full overflow-hidden">
+                  {/* 内层绝对定位滚动轨道 */}
+                  <div className="absolute top-0 left-0 w-full flex flex-col animate-text-scroll">
+                    {SCROLL_WORDS.map((w, index) => (
+                      <div key={index} className="h-[1em] text-metallic-blue flex items-center leading-none">
+                        {w}
+                      </div>
+                    ))}
+                    {/* 克隆第一个词 */}
+                    <div aria-hidden="true" className="h-[1em] text-metallic-blue flex items-center leading-none">
+                      {SCROLL_WORDS[0]}
                     </div>
-                  ))}
-                  {/* 克隆第一个词，用于纯 CSS 无缝完美循环 */}
-                  <div aria-hidden="true" className="h-[1.2em] flex-shrink-0 text-metallic-blue flex items-center w-full leading-none">
-                    {SCROLL_WORDS[0]}
                   </div>
                 </div>
+
               </div>
             </h1>
           </div>
 
-          {/* 底部信息条 */}
           <div className={`absolute bottom-16 left-0 w-full px-6 md:px-0 flex flex-col md:flex-row md:items-end justify-between gap-8 transition-all duration-[1500ms] delay-500 ease-out ${showHero ? 'opacity-60 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <p className="max-w-md text-sm md:text-base font-mono leading-relaxed">
               {displayText}<span className="inline-block w-2 md:w-2.5 h-4 md:h-5 bg-blue-600 ml-2 animate-pulse align-middle" />
@@ -226,7 +225,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
 
         </header>
 
-        {/* --- 文章列表区 --- */}
         <section 
           ref={articlesRef}
           className={`transition-all duration-[1200ms] ease-[cubic-bezier(0.2,0,0.2,1)] ${
@@ -263,7 +261,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         </section>
       </main>
 
-      {/* --- 搜索系统 --- */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[150] flex items-start justify-center pt-[10vh] px-8">
           <div className="absolute inset-0 bg-white/98 dark:bg-black/98 backdrop-blur-2xl" onClick={() => setIsSearchOpen(false)} />
@@ -296,21 +293,26 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         <span className="hidden sm:inline">ENGINEERED FOR THE WEB</span>
       </footer>
 
-      {/* 极简样式与舒服的金属动画 */}
+      {/* =======================
+          终极样式修复区域
+          ======================= */}
       <style jsx global>{`
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); }
         .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
 
-        /* 使用极其精确的 em 单位进行位移，彻底解决对齐空隙问题 */
+        /* 终极防偏移算法：
+          容器内有 6 个元素(5个词+1个克隆)，每次精准上移 1/6 (即 16.6666%)
+          无论外部字体多大、行高如何压缩，自身百分比计算绝不会出现间隙！
+        */
         @keyframes text-scroll {
           0%, 15%   { transform: translateY(0); }
-          20%, 35%  { transform: translateY(-1.2em); }
-          40%, 55%  { transform: translateY(-2.4em); }
-          60%, 75%  { transform: translateY(-3.6em); }
-          80%, 95%  { transform: translateY(-4.8em); }
-          100%      { transform: translateY(-6.0em); }
+          20%, 35%  { transform: translateY(calc(-100% * 1 / 6)); }
+          40%, 55%  { transform: translateY(calc(-100% * 2 / 6)); }
+          60%, 75%  { transform: translateY(calc(-100% * 3 / 6)); }
+          80%, 95%  { transform: translateY(calc(-100% * 4 / 6)); }
+          100%      { transform: translateY(calc(-100% * 5 / 6)); }
         }
 
         .animate-text-scroll {
@@ -322,7 +324,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
           100% { background-position: 200% center; }
         }
 
-        /* 舒服的金属流光 - 周期延长至 12s，缓动平滑 */
+        /* 舒服的金属流光 */
         .text-metallic {
           background: linear-gradient(105deg, 
             rgba(75,85,99,1) 0%, 
