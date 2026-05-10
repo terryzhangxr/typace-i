@@ -189,6 +189,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         <header className="min-h-screen pt-32 pb-24 flex flex-col justify-center relative">
           
           <div className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+            {/* 这里的行高设置了 0.85 使得整体紧凑 */}
             <h1 className="text-[clamp(3.8rem,11.5vw,13rem)] leading-[0.85] font-black tracking-tighter uppercase">
               
               {/* 1. BUILDING：流光实心填充 */}
@@ -196,14 +197,16 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
                 BUILDING
               </span>
 
-              {/* 2. 纯粹滚动词 (移除了装饰条，纯净展示) */}
-              <div className="flex items-center my-2 md:my-4 h-[1.1em] overflow-hidden">
+              {/* 2. 纯粹滚动词 (高度精准固定在 1.2em，防压缩) */}
+              <div className="flex items-center my-2 md:my-4 h-[1.2em] overflow-hidden">
                 <div className="flex flex-col w-full animate-text-scroll">
                   {SCROLL_WORDS.map((w, index) => (
-                    <div key={index} className="h-[1.1em] text-metallic-blue flex items-center w-full">{w}</div>
+                    <div key={index} className="h-[1.2em] flex-shrink-0 text-metallic-blue flex items-center w-full leading-none">
+                      {w}
+                    </div>
                   ))}
-                  {/* 克隆第一个词，用于纯 CSS 无缝完美循环，再无空白期 */}
-                  <div aria-hidden="true" className="h-[1.1em] text-metallic-blue flex items-center w-full">
+                  {/* 克隆第一个词，用于纯 CSS 无缝完美循环 */}
+                  <div aria-hidden="true" className="h-[1.2em] flex-shrink-0 text-metallic-blue flex items-center w-full leading-none">
                     {SCROLL_WORDS[0]}
                   </div>
                 </div>
@@ -300,14 +303,14 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); }
         .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
 
-        /* 纯 CSS 无缝循环动画：利用贝塞尔曲线做到停顿与急弹结合 */
+        /* 使用极其精确的 em 单位进行位移，彻底解决对齐空隙问题 */
         @keyframes text-scroll {
-          0%, 15% { transform: translateY(0%); }
-          20%, 35% { transform: translateY(-16.666%); }
-          40%, 55% { transform: translateY(-33.333%); }
-          60%, 75% { transform: translateY(-50%); }
-          80%, 95% { transform: translateY(-66.666%); }
-          100% { transform: translateY(-83.333%); }
+          0%, 15%   { transform: translateY(0); }
+          20%, 35%  { transform: translateY(-1.2em); }
+          40%, 55%  { transform: translateY(-2.4em); }
+          60%, 75%  { transform: translateY(-3.6em); }
+          80%, 95%  { transform: translateY(-4.8em); }
+          100%      { transform: translateY(-6.0em); }
         }
 
         .animate-text-scroll {
