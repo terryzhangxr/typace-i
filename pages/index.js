@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 // --- 全局配置区 ---
 const POSTS_PER_PAGE = 10;
-const SCROLL_WORDS = ["Modern", "Scalable", "Performant", "Minimalist", "Elegant"];
+const SCROLL_WORDS = ["Modern", "Scalable", "Minimalist", "Efficient", "Elegant"];
 
 // 自定义背景图配置
 const BG_IMAGES = {
