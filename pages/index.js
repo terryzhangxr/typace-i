@@ -66,7 +66,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
       }, 45);
     });
 
-    const wordTimer = setInterval(() => setWordIndex(p => (p + 1) % SCROLL_WORDS.length), 2500);
+    const wordTimer = setInterval(() => setWordIndex(p => (p + 1) % SCROLL_WORDS.length), 3000);
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -163,47 +163,47 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         </div>
       </nav>
 
-      <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-20 md:pt-0 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
+      <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
         
         {/* =========================================
-            全新升级：中置对称流光金属首屏
+            全新 Flex 布局：防止遮挡的流光金属首屏
             ========================================= */}
-        <header className="min-h-[85vh] md:min-h-screen flex flex-col items-center justify-center relative mb-24 md:mb-40 text-center">
+        <header className="min-h-screen flex flex-col items-center justify-between pt-32 pb-24 md:pt-40 md:pb-32 relative text-center">
           
-          {/* 顶部微小系统标识 */}
-          <div className={`absolute top-1/4 md:top-32 flex flex-col items-center space-y-3 transition-all duration-[2000ms] delay-300 ease-out ${showHero ? 'opacity-50 translate-y-0' : 'opacity-0 -translate-y-10'}`}>
+          {/* 背后氛围光（固定在中心） */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50vw] h-[50vw] max-w-[500px] max-h-[500px] bg-blue-500/5 dark:bg-blue-400/10 blur-[100px] rounded-full pointer-events-none z-0"></div>
+
+          {/* 1. 顶部微小系统标识 */}
+          <div className={`relative z-10 flex flex-col items-center space-y-3 transition-all duration-[1500ms] ease-out ${showHero ? 'opacity-50 translate-y-0' : 'opacity-0 -translate-y-6'}`}>
             <span className="text-[9px] font-black tracking-[0.5em] uppercase border border-black/20 dark:border-white/20 px-4 py-1.5 rounded-full">
               Digital Order · 2026
             </span>
           </div>
 
-          {/* 背后若隐若现的发光轮廓（增强金属反光感） */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] max-w-[600px] max-h-[600px] bg-blue-500/5 dark:bg-blue-400/10 blur-[100px] rounded-full pointer-events-none z-0"></div>
-
-          {/* 巨型中置排版 */}
-          <div className={`relative z-10 transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] w-full ${showHero ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
-            <h1 className="text-[clamp(3.5rem,11vw,12rem)] leading-[0.85] font-black tracking-tighter uppercase flex flex-col items-center justify-center">
+          {/* 2. 居中巨型排版区 (占据主要弹性空间) */}
+          <div className={`relative z-10 flex-1 flex flex-col justify-center w-full my-12 transition-all duration-[1500ms] delay-150 ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
+            <h1 className="text-[clamp(3.2rem,10vw,11rem)] leading-[0.85] font-black tracking-tighter uppercase flex flex-col items-center justify-center">
               
-              <span className="block text-metallic">BUILDING</span>
+              <span className="block text-metallic pb-1">BUILDING</span>
 
-              <div className="relative h-[1em] w-full overflow-hidden my-3 md:my-5 flex justify-center items-center">
+              <div className="relative h-[1.2em] w-full overflow-hidden my-2 md:my-4 flex justify-center items-center">
                 <div
                   className="transition-transform duration-[1000ms] ease-[cubic-bezier(0.85,0,0.15,1)] flex flex-col items-center w-full"
-                  style={{ transform: `translateY(-${wordIndex * 20}%)` }}
+                  style={{ transform: `translateY(-${wordIndex * (100 / SCROLL_WORDS.length)}%)` }}
                 >
                   {SCROLL_WORDS.map((w) => (
-                    <div key={w} className="h-[1em] text-metallic-blue flex items-center justify-center w-full">{w}</div>
+                    <div key={w} className="h-[1.2em] text-metallic-blue flex items-center justify-center w-full">{w}</div>
                   ))}
                 </div>
               </div>
 
-              <span className="block text-metallic">SYSTEMS.</span>
+              <span className="block text-metallic pt-1">SYSTEMS.</span>
             </h1>
           </div>
 
-          {/* 底部居中一言与仪表盘信息 */}
-          <div className={`absolute bottom-24 md:bottom-32 flex flex-col items-center space-y-6 transition-all duration-[2000ms] delay-700 ease-out ${showHero ? 'opacity-80 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            <p className="max-w-xl text-sm md:text-base font-medium leading-relaxed font-mono text-center">
+          {/* 3. 底部一言与仪表盘信息 (自然排布在底部) */}
+          <div className={`relative z-10 flex flex-col items-center space-y-6 transition-all duration-[1500ms] delay-500 ease-out ${showHero ? 'opacity-80 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            <p className="max-w-xl text-sm md:text-base font-medium leading-relaxed font-mono text-center px-4">
               {displayText}<span className="inline-block w-2 md:w-2.5 h-4 md:h-5 bg-blue-600 ml-2 animate-pulse align-middle" />
             </p>
             
@@ -238,7 +238,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
           </div>
 
           {totalPages > 1 && (
-            <div className="mt-24 flex items-center justify-between border-t border-black/5 dark:border-white/10 pt-10">
+            <div className="mt-24 flex items-center justify-between border-t border-black/5 dark:border-white/10 pt-10 mb-10">
               <div className="flex gap-4">
                 {Array.from({ length: totalPages }).map((_, i) => (
                   <button
@@ -291,7 +291,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
       </footer>
 
       {/* =========================================
-          全局样式与流光金属特效
+          全局样式与优化后的柔和流光金属特效
           ========================================= */}
       <style jsx global>{`
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
@@ -299,54 +299,54 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); }
         .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
 
+        /* 呼吸式往复流光，比单向 linear 更自然 */
         @keyframes metallic-shine {
-          0% { background-position: 0% center; }
-          100% { background-position: 200% center; }
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
         }
 
-        /* 浅色模式：液态银质感 */
+        /* 浅色模式：雾面银质感 */
         .text-metallic {
-          background: linear-gradient(to right, #4b5563 0%, #d1d5db 20%, #ffffff 40%, #9ca3af 60%, #4b5563 100%);
+          background: linear-gradient(105deg, #6b7280 0%, #9ca3af 25%, #ffffff 50%, #9ca3af 75%, #6b7280 100%);
           background-size: 200% auto;
           color: transparent;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-          animation: metallic-shine 7s linear infinite;
-          filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.1));
+          animation: metallic-shine 8s ease-in-out infinite;
         }
 
-        /* 暗黑模式：钛合金反光质感 */
+        /* 暗黑模式：拉丝钛金属/深空灰质感 */
         .dark .text-metallic {
-          background: linear-gradient(to right, #111827 0%, #6b7280 20%, #f3f4f6 40%, #4b5563 60%, #111827 100%);
+          background: linear-gradient(105deg, #374151 0%, #6b7280 25%, #f3f4f6 50%, #6b7280 75%, #374151 100%);
           background-size: 200% auto;
           color: transparent;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-          animation: metallic-shine 7s linear infinite;
-          filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.5));
+          animation: metallic-shine 8s ease-in-out infinite;
         }
 
-        /* 金属蓝滚动字 */
+        /* 金属蓝滚动字：调和对比度，更顺滑的渐变 */
         .text-metallic-blue {
-          background: linear-gradient(to right, #1e3a8a 0%, #3b82f6 20%, #bfdbfe 40%, #2563eb 60%, #1e3a8a 100%);
+          background: linear-gradient(105deg, #1e3a8a 0%, #3b82f6 25%, #93c5fd 50%, #3b82f6 75%, #1e3a8a 100%);
           background-size: 200% auto;
           color: transparent;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-          animation: metallic-shine 6s linear infinite;
+          animation: metallic-shine 6s ease-in-out infinite;
         }
 
         .dark .text-metallic-blue {
-          background: linear-gradient(to right, #172554 0%, #2563eb 20%, #93c5fd 40%, #1d4ed8 60%, #172554 100%);
+          background: linear-gradient(105deg, #172554 0%, #2563eb 25%, #bfdbfe 50%, #2563eb 75%, #172554 100%);
           background-size: 200% auto;
           color: transparent;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-          animation: metallic-shine 6s linear infinite;
+          animation: metallic-shine 6s ease-in-out infinite;
         }
       `}</style>
     </div>
