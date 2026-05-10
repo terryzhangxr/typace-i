@@ -4,8 +4,15 @@ import { getSortedPostsData } from '../lib/posts';
 import Head from 'next/head';
 import Link from 'next/link';
 
+// --- 全局配置区 ---
 const POSTS_PER_PAGE = 10;
 const SCROLL_WORDS = ["Modern", "Scalable", "Performant", "Minimalist", "Elegant"];
+
+// 自定义背景图配置（填入图片 URL 或相对路径，留空则使用默认极简纯色）
+const BG_IMAGES = {
+  light: "", 
+  dark: ""   
+};
 
 export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMounted }) {
   const canvasRef = useRef(null);
@@ -22,6 +29,10 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isArticlesVisible, setIsArticlesVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // 动态读取背景配置
+  const currentBgImage = isDarkMode ? BG_IMAGES.dark : BG_IMAGES.light;
+  const hasCustomBg = !!currentBgImage;
 
   // --- 核心逻辑：分页与搜索 ---
   const totalPages = Math.ceil(allPostsData.length / POSTS_PER_PAGE);
@@ -113,13 +124,27 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
   }, [isDarkMode, isMobileMenuOpen, isSearchOpen]); 
 
   return (
-    <div className={`min-h-screen selection:bg-blue-600 selection:text-white transition-colors duration-700 ${isDarkMode ? 'dark bg-black text-white' : 'bg-[#fafafa] text-black'}`}>
+    <div 
+      className={`min-h-screen selection:bg-blue-600 selection:text-white transition-colors duration-700 ${isDarkMode ? 'dark bg-black text-white' : 'bg-[#fafafa] text-black'}`}
+      style={hasCustomBg ? {
+        backgroundImage: `url('${currentBgImage}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+      } : {}}
+    >
+      {/* 背景遮罩层 */}
+      {hasCustomBg && (
+        <div className={`fixed inset-0 pointer-events-none z-0 transition-colors duration-700 ${isDarkMode ? 'bg-black/75' : 'bg-white/80'}`}></div>
+      )}
+
+      {/* 粒子层 */}
+      <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-100" />
+
       <Head>
         <title>TYPACE — Digital Order</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" />
       </Head>
-
-      <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-100" />
 
       {/* --- 顶部导航栏 --- */}
       <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
@@ -165,88 +190,41 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
 
       <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
         
-        {/* =========================================
-            全新非对称网格：对角线视觉流 Hero
-            ========================================= */}
-        <header className="min-h-screen pt-32 pb-24 md:pt-40 md:pb-32 relative flex flex-col justify-center">
+        <header className="min-h-screen pt-32 pb-24 flex flex-col justify-center relative">
           
-          {/* 背景环境光（偏右分布平衡视觉） */}
-          <div className="absolute top-1/2 right-0 md:right-1/4 -translate-y-1/2 w-[60vw] h-[60vw] max-w-[600px] max-h-[600px] bg-blue-500/10 dark:bg-blue-400/15 blur-[120px] rounded-full pointer-events-none z-0"></div>
-
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-4 relative z-10 w-full h-full">
-            
-            {/* 左侧：核心排版区 */}
-            <div className={`md:col-span-8 flex flex-col justify-center transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'translate-x-0 opacity-100' : '-translate-x-12 opacity-0'}`}>
+          <div className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+            <h1 className="text-[clamp(3.8rem,11.5vw,13rem)] leading-[0.85] font-black tracking-tighter uppercase">
               
-              {/* 微型标识 */}
-              <div className="flex items-center space-x-4 mb-8 md:mb-16">
-                <div className="w-4 h-4 border border-black/30 dark:border-white/30 flex items-center justify-center">
-                  <div className="w-1 h-1 bg-current"></div>
-                </div>
-                <span className="text-[9px] font-black tracking-[0.4em] uppercase opacity-60">
-                  Phase_01 / Engine
-                </span>
-              </div>
+              {/* 1. BUILDING：流光实心填充 */}
+              <span className="block text-metallic pb-2 md:pb-4">
+                BUILDING
+              </span>
 
-              {/* 左对齐巨幕排版 */}
-              <h1 className="text-[clamp(3.8rem,9.5vw,10rem)] leading-[0.88] font-black tracking-tighter uppercase">
-                
-                {/* 描边特效字体 */}
-                <span 
-                  className="block text-transparent pb-1 transition-colors duration-700 hover:text-black/5 dark:hover:text-white/5"
-                  style={{ WebkitTextStroke: isDarkMode ? '1.5px rgba(255,255,255,0.85)' : '1.5px rgba(0,0,0,0.85)' }}
+              {/* 2. 蓝条与滚动词：流光蓝色 */}
+              <div className="flex items-center gap-4 md:gap-8 my-2 md:my-4 h-[1.1em] overflow-hidden">
+                <div className="w-16 md:w-40 h-[clamp(0.6rem,1.5vw,1.2rem)] bg-blue-600 flex-shrink-0"></div>
+                <div
+                  className="transition-transform duration-[1200ms] ease-[cubic-bezier(0.85,0,0.15,1)] flex flex-col w-full"
+                  style={{ transform: `translateY(-${wordIndex * (100 / SCROLL_WORDS.length)}%)` }}
                 >
-                  BUILDING
-                </span>
-
-                <div className="relative h-[1.2em] w-full overflow-hidden my-3 md:my-5 flex items-center">
-                  {/* 蓝条装饰块 */}
-                  <div className="hidden md:block w-16 md:w-24 h-[clamp(0.6rem,1.5vw,1rem)] bg-blue-600 mr-6 md:mr-8 flex-shrink-0"></div>
-                  <div
-                    className="transition-transform duration-[1000ms] ease-[cubic-bezier(0.85,0,0.15,1)] flex flex-col w-full"
-                    style={{ transform: `translateY(-${wordIndex * (100 / SCROLL_WORDS.length)}%)` }}
-                  >
-                    {SCROLL_WORDS.map((w) => (
-                      <div key={w} className="h-[1.2em] text-metallic-blue flex items-center w-full">{w}</div>
-                    ))}
-                  </div>
+                  {SCROLL_WORDS.map((w) => (
+                    <div key={w} className="h-[1.1em] text-metallic-blue flex items-center w-full">{w}</div>
+                  ))}
                 </div>
-
-                {/* 流光金属实心字 */}
-                <span className="block text-metallic pt-1">SYSTEMS.</span>
-              </h1>
-            </div>
-
-            {/* 右侧：功能信息区 (放置在网格底部，形成对角线) */}
-            <div className={`md:col-span-4 flex flex-col justify-end md:items-end text-left md:text-right mt-16 md:mt-0 pb-4 transition-all duration-[1500ms] delay-500 ease-out ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
-              
-              {/* 打字机 */}
-              <div className="border-l-2 md:border-l-0 md:border-r-2 border-blue-600 pl-4 md:pl-0 md:pr-4 py-1 mb-8 md:mb-12">
-                <p className="max-w-[280px] text-sm md:text-sm font-medium leading-relaxed font-mono opacity-80">
-                  {displayText}<span className="inline-block w-2 h-4 bg-blue-600 ml-1.5 animate-pulse align-middle" />
-                </p>
               </div>
-
-              {/* 仪表盘数据栈 */}
-              <div className="flex flex-col space-y-3 text-[10px] font-mono tracking-widest uppercase opacity-50">
-                <div className="flex items-center md:justify-end space-x-3">
-                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
-                  <span>Net: Connected</span>
-                </div>
-                <span>Render: 60FPS / 0ms</span>
-                <span>Lat: 1.3521° N</span>
-              </div>
-              
-              {/* 装饰刻度 */}
-              <div className="mt-8 flex space-x-1 opacity-20">
-                {[...Array(12)].map((_, i) => (
-                  <div key={i} className={`h-1 bg-current ${i % 4 === 0 ? 'w-4' : 'w-1'}`}></div>
-                ))}
-              </div>
-
-            </div>
-
+            </h1>
           </div>
+
+          {/* 底部信息条 */}
+          <div className={`absolute bottom-16 left-0 w-full px-6 md:px-0 flex flex-col md:flex-row md:items-end justify-between gap-8 transition-all duration-[1500ms] delay-500 ease-out ${showHero ? 'opacity-60 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            <p className="max-w-md text-sm md:text-base font-mono leading-relaxed">
+              {displayText}<span className="inline-block w-2 md:w-2.5 h-4 md:h-5 bg-blue-600 ml-2 animate-pulse align-middle" />
+            </p>
+            <span className="text-[10px] font-bold tracking-[0.4em] uppercase opacity-50">
+              Phase_01 // Digital Order
+            </span>
+          </div>
+
         </header>
 
         {/* --- 文章列表区 --- */}
@@ -314,15 +292,12 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         </div>
       )}
 
-      {/* --- Footer --- */}
       <footer className={`max-w-[1440px] mx-auto px-10 py-24 flex justify-between items-center opacity-20 text-[9px] font-bold tracking-[0.5em] uppercase border-t border-black/5 dark:border-white/10 transition-all ${isMobileMenuOpen ? 'blur-2xl' : 'blur-0'}`}>
         <span>© TYPACE SYSTEM 2026</span>
         <span className="hidden sm:inline">ENGINEERED FOR THE WEB</span>
       </footer>
 
-      {/* =========================================
-          全局样式与优化后的柔和流光金属特效
-          ========================================= */}
+      {/* 极简样式与舒服的金属动画 */}
       <style jsx global>{`
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
         ::-webkit-scrollbar { width: 3px; }
@@ -330,59 +305,59 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
 
         @keyframes metallic-shine {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
+          0% { background-position: 0% center; }
+          100% { background-position: 200% center; }
         }
 
-        /* 浅色模式：雾面银质感 */
+        /* 舒服的金属流光 - 周期延长至 12s，缓动平滑 */
         .text-metallic {
-          background: linear-gradient(105deg, #6b7280 0%, #9ca3af 25%, #ffffff 50%, #9ca3af 75%, #6b7280 100%);
+          background: linear-gradient(105deg, 
+            rgba(75,85,99,1) 0%, 
+            rgba(156,163,175,1) 25%, 
+            rgba(255,255,255,1) 50%, 
+            rgba(156,163,175,1) 75%, 
+            rgba(75,85,99,1) 100%
+          );
           background-size: 200% auto;
           color: transparent;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-          animation: metallic-shine 8s ease-in-out infinite;
+          animation: metallic-shine 12s ease-in-out infinite;
         }
 
-        /* 暗黑模式：拉丝钛金属/深空灰质感 */
         .dark .text-metallic {
-          background: linear-gradient(105deg, #374151 0%, #6b7280 25%, #f3f4f6 50%, #6b7280 75%, #374151 100%);
+          background: linear-gradient(105deg, 
+            #27272a 0%, 
+            #71717a 25%, 
+            #fafafa 50%, 
+            #71717a 75%, 
+            #27272a 100%
+          );
           background-size: 200% auto;
           color: transparent;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-          animation: metallic-shine 8s ease-in-out infinite;
+          animation: metallic-shine 15s ease-in-out infinite;
         }
 
-        /* 金属蓝滚动字 */
+        /* 舒服的蓝色流光 */
         .text-metallic-blue {
-          background: linear-gradient(105deg, #1e3a8a 0%, #3b82f6 25%, #93c5fd 50%, #3b82f6 75%, #1e3a8a 100%);
+          background: linear-gradient(105deg, #1e40af 0%, #3b82f6 25%, #93c5fd 50%, #3b82f6 75%, #1e40af 100%);
           background-size: 200% auto;
           color: transparent;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-          animation: metallic-shine 6s ease-in-out infinite;
-        }
-
-        .dark .text-metallic-blue {
-          background: linear-gradient(105deg, #172554 0%, #2563eb 25%, #bfdbfe 50%, #2563eb 75%, #172554 100%);
-          background-size: 200% auto;
-          color: transparent;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          animation: metallic-shine 6s ease-in-out infinite;
+          animation: metallic-shine 10s ease-in-out infinite;
         }
       `}</style>
     </div>
   );
 }
 
-// --- 抽离的子组件 ---
+// --- 子组件 ---
 
 const ArticleBox = ({ post, featured }) => (
   <Link href={`/posts/${post.slug}`}>
