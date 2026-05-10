@@ -8,7 +8,7 @@ import Link from 'next/link';
 const POSTS_PER_PAGE = 10;
 const SCROLL_WORDS = ["Modern", "Scalable", "Performant", "Minimalist", "Elegant"];
 
-// 自定义背景图配置
+// 自定义背景图配置（填入图片 URL 或相对路径，留空则使用默认极简纯色）
 const BG_IMAGES = {
   light: "", 
   dark: ""   
@@ -180,47 +180,43 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         <header className="min-h-screen pt-32 pb-24 flex flex-col justify-center relative">
           
           <div className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
-            {/* 严格锁定行高 leading-none 防止任何外边距溢出 */}
             <h1 className="text-[clamp(3.8rem,11.5vw,13rem)] leading-none font-black tracking-tighter uppercase flex flex-col">
               
-              {/* 1. BUILDING：流光实心填充 */}
               <span className="block text-metallic pb-2 md:pb-4">
                 BUILDING
               </span>
 
-              {/* 2. 纯粹滚动词 (绝对定位方案) */}
-              <div className="flex items-center my-2 md:my-4 h-[1em] overflow-hidden relative">
-                
-                {/* 蓝条装饰 */}
-                <div className="w-16 md:w-32 h-[clamp(0.6rem,1.5vw,1rem)] bg-blue-600 mr-6 md:mr-8 flex-shrink-0 z-10"></div>
-                
-                {/* 外层定高容器 */}
-                <div className="relative h-[1em] w-full overflow-hidden">
-                  {/* 内层绝对定位滚动轨道 */}
-                  <div className="absolute top-0 left-0 w-full flex flex-col animate-text-scroll">
-                    {SCROLL_WORDS.map((w, index) => (
-                      <div key={index} className="h-[1em] text-metallic-blue flex items-center leading-none">
-                        {w}
-                      </div>
-                    ))}
-                    {/* 克隆第一个词 */}
-                    <div aria-hidden="true" className="h-[1em] text-metallic-blue flex items-center leading-none">
-                      {SCROLL_WORDS[0]}
+              {/* 纯粹滚动词：无破折号，极致干净 */}
+              <div className="relative my-2 md:my-4 h-[1em] w-full overflow-hidden">
+                <div className="absolute top-0 left-0 w-full flex flex-col animate-text-scroll">
+                  {SCROLL_WORDS.map((w, index) => (
+                    <div key={index} className="h-[1em] text-metallic-blue flex items-center leading-none">
+                      {w}
                     </div>
+                  ))}
+                  {/* 克隆第一个词，无缝衔接 */}
+                  <div aria-hidden="true" className="h-[1em] text-metallic-blue flex items-center leading-none">
+                    {SCROLL_WORDS[0]}
                   </div>
                 </div>
-
               </div>
+
             </h1>
           </div>
 
-          <div className={`absolute bottom-16 left-0 w-full px-6 md:px-0 flex flex-col md:flex-row md:items-end justify-between gap-8 transition-all duration-[1500ms] delay-500 ease-out ${showHero ? 'opacity-60 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          {/* 底部信息条：打字机 + 极简状态指示灯 */}
+          <div className={`absolute bottom-16 left-0 w-full px-6 md:px-0 flex flex-col md:flex-row md:items-end justify-between gap-8 transition-all duration-[1500ms] delay-500 ease-out ${showHero ? 'opacity-70 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <p className="max-w-md text-sm md:text-base font-mono leading-relaxed">
               {displayText}<span className="inline-block w-2 md:w-2.5 h-4 md:h-5 bg-blue-600 ml-2 animate-pulse align-middle" />
             </p>
-            <span className="text-[10px] font-bold tracking-[0.4em] uppercase opacity-50">
-              Phase_01 // Digital Order
-            </span>
+            
+            <div className="flex flex-col items-start md:items-end space-y-1.5 text-[9px] font-mono tracking-widest uppercase opacity-60">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+                <span>SYS.STATUS / ONLINE</span>
+              </div>
+              <span className="opacity-40">All nodes operational</span>
+            </div>
           </div>
 
         </header>
@@ -294,7 +290,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
       </footer>
 
       {/* =======================
-          终极样式修复区域
+          优化后的光泽与滚动样式
           ======================= */}
       <style jsx global>{`
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
@@ -302,10 +298,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); }
         .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
 
-        /* 终极防偏移算法：
-          容器内有 6 个元素(5个词+1个克隆)，每次精准上移 1/6 (即 16.6666%)
-          无论外部字体多大、行高如何压缩，自身百分比计算绝不会出现间隙！
-        */
+        /* 绝对像素级防错位滚动算法 */
         @keyframes text-scroll {
           0%, 15%   { transform: translateY(0); }
           20%, 35%  { transform: translateY(calc(-100% * 1 / 6)); }
@@ -324,14 +317,52 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
           100% { background-position: 200% center; }
         }
 
-        /* 舒服的金属流光 */
+        /* 优化：浅色模式金属质感
+           缩短了色值的亮度跨度（不用纯白，最低用到深灰），保证任何时候都不会太亮或太黑 
+        */
         .text-metallic {
           background: linear-gradient(105deg, 
-            rgba(75,85,99,1) 0%, 
-            rgba(156,163,175,1) 25%, 
-            rgba(255,255,255,1) 50%, 
-            rgba(156,163,175,1) 75%, 
-            rgba(75,85,99,1) 100%
+            #6b7280 0%,     /* 灰 500 */
+            #9ca3af 30%,    /* 灰 400 */
+            #e5e7eb 50%,    /* 灰 200 (最高亮，不刺眼) */
+            #9ca3af 70%,    /* 灰 400 */
+            #6b7280 100%    /* 灰 500 */
+          );
+          background-size: 200% auto;
+          color: transparent;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: metallic-shine 14s ease-in-out infinite;
+        }
+
+        /* 优化：暗黑模式金属质感
+           不用纯黑，最高亮控制在中灰色，维持克制的哑光感 
+        */
+        .dark .text-metallic {
+          background: linear-gradient(105deg, 
+            #374151 0%,     /* 灰 700 */
+            #6b7280 30%,    /* 灰 500 */
+            #d1d5db 50%,    /* 灰 300 (暗夜中的柔和反光) */
+            #6b7280 70%,    /* 灰 500 */
+            #374151 100%    /* 灰 700 */
+          );
+          background-size: 200% auto;
+          color: transparent;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: metallic-shine 14s ease-in-out infinite;
+        }
+
+        /* 优化：蓝色流光，保持适中的色彩饱和度 */
+        .text-metallic-blue {
+          background: linear-gradient(105deg, 
+            #2563eb 0%, 
+            #60a5fa 30%, 
+            #bfdbfe 50%, 
+            #60a5fa 70%, 
+            #2563eb 100%
           );
           background-size: 200% auto;
           color: transparent;
@@ -339,33 +370,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
           -webkit-text-fill-color: transparent;
           background-clip: text;
           animation: metallic-shine 12s ease-in-out infinite;
-        }
-
-        .dark .text-metallic {
-          background: linear-gradient(105deg, 
-            #27272a 0%, 
-            #71717a 25%, 
-            #fafafa 50%, 
-            #71717a 75%, 
-            #27272a 100%
-          );
-          background-size: 200% auto;
-          color: transparent;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          animation: metallic-shine 15s ease-in-out infinite;
-        }
-
-        /* 舒服的蓝色流光 */
-        .text-metallic-blue {
-          background: linear-gradient(105deg, #1e40af 0%, #3b82f6 25%, #93c5fd 50%, #3b82f6 75%, #1e40af 100%);
-          background-size: 200% auto;
-          color: transparent;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          animation: metallic-shine 10s ease-in-out infinite;
         }
       `}</style>
     </div>
