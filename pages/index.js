@@ -7,7 +7,6 @@ import Link from 'next/link';
 const POSTS_PER_PAGE = 10;
 const SCROLL_WORDS = ["Modern", "Scalable", "Performant", "Minimalist", "Elegant"];
 
-// 1. 修改入参：接收来自 _app.js 的 isDarkMode, toggleDarkMode, themeMounted
 export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMounted }) {
   const canvasRef = useRef(null);
   const articlesRef = useRef(null);
@@ -15,7 +14,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
 
   // --- 状态管理 ---
   const [currentPage, setCurrentPage] = useState(1);
-  // 【删除】此处不再定义本地 isDarkMode 状态
   const [displayText, setDisplayText] = useState(''); 
   const [wordIndex, setWordIndex] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
@@ -43,7 +41,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
   // --- 副作用控制系统 ---
   useEffect(() => {
     setIsMounted(true);
-    // 【删除】此处不再读取 localStorage 和操作 classList
     
     setTimeout(() => setShowHero(true), 150);
 
@@ -92,7 +89,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
     const render = () => {
       time += 0.015;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // 动态色彩映射 - 直接使用 Props 传进来的 isDarkMode
       const colorRGB = isDarkMode ? '255, 255, 255' : '0, 0, 0';
       ctx.fillStyle = `rgba(${colorRGB}, ${isDarkMode ? 0.35 : 0.25})`;
       
@@ -119,10 +115,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
       cancelAnimationFrame(animationFrameId);
       observer.disconnect();
     };
-    // 依赖项加入 isDarkMode，确保切换时粒子颜色立即更新
   }, [isDarkMode, isMobileMenuOpen, isSearchOpen]); 
-
-  // 【删除】本地 toggleDarkMode 函数
 
   return (
     <div className={`min-h-screen selection:bg-blue-600 selection:text-white transition-colors duration-700 ${isDarkMode ? 'dark bg-black text-white' : 'bg-[#fafafa] text-black'}`}>
@@ -133,6 +126,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
 
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0 opacity-100" />
 
+      {/* --- 顶部导航栏 (保持不变) --- */}
       <nav className="fixed top-0 w-full z-[100] border-b border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/80 backdrop-blur-xl">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
           <Link href="/"><a className="text-sm font-black tracking-widest hover:opacity-50 transition-opacity z-50">TYPACE</a></Link>
@@ -142,7 +136,6 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
             <NavLink href="/tags">Tags</NavLink>
             <NavLink href="/about">About</NavLink>
             <button onClick={() => setIsSearchOpen(true)} className="p-1 opacity-40 hover:opacity-100 transition-opacity focus:outline-none"><SearchIcon /></button>
-            {/* 使用全局 toggleDarkMode，并根据 themeMounted 渲染图标防止水合闪烁 */}
             <button onClick={toggleDarkMode} className="w-5 h-5 flex items-center justify-center rounded-full border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-sm focus:outline-none">
               {!themeMounted ? null : (isDarkMode ? '☼' : '☾')}
             </button>
@@ -176,31 +169,78 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         </div>
       </nav>
 
-      <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-48 pb-32 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
+      <main className={`relative z-10 max-w-[1440px] mx-auto px-6 md:px-10 pt-40 md:pt-48 pb-32 transition-all duration-700 ease-in-out ${isMobileMenuOpen ? 'blur-2xl scale-[0.97] pointer-events-none opacity-50' : 'blur-0 scale-100 opacity-100'}`}>
         
-        <header className="min-h-[50vh] flex flex-col justify-center mb-32 md:mb-64">
-          <div className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-            <h1 className="text-[clamp(3rem,11.5vw,10.5rem)] leading-[0.8] font-black tracking-tighter mb-12">
-              BUILDING <br />
-              <div className="relative h-[1.1em] overflow-hidden">
-                <div 
-                  className="transition-transform duration-[1000ms] delay-300 ease-[cubic-bezier(0.85,0,0.15,1)]"
-                  style={{ transform: `translateY(-${wordIndex * 20}%)` }}
-                >
-                  {SCROLL_WORDS.map((w) => (
-                    <div key={w} className="h-[1.1em] text-blue-600 dark:text-blue-500 uppercase">{w}</div>
-                  ))}
+        {/* =========================================
+            全新升级的高级感首屏 (Hero Section) 
+            ========================================= */}
+        <header className="min-h-[75vh] md:min-h-[85vh] relative flex flex-col justify-center mb-32 md:mb-56">
+          
+          {/* 左上角极简装饰条 */}
+          <div className={`absolute top-0 left-0 flex items-center space-x-4 md:space-x-6 transition-all duration-[2000ms] delay-300 ease-out ${showHero ? 'opacity-40 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
+            <div className="h-[1px] w-8 md:w-16 bg-black dark:bg-white"></div>
+            <span className="text-[9px] font-mono tracking-[0.4em] uppercase">Init_Phase // V_2.0.26</span>
+          </div>
+
+          {/* 巨幅排版区 */}
+          <div className={`transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] z-10 w-full ${showHero ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0'}`}>
+            <h1 className="text-[clamp(3.8rem,10.5vw,11rem)] leading-[0.85] font-black tracking-tighter uppercase flex flex-col">
+              
+              <span className="block opacity-90 transition-opacity">BUILDING</span>
+
+              <div className="flex items-center gap-4 md:gap-8 my-1 md:my-3">
+                <div className="hidden md:block w-12 md:w-28 h-[clamp(0.6rem,1.5vw,1rem)] bg-blue-600 flex-shrink-0"></div>
+                <div className="relative h-[1.1em] overflow-hidden w-full">
+                  <div
+                    className="transition-transform duration-[1000ms] delay-300 ease-[cubic-bezier(0.85,0,0.15,1)]"
+                    style={{ transform: `translateY(-${wordIndex * 20}%)` }}
+                  >
+                    {SCROLL_WORDS.map((w) => (
+                      <div key={w} className="h-[1.1em] text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-400 dark:from-blue-500 dark:to-blue-300 flex items-center">{w}</div>
+                    ))}
+                  </div>
                 </div>
               </div>
+
+              {/* 引入描边文字效果增加层次感 */}
+              <span 
+                className="block text-transparent transition-all duration-700 hover:text-black dark:hover:text-white" 
+                style={{ WebkitTextStroke: isDarkMode ? '1.5px rgba(255,255,255,0.8)' : '1.5px rgba(0,0,0,0.8)' }}
+              >
+                SYSTEMS.
+              </span>
             </h1>
           </div>
-          <div className={`transition-all duration-[1800ms] delay-700 ease-out ${showHero ? 'opacity-40 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <p className="max-w-2xl text-base font-medium leading-relaxed italic font-mono">
-              {displayText}<span className="inline-block w-2 h-4 bg-blue-600 ml-2 animate-pulse" />
-            </p>
+
+          {/* 底部打字机面板 & 科技仪表盘组合 */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 mt-16 md:mt-32 border-t border-black/10 dark:border-white/10 pt-10 relative">
+            
+            <div className={`md:col-span-8 transition-all duration-[1800ms] delay-700 ease-out ${showHero ? 'opacity-80 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+              <p className="max-w-2xl text-sm md:text-lg font-medium leading-relaxed font-mono">
+                {displayText}<span className="inline-block w-2 md:w-3 h-4 md:h-5 bg-blue-600 ml-2 animate-pulse align-middle" />
+              </p>
+            </div>
+
+            {/* 右侧高级数据组件 */}
+            <div className={`md:col-span-4 hidden md:flex flex-col items-end justify-end space-y-3 text-right transition-all duration-[2000ms] delay-1000 ease-out ${showHero ? 'opacity-40 translate-x-0' : 'opacity-0 translate-x-8'}`}>
+              <div className="flex items-center space-x-3">
+                <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-ping"></div>
+                <span className="text-[10px] font-mono tracking-widest uppercase">Sys.Status : Online</span>
+              </div>
+              <span className="text-[10px] font-mono tracking-widest uppercase">Lat: 1.3521° N, Lon: 103.8198° E</span>
+              <div className="h-px w-12 bg-current mt-2 opacity-30"></div>
+            </div>
           </div>
+
+          {/* 垂直滚动引导器 (Scroll Indicator) */}
+          <div className={`absolute -bottom-16 md:-bottom-24 left-0 hidden md:flex flex-col items-center space-y-4 transition-all duration-[2000ms] delay-1000 ${showHero ? 'opacity-30' : 'opacity-0'}`}>
+            <span className="text-[9px] font-mono tracking-[0.5em] [writing-mode:vertical-lr] uppercase">Scroll</span>
+            <div className="w-[1px] h-16 bg-gradient-to-b from-current to-transparent animate-pulse"></div>
+          </div>
+
         </header>
 
+        {/* --- 文章列表区 (保持不变) --- */}
         <section 
           ref={articlesRef}
           className={`transition-all duration-[1200ms] ease-[cubic-bezier(0.2,0,0.2,1)] ${
@@ -237,7 +277,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         </section>
       </main>
 
-      {/* 搜索系统 */}
+      {/* --- 搜索系统 (保持不变) --- */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[150] flex items-start justify-center pt-[10vh] px-8">
           <div className="absolute inset-0 bg-white/98 dark:bg-black/98 backdrop-blur-2xl" onClick={() => setIsSearchOpen(false)} />
@@ -265,6 +305,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         </div>
       )}
 
+      {/* --- Footer (保持不变) --- */}
       <footer className={`max-w-[1440px] mx-auto px-10 py-24 flex justify-between items-center opacity-20 text-[9px] font-bold tracking-[0.5em] uppercase border-t border-black/5 dark:border-white/10 transition-all ${isMobileMenuOpen ? 'blur-2xl' : 'blur-0'}`}>
         <span>© TYPACE SYSTEM 2026</span>
         <span className="hidden sm:inline">ENGINEERED FOR THE WEB</span>
