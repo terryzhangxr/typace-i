@@ -204,7 +204,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
             </h1>
           </div>
 
-          {/* 底部信息条：打字机 + 极简状态指示灯 */}
+          {/* 底部信息条*/}
           <div className={`absolute bottom-16 left-0 w-full px-6 md:px-0 flex flex-col md:flex-row md:items-end justify-between gap-8 transition-all duration-[1500ms] delay-500 ease-out ${showHero ? 'opacity-70 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <p className="max-w-md text-sm md:text-base font-mono leading-relaxed">
               {displayText}<span className="inline-block w-2 md:w-2.5 h-4 md:h-5 bg-blue-600 ml-2 animate-pulse align-middle" />
@@ -214,8 +214,9 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
               <div className="flex items-center space-x-2.5">
                 <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
                 <span>SYS.STATUS / ONLINE</span>
+                <span>Location / Shanghai</span>
               </div>
-              <span className="opacity-40">All nodes operational</span>
+              <span className="opacity-60">All nodes operational</span>
             </div>
           </div>
 
@@ -290,7 +291,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
       </footer>
 
       {/* =======================
-          优化后的光泽与滚动样式
+          光泽与滚动样式
           ======================= */}
       <style jsx global>{`
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
@@ -298,7 +299,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
         ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); }
         .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
 
-        /* 绝对像素级防错位滚动算法 */
+       
         @keyframes text-scroll {
           0%, 15%   { transform: translateY(0); }
           20%, 35%  { transform: translateY(calc(-100% * 1 / 6)); }
@@ -317,14 +318,12 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
           100% { background-position: 200% center; }
         }
 
-        /* 优化：浅色模式金属质感
-           缩短了色值的亮度跨度（不用纯白，最低用到深灰），保证任何时候都不会太亮或太黑 
-        */
+        
         .text-metallic {
           background: linear-gradient(105deg, 
             #6b7280 0%,     /* 灰 500 */
             #9ca3af 30%,    /* 灰 400 */
-            #e5e7eb 50%,    /* 灰 200 (最高亮，不刺眼) */
+            #e5e7eb 50%,    /* 灰 200  */
             #9ca3af 70%,    /* 灰 400 */
             #6b7280 100%    /* 灰 500 */
           );
@@ -336,14 +335,12 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
           animation: metallic-shine 14s ease-in-out infinite;
         }
 
-        /* 优化：暗黑模式金属质感
-           不用纯黑，最高亮控制在中灰色，维持克制的哑光感 
-        */
+       
         .dark .text-metallic {
           background: linear-gradient(105deg, 
             #374151 0%,     /* 灰 700 */
             #6b7280 30%,    /* 灰 500 */
-            #d1d5db 50%,    /* 灰 300 (暗夜中的柔和反光) */
+            #d1d5db 50%,    /* 灰 300  */
             #6b7280 70%,    /* 灰 500 */
             #374151 100%    /* 灰 700 */
           );
@@ -355,7 +352,7 @@ export default function Home({ allPostsData, isDarkMode, toggleDarkMode, themeMo
           animation: metallic-shine 14s ease-in-out infinite;
         }
 
-        /* 优化：蓝色流光，保持适中的色彩饱和度 */
+        
         .text-metallic-blue {
           background: linear-gradient(105deg, 
             #2563eb 0%, 
